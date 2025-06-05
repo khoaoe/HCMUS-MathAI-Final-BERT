@@ -1,0 +1,699 @@
+% =========================================================================
+%% CHƯƠNG 1: GIỚI THIỆU CHUNG VỀ BERT
+%% =========================================================================
+\section{Giới Thiệu Chung về BERT}
+\label{sec:gioi_thieu_chung_bert}
+
+\subsection{Bối cảnh và Tầm quan trọng của Mô hình Biểu diễn Ngôn ngữ}
+\label{ssec:boi_canh_bieu_dien_ngon_ngu}
+Trong lĩnh vực Xử lý Ngôn ngữ Tự nhiên (NLP), việc xây dựng các biểu diễn ngôn ngữ (language representations) hiệu quả luôn là một mục tiêu trung tâm. Các biểu diễn này, thường ở dạng vector, cố gắng nắm bắt các đặc tính ngữ nghĩa và cú pháp của từ, cụm từ hoặc câu, làm nền tảng cho nhiều tác vụ NLP phức tạp hơn. 
+
+Trước khi BERT ra đời, các phương pháp biểu diễn ngôn ngữ phổ biến bao gồm các word embeddings tĩnh như Word2Vec \cite{mikolov2013distributed} và GloVe \cite{pennington2014glove}. Để hiểu rõ hạn chế của các phương pháp này, hãy xét một ví dụ cụ thể: từ "bank" trong câu "I went to the bank to deposit money" (ngân hàng) và "The river bank was flooded" (bờ sông) sẽ có cùng một vector biểu diễn, mặc dù ý nghĩa hoàn toàn khác nhau. Đây chính là hạn chế cố hữu của biểu diễn tĩnh - không thể nắm bắt được ngữ cảnh.
+
+Để khắc phục nhược điểm này, các mô hình biểu diễn ngôn ngữ theo ngữ cảnh (contextual language representation models) đã được phát triển. Các mô hình dựa trên kiến trúc tuần tự như Mạng Nơ-ron Hồi quy (RNN) và Bộ nhớ Dài-Ngắn Hạn (LSTM) bắt đầu cho thấy khả năng nắm bắt thông tin ngữ cảnh. Tuy nhiên, các mô hình này gặp phải vấn đề "information bottleneck" - thông tin phải được nén qua một vector trạng thái ẩn có kích thước cố định, dẫn đến mất mát thông tin khi xử lý chuỗi dài.
+
+ELMo (Embeddings from Language Models) \cite{peters2018deep} đã cố gắng giải quyết vấn đề này bằng cách kết hợp biểu diễn từ cả hai chiều. Cụ thể, ELMo huấn luyện hai LSTM độc lập: một đọc văn bản từ trái sang phải, một đọc từ phải sang trái, sau đó nối (concatenate) các biểu diễn. Tuy nhiên, đây chỉ là kết hợp "nông" (shallow) - hai LSTM không thực sự tương tác với nhau trong quá trình học.
+
+Sự ra đời của kiến trúc Transformer \cite{vaswani2017attention} với cơ chế tự chú ý (self-attention) đã mang lại một cuộc cách mạng. Khác với RNN phải xử lý tuần tự từng từ, Transformer có thể xử lý toàn bộ chuỗi song song, cho phép mô hình hóa các phụ thuộc tầm xa một cách trực tiếp. OpenAI GPT \cite{radford2018improving} đã tận dụng Transformer nhưng vẫn giữ hướng huấn luyện từ trái sang phải, giới hạn khả năng hiểu ngữ cảnh toàn diện.
+
+BERT (Bidirectional Encoder Representations from Transformers) \cite{devlin2018bert}, được Google giới thiệu năm 2018, đã giải quyết triệt để vấn đề này. BERT sử dụng một chiến lược đột phá: che ngẫu nhiên một số từ trong câu và yêu cầu mô hình dự đoán chúng dựa trên ngữ cảnh hai chiều. Điều này cho phép BERT học được biểu diễn sâu sắc hai chiều (deeply bidirectional) - mỗi từ được hiểu dựa trên toàn bộ ngữ cảnh xung quanh, không chỉ một phía.
+
+\subsection{Mục tiêu và Đóng góp chính của BERT}
+\label{ssec:muc_tieu_dong_gop_bert}
+Mục tiêu chính của bài báo BERT \cite{devlin2018bert} là giới thiệu một phương pháp tiền huấn luyện (pre-training) các biểu diễn ngôn ngữ sâu sắc hai chiều, có khả năng nắm bắt thông tin ngữ nghĩa và cú pháp phong phú từ dữ liệu văn bản không gán nhãn. Đây là một bước đột phá quan trọng vì dữ liệu không gán nhãn rất dồi dào và dễ thu thập, trong khi dữ liệu có nhãn cho các tác vụ cụ thể thường khan hiếm và tốn kém.
+
+Những đóng góp chính của BERT bao gồm:
+
+\begin{itemize}
+    \item \textbf{Kiến trúc hai chiều sâu sắc (Deeply Bidirectional):} Đây là điểm khác biệt quan trọng nhất của BERT. Trong khi các mô hình trước đó như GPT chỉ nhìn ngữ cảnh một chiều, hoặc như ELMo kết hợp hai chiều một cách độc lập, BERT cho phép mỗi lớp của mô hình xem xét ngữ cảnh hai chiều đồng thời. Điều này có nghĩa là khi xử lý từ "bank" trong câu, BERT có thể đồng thời xem xét cả "went to the" (bên trái) và "to deposit money" (bên phải) để hiểu đây là "ngân hàng" chứ không phải "bờ sông".
+    
+    \item \textbf{Hai tác vụ tiền huấn luyện sáng tạo:}
+    \begin{itemize}
+        \item \textbf{Masked Language Model (MLM):} BERT che ngẫu nhiên 15\% các từ trong câu và yêu cầu mô hình dự đoán chúng. Ví dụ, từ câu "The cat sat on the mat", BERT có thể che từ "sat" thành "[MASK]" và học cách dự đoán từ đó dựa trên ngữ cảnh. Điều quan trọng là BERT sử dụng chiến lược 80-10-10: 80\% thời gian thay bằng [MASK], 10\% thay bằng từ ngẫu nhiên, 10\% giữ nguyên. Chiến lược này giúp giảm sự khác biệt giữa giai đoạn huấn luyện (có [MASK]) và sử dụng thực tế (không có [MASK]).
+        
+        \item \textbf{Next Sentence Prediction (NSP):} BERT học dự đoán xem hai câu có liên tiếp trong văn bản gốc hay không. Ví dụ, "The weather is nice today. Let's go for a walk" (IsNext) so với "The weather is nice today. Penguins live in Antarctica" (NotNext). Tác vụ này giúp BERT hiểu mối quan hệ giữa các câu, rất quan trọng cho các ứng dụng như hỏi đáp hay suy luận ngôn ngữ.
+    \end{itemize}
+    
+    \item \textbf{Hiệu suất vượt trội:} BERT đã thiết lập kỷ lục mới trên 11 tác vụ NLP khác nhau. Trên GLUE benchmark, BERT\textsubscript{LARGE} đạt điểm trung bình 80.5, vượt xa mô hình tốt nhất trước đó (OpenAI GPT với 72.8). Trên SQuAD v1.1, BERT thậm chí vượt qua hiệu suất con người (F1: 93.2 so với 91.2).
+    
+    \item \textbf{Tính linh hoạt và dễ áp dụng:} BERT được thiết kế với triết lý "pre-train once, fine-tune for everything". Sau khi tiền huấn luyện trên dữ liệu lớn (BookCorpus và Wikipedia), BERT có thể được tinh chỉnh cho bất kỳ tác vụ NLP nào chỉ bằng cách thêm một lớp đầu ra đơn giản. Quá trình tinh chỉnh thường chỉ mất vài giờ trên GPU, so với hàng tuần cho việc huấn luyện từ đầu.
+\end{itemize}
+
+Sự thành công của BERT không chỉ nằm ở hiệu suất vượt trội mà còn ở việc nó mở ra một hướng nghiên cứu mới - sử dụng mô hình ngôn ngữ lớn được tiền huấn luyện làm nền tảng cho mọi tác vụ NLP. Điều này đã dẫn đến sự phát triển của cả một thế hệ mô hình mới như RoBERTa, ALBERT, và xa hơn là GPT-3, ChatGPT - định hình lại toàn bộ lĩnh vực AI ngôn ngữ.
+
+%% =========================================================================
+%% CHƯƠNG 2: KIẾN TRÚC BERT VÀ CÁC THÀNH PHẦN CỐT LÕI
+%% =========================================================================
+\section{Kiến trúc BERT và các Thành phần Cốt lõi}
+\label{sec:kien_truc_bert}
+Kiến trúc của BERT dựa trên kiến trúc Transformer \cite{vaswani2017attention}, cụ thể là phần bộ mã hóa (encoder). Để hiểu sâu về BERT, chúng ta cần phân tích từng thành phần cốt lõi và cách chúng kết hợp để tạo nên sức mạnh của mô hình.
+
+\subsection{Tổng quan về Kiến trúc Transformer}
+\label{ssec:tong_quan_transformer}
+Transformer là một kiến trúc mạng nơ-ron được giới thiệu với mục tiêu ban đầu là cải thiện các mô hình dịch máy. Điểm đột phá của Transformer là loại bỏ hoàn toàn các cấu trúc tuần tự (RNN, LSTM) và thay thế bằng cơ chế attention, cho phép xử lý song song toàn bộ chuỗi.
+
+Kiến trúc Transformer gồm hai phần chính:
+\begin{itemize}
+    \item \textbf{Encoder (Bộ mã hóa):} Xử lý chuỗi đầu vào và tạo ra biểu diễn ngữ cảnh
+    \item \textbf{Decoder (Bộ giải mã):} Sinh ra chuỗi đầu ra dựa trên biểu diễn từ encoder
+\end{itemize}
+
+BERT chỉ sử dụng phần Encoder vì mục tiêu là tạo biểu diễn ngôn ngữ, không phải sinh văn bản. Mỗi khối encoder trong BERT bao gồm:
+
+\begin{itemize}
+    \item \textbf{Lớp Multi-Head Self-Attention:} Cho phép mô hình "chú ý" đến các vị trí khác nhau trong chuỗi khi xử lý mỗi từ. Ví dụ, khi xử lý từ "it" trong câu "The animal didn't cross the street because it was too tired", lớp attention giúp mô hình liên kết "it" với "animal" chứ không phải "street".
+    
+    \item \textbf{Lớp Feed-Forward Network:} Xử lý độc lập từng vị trí với cùng một mạng nơ-ron. Điều này giúp biến đổi phi tuyến các biểu diễn sau khi đã tổng hợp thông tin ngữ cảnh từ attention.
+\end{itemize}
+
+Mỗi lớp con đều có kết nối phần dư (residual connection) và chuẩn hóa lớp (layer normalization), giúp huấn luyện ổn định các mạng sâu.
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.5\textwidth]{img/transformer_arch.png}
+    \caption{Kiến trúc tổng quan của mô hình Transformer. BERT chỉ sử dụng phần Encoder (bên trái). Mỗi khối encoder chứa lớp Multi-Head Attention và Feed-Forward, được kết nối bằng residual connections và layer normalization.}
+    \label{fig:transformer_architecture}
+\end{figure}
+
+\subsection{Cơ chế Tự chú ý (Self-Attention) - Trái tim của BERT}
+\label{ssec:self_attention}
+Self-attention là cơ chế cho phép mỗi từ trong chuỗi "nhìn" và tương tác với mọi từ khác để xây dựng biểu diễn của mình. Điều này khác biệt hoàn toàn với RNN chỉ có thể xem thông tin tuần tự.
+
+\subsubsection{Trực quan về Attention}
+Hãy tưởng tượng bạn đang đọc câu và cần hiểu từ "bank". Não bộ của bạn tự động "chú ý" đến các từ xung quanh như "river", "money", "deposit" để xác định nghĩa. Self-attention mô phỏng chính quá trình này.
+
+\subsubsection{Công thức toán học}
+Với đầu vào là các vector biểu diễn của từ, self-attention tính toán ba ma trận:
+\begin{itemize}
+    \item \textbf{Query (Q):} "Tôi đang tìm kiếm thông tin gì?"
+    \item \textbf{Key (K):} "Tôi có thông tin gì để cung cấp?"
+    \item \textbf{Value (V):} "Thông tin thực sự tôi sẽ truyền đi là gì?"
+\end{itemize}
+
+Công thức attention:
+$$ \text{Attention}(Q, K, V) = \text{softmax}\left(\frac{QK^T}{\sqrt{d_k}}\right)V $$
+
+Trong đó:
+\begin{itemize}
+    \item $QK^T$: Tính điểm tương đồng giữa queries và keys (ma trận attention scores)
+    \item $\sqrt{d_k}$: Hệ số chuẩn hóa để tránh gradient vanishing khi $d_k$ lớn
+    \item $\text{softmax}$: Chuyển điểm số thành xác suất (tổng = 1)
+    \item Nhân với $V$: Tổng hợp thông tin dựa trên trọng số attention
+\end{itemize}
+
+\subsubsection{Ví dụ minh họa}
+Xét câu: "The cat sat on the mat"
+Khi tính attention cho từ "sat":
+\begin{enumerate}
+    \item Query của "sat" được so sánh với Key của mọi từ
+    \item Điểm số cao với "cat" (chủ ngữ) và "mat" (địa điểm)
+    \item Sau softmax, ta có trọng số attention (ví dụ: cat=0.3, sat=0.1, on=0.1, the=0.15, mat=0.35)
+    \item Biểu diễn mới của "sat" = tổng có trọng số của các Value
+\end{enumerate}
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.5\textwidth]{img/scaled_dotproduct.png}
+    \caption{Cơ chế Scaled Dot-Product Attention. MatMul thực hiện phép nhân ma trận $QK^T$, Scale chia cho $\sqrt{d_k}$, Mask (tùy chọn) che các vị trí không hợp lệ, Softmax chuẩn hóa thành xác suất, và MatMul cuối cùng tính tổng có trọng số của Values.}
+    \label{fig:scaled_dot_product_attention}
+\end{figure}
+
+\subsection{Chú ý Đa đầu (Multi-Head Attention) - Sức mạnh từ sự đa dạng}
+\label{ssec:multi_head_attention}
+Một cơ chế attention duy nhất chỉ có thể nắm bắt một loại mối quan hệ. Multi-Head Attention giải quyết hạn chế này bằng cách chạy nhiều attention song song, mỗi cái tập trung vào khía cạnh khác nhau.
+
+\subsubsection{Ý tưởng chính}
+Thay vì có một attention lớn, ta chia thành $h$ attention nhỏ hơn (heads). Mỗi head học một "góc nhìn" khác:
+\begin{itemize}
+    \item Head 1 có thể học quan hệ cú pháp (chủ ngữ - vị ngữ)
+    \item Head 2 có thể học quan hệ ngữ nghĩa (từ đồng nghĩa)
+    \item Head 3 có thể học khoảng cách (từ gần nhau)
+    \item ...
+\end{itemize}
+
+\subsubsection{Công thức toán học}
+$$ \text{MultiHead}(Q, K, V) = \text{Concat}(\text{head}_1, ..., \text{head}_h)W^O $$
+$$ \text{với } \text{head}_i = \text{Attention}(QW_i^Q, KW_i^K, VW_i^V) $$
+
+Trong đó:
+\begin{itemize}
+    \item $W_i^Q, W_i^K, W_i^V \in \mathbb{R}^{d_{model} \times d_k}$: Ma trận chiếu cho head thứ $i$
+    \item $W^O \in \mathbb{R}^{hd_v \times d_{model}}$: Ma trận chiếu đầu ra
+    \item $d_k = d_v = d_{model}/h$: Kích thước mỗi head
+\end{itemize}
+
+BERT\textsubscript{BASE} sử dụng $h=12$ heads với $d_{model}=768$, nên mỗi head có kích thước $d_k=64$.
+
+\subsubsection{Ví dụ thực tế}
+Trong câu "The bank will not approve the loan", các head khác nhau có thể học:
+\begin{itemize}
+    \item Head 1: Liên kết "bank" với "loan" (quan hệ ngữ nghĩa tài chính)
+    \item Head 2: Liên kết "will not" với "approve" (phủ định)
+    \item Head 3: Liên kết "the" với danh từ theo sau (quan hệ ngữ pháp)
+\end{itemize}
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.5\textwidth]{img/multihead.png}
+    \caption{Cơ chế Multi-Head Attention. Đầu vào được chiếu thành $h$ bộ Q, K, V độc lập. Mỗi head thực hiện attention riêng, sau đó các kết quả được nối lại và chiếu qua $W^O$ để tạo đầu ra cuối cùng.}
+    \label{fig:multi_head_attention}
+\end{figure}
+
+\subsection{Position-wise Feed-Forward Networks - Biến đổi phi tuyến}
+\label{ssec:feed_forward_networks}
+Sau khi tổng hợp thông tin qua attention, mỗi vị trí được xử lý qua một mạng FFN giống nhau:
+
+$$ \text{FFN}(x) = \max(0, xW_1 + b_1)W_2 + b_2 $$
+
+Đặc điểm quan trọng:
+\begin{itemize}
+    \item Cùng một FFN được áp dụng cho mọi vị trí (parameter sharing)
+    \item Lớp ẩn có kích thước lớn hơn ($d_{ff}=3072$ so với $d_{model}=768$)
+    \item ReLU activation tạo tính phi tuyến
+\end{itemize}
+
+FFN đóng vai trò như bộ xử lý đặc trưng cục bộ sau khi đã có ngữ cảnh toàn cục từ attention.
+
+\subsection{Residual Connections và Layer Normalization}
+\label{ssec:residual_layer_norm}
+Mỗi sublayer (attention hoặc FFN) được bọc bởi:
+$$ \text{LayerNorm}(x + \text{Sublayer}(x)) $$
+
+Lợi ích:
+\begin{itemize}
+    \item \textbf{Residual connection ($x +$):} Cho phép gradient flow trực tiếp, giúp huấn luyện mạng sâu
+    \item \textbf{Layer normalization:} Chuẩn hóa theo chiều features, ổn định quá trình học
+\end{itemize}
+
+\subsection{Biểu diễn Đầu vào của BERT - Kết hợp thông tin đa chiều}
+\label{ssec:input_representation_bert}
+BERT xây dựng biểu diễn đầu vào bằng cách cộng ba loại embedding:
+
+$$ \text{Input}_i = \text{TokenEmb}_i + \text{SegmentEmb}_i + \text{PositionEmb}_i $$
+
+\subsubsection{Token Embeddings}
+\begin{itemize}
+    \item Sử dụng WordPiece tokenization với vocabulary $\approx$ 30,000 tokens
+    \item Ví dụ: "playing" → ["play", "\#\#ing"]
+    \item Giúp xử lý từ hiếm và từ mới (out-of-vocabulary)
+\end{itemize}
+
+\subsubsection{Segment Embeddings}  
+\begin{itemize}
+    \item Phân biệt câu A và câu B trong các tác vụ cặp câu
+    \item Chỉ có 2 giá trị: $E_A$ cho câu đầu, $E_B$ cho câu thứ hai
+    \item Ví dụ: "[CLS] How are you ? [SEP] I am fine [SEP]"
+    \begin{itemize}
+        \item Tokens của "How are you ?" nhận $E_A$
+        \item Tokens của "I am fine" nhận $E_B$
+    \end{itemize}
+\end{itemize}
+
+\subsubsection{Position Embeddings}
+\begin{itemize}
+    \item Transformer không có cấu trúc tuần tự nên cần thông tin vị trí
+    \item BERT học position embeddings (khác với Transformer gốc dùng sinusoidal)
+    \item Giới hạn 512 positions (có thể mở rộng khi cần)
+\end{itemize}
+
+\subsubsection{Special Tokens}
+\begin{itemize}
+    \item \textbf{[CLS]:} Token đầu tiên, biểu diễn cuối cùng dùng cho classification
+    \item \textbf{[SEP]:} Phân tách câu và đánh dấu kết thúc
+    \item \textbf{[MASK]:} Dùng trong pre-training MLM
+    \item \textbf{[PAD]:} Padding để các chuỗi có cùng độ dài
+\end{itemize}
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.9\textwidth]{img/input_representation.png}
+    \caption{Biểu diễn đầu vào của BERT. Ví dụ cho cặp câu "He likes playing" và "My dog is cute". Ba loại embeddings được cộng theo từng vị trí để tạo input embedding cuối cùng. Token [CLS] ở đầu sẽ được dùng cho các tác vụ phân loại.}
+    \label{fig:bert_input_representation}
+\end{figure}
+
+\subsection{Các phiên bản BERT}
+\label{ssec:bert_versions}
+Google phát hành hai phiên bản chính:
+
+\begin{table}[H]
+\centering
+\caption{So sánh các phiên bản BERT}
+\begin{tabular}{lccccc}
+\toprule
+\textbf{Phiên bản} & \textbf{Layers (L)} & \textbf{Hidden (H)} & \textbf{Heads (A)} & \textbf{Parameters} & \textbf{Training Time} \\
+\midrule
+BERT\textsubscript{BASE} & 12 & 768 & 12 & 110M & 4 days on 16 TPUs \\
+BERT\textsubscript{LARGE} & 24 & 1024 & 16 & 340M & 4 days on 64 TPUs \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+Sự khác biệt không chỉ về kích thước mà còn về khả năng học:
+\begin{itemize}
+    \item BERT\textsubscript{LARGE} có capacity lớn hơn, phù hợp cho tác vụ phức tạp
+    \item BERT\textsubscript{BASE} hiệu quả hơn về tài nguyên, phù hợp cho deployment
+    \item Cả hai đều vượt trội so với các mô hình trước đó
+\end{itemize}
+
+
+%% =========================================================================
+%% CHƯƠNG 3: CÁC TÁC VỤ TIỀN HUẤN LUYỆN CỦA BERT
+%% =========================================================================
+\section{Các Tác vụ Tiền huấn luyện của BERT}
+\label{sec:pre_training_tasks}
+BERT được tiền huấn luyện đồng thời trên hai tác vụ tự giám sát (self-supervised): Masked Language Model (MLM) và Next Sentence Prediction (NSP). Các tác vụ này cho phép BERT học từ dữ liệu văn bản không cần gán nhãn thủ công.
+
+\subsection{Masked Language Model (MLM) - Đột phá cho học hai chiều}
+\label{ssec:mlm}
+
+\subsubsection{Vấn đề cốt lõi}
+Các mô hình ngôn ngữ truyền thống chỉ có thể học một chiều vì lý do đơn giản: nếu cho phép mô hình "nhìn" cả hai chiều khi dự đoán từ tiếp theo, nó sẽ "gian lận" bằng cách nhìn trực tiếp vào từ cần dự đoán. BERT giải quyết vấn đề này một cách khéo léo: che ngẫu nhiên một số từ và yêu cầu mô hình dự đoán chúng từ ngữ cảnh.
+
+\subsubsection{Chiến lược Masking 80-10-10}
+BERT che 15\% tokens trong mỗi chuỗi, nhưng không phải lúc nào cũng thay bằng [MASK]:
+
+\begin{itemize}
+    \item \textbf{80\% trường hợp → [MASK]:} 
+    \begin{itemize}
+        \item Input: "The cat sat on the mat"
+        \item Masked: "The cat [MASK] on the mat"
+        \item Target: Dự đoán "sat"
+    \end{itemize}
+    
+    \item \textbf{10\% trường hợp → Random token:}
+    \begin{itemize}
+        \item Input: "The cat sat on the mat"
+        \item Masked: "The cat apple on the mat"
+        \item Target: Dự đoán "sat" (không phải "apple")
+    \end{itemize}
+    
+    \item \textbf{10\% trường hợp → Giữ nguyên:}
+    \begin{itemize}
+        \item Input: "The cat sat on the mat"
+        \item Masked: "The cat sat on the mat"
+        \item Target: Vẫn dự đoán "sat"
+    \end{itemize}
+\end{itemize}
+
+\subsubsection{Tại sao cần chiến lược phức tạp này?}
+\begin{enumerate}
+    \item \textbf{Vấn đề [MASK] token:} Trong quá trình fine-tuning và sử dụng thực tế, không có token [MASK]. Nếu chỉ train với [MASK], mô hình sẽ học cách xử lý [MASK] tốt nhưng kém với các từ thực.
+    
+    \item \textbf{Random replacement (10\%):} Buộc mô hình phải học biểu diễn tốt cho MỌI token, không chỉ [MASK]. Mô hình phải "nghi ngờ" mọi từ có thể bị thay thế.
+    
+    \item \textbf{Keep unchanged (10\%):} Đảm bảo mô hình cũng học cách biểu diễn các từ không bị thay đổi. Tạo cân bằng trong học tập.
+\end{enumerate}
+
+\subsubsection{Ví dụ huấn luyện MLM}
+Câu gốc: "BERT revolutionized natural language processing in 2018"
+
+Bước 1: Chọn ngẫu nhiên 15\% tokens (giả sử chọn "revolutionized" và "2018")
+
+Bước 2: Áp dụng chiến lược:
+\begin{itemize}
+    \item "revolutionized" → [MASK] (80\% chance)
+    \item "2018" → "cat" (10\% chance - random)
+\end{itemize}
+
+Input cho BERT: "BERT [MASK] natural language processing in cat"
+
+Mục tiêu: 
+\begin{itemize}
+    \item Tại vị trí [MASK]: dự đoán "revolutionized"
+    \item Tại vị trí "cat": dự đoán "2018"
+    \item Các vị trí khác: không tính loss
+\end{itemize}
+
+\subsubsection{Hàm loss cho MLM}
+Loss chỉ được tính cho các vị trí bị mask:
+$$ \mathcal{L}_{MLM} = -\sum_{i \in \text{masked}} \log P(w_i | \text{context}) $$
+
+Trong đó $P(w_i | \text{context})$ là xác suất dự đoán đúng từ gốc tại vị trí $i$.
+
+\subsection{Next Sentence Prediction (NSP) - Học quan hệ giữa câu}
+\label{ssec:nsp}
+
+\subsubsection{Động lực}
+Nhiều tác vụ NLP quan trọng yêu cầu hiểu mối quan hệ giữa các câu:
+\begin{itemize}
+    \item \textbf{Question Answering:} Câu hỏi và đoạn văn có liên quan?
+    \item \textbf{Natural Language Inference:} Câu A kéo theo câu B?
+    \item \textbf{Paraphrasing:} Hai câu có cùng ý nghĩa?
+\end{itemize}
+
+MLM chỉ học quan hệ trong câu, NSP bổ sung khả năng học quan hệ giữa câu.
+
+\subsubsection{Cách thức hoạt động}
+\begin{enumerate}
+    \item \textbf{Tạo dữ liệu huấn luyện:}
+    \begin{itemize}
+        \item 50\% mẫu: Câu B thực sự theo sau câu A trong văn bản (label: IsNext)
+        \item 50\% mẫu: Câu B là câu ngẫu nhiên từ corpus (label: NotNext)
+    \end{itemize}
+    
+    \item \textbf{Input format:}
+    \begin{verbatim}
+    [CLS] Sentence A [SEP] Sentence B [SEP]
+    \end{verbatim}
+    
+    \item \textbf{Prediction:} Sử dụng biểu diễn cuối cùng của [CLS] token qua một classifier:
+    $$ P(\text{IsNext}) = \text{softmax}(W_{NSP} \cdot h_{[CLS]} + b_{NSP}) $$
+\end{enumerate}
+
+\subsubsection{Ví dụ cụ thể}
+\textbf{Positive example (IsNext):}
+\begin{itemize}
+    \item A: "The weather forecast predicts heavy rain tomorrow."
+    \item B: "I should bring an umbrella to work."
+    \item Logic: B là hệ quả logic của A
+\end{itemize}
+
+\textbf{Negative example (NotNext):}
+\begin{itemize}
+    \item A: "The weather forecast predicts heavy rain tomorrow."
+    \item B: "Python is a popular programming language."
+    \item Logic: Không có quan hệ ngữ nghĩa
+\end{itemize}
+
+\subsubsection{Vai trò của [CLS] token}
+[CLS] token đóng vai trò như "summary vector" của cả cặp câu:
+\begin{itemize}
+    \item Vị trí đầu tiên, có thể attend đến mọi token khác
+    \item Qua các layer, tích lũy thông tin từ cả hai câu
+    \item Biểu diễn cuối cùng chứa thông tin về mối quan hệ câu
+    \item Được sử dụng cho mọi tác vụ classification sau này
+\end{itemize}
+
+\subsubsection{Combined Loss}
+BERT được train với combined loss:
+$$ \mathcal{L}_{total} = \mathcal{L}_{MLM} + \mathcal{L}_{NSP} $$
+
+Cả hai loss được tối ưu đồng thời, giúp BERT học cả biểu diễn từ (MLM) và quan hệ câu (NSP).
+
+\subsubsection{Tranh cãi về NSP}
+Các nghiên cứu sau (RoBERTa, ALBERT) cho thấy:
+\begin{itemize}
+    \item NSP có thể không cần thiết hoặc thậm chí có hại cho một số tác vụ
+    \item Vấn đề: Negative samples (random sentences) quá dễ phân biệt
+    \item Cải tiến: Sentence Order Prediction (SOP) trong ALBERT - dự đoán thứ tự câu
+\end{itemize}
+
+Tuy nhiên, trong thiết kế gốc, NSP đóng góp vào thành công của BERT trên nhiều benchmark.
+
+%% =========================================================================
+%% CHƯƠNG 4: TINH CHỈNH (FINE-TUNING) BERT CHO CÁC TÁC VỤ CỤ THỂ
+%% =========================================================================
+\section{Tinh chỉnh (Fine-tuning) BERT cho các Tác vụ Cụ thể}
+\label{sec:fine_tuning_bert}
+Sau khi được tiền huấn luyện trên một lượng lớn dữ liệu, BERT có thể được tinh chỉnh cho các tác vụ NLP cụ thể (downstream tasks). Quá trình tinh chỉnh tương đối đơn giản và không đòi hỏi thay đổi nhiều về kiến trúc.
+
+\subsection{Quy trình Tinh chỉnh Chung}
+\label{ssec:quy_trinh_tinh_chinh}
+Đối với mỗi tác vụ, các chuỗi đầu vào (một câu hoặc cặp câu) được đưa vào BERT theo cách tương tự như quá trình tiền huấn luyện. Sau đó, một hoặc nhiều lớp đầu ra đơn giản được thêm vào phía trên các biểu diễn cuối cùng của BERT. Tất cả các tham số của BERT và các lớp mới thêm vào này đều được huấn luyện (tinh chỉnh) trên dữ liệu gán nhãn của tác vụ đó.
+
+So với tiền huấn luyện, quá trình tinh chỉnh thường nhanh hơn nhiều và đòi hỏi ít dữ liệu hơn. Các siêu tham số (hyperparameters) như tốc độ học (learning rate), kích thước batch (batch size), số epochs thường nhỏ hơn so với tiền huấn luyện.
+
+\subsection{Ví dụ về Tinh chỉnh cho các Tác vụ Phổ biến}
+\label{ssec:vi_du_tinh_chinh}
+BERT có thể được áp dụng cho nhiều loại tác vụ NLP khác nhau:
+
+\begin{itemize}
+    \item \textbf{Phân loại cặp câu (Sentence Pair Classification Tasks):} Ví dụ: Natural Language Inference (NLI), Semantic Textual Similarity (STS).
+    Đầu vào là một cặp câu (A, B). Biểu diễn cuối cùng của token `[CLS]` được đưa qua một lớp softmax để phân loại.
+    \item \textbf{Phân loại một câu (Single Sentence Classification Tasks):} Ví dụ: Phân loại cảm xúc (Sentiment Analysis), Phân loại chủ đề văn bản.
+    Tương tự như phân loại cặp câu, nhưng đầu vào chỉ có một câu. Biểu diễn của `[CLS]` được sử dụng.
+    \item \textbf{Trả lời câu hỏi (Question Answering Tasks):} Ví dụ: SQuAD.
+    Đầu vào là một cặp (câu hỏi, đoạn văn chứa câu trả lời). BERT cần dự đoán vị trí bắt đầu (start span) và kết thúc (end span) của câu trả lời trong đoạn văn. Điều này được thực hiện bằng cách học hai vector mới $S$ và $E$. Xác suất token $i$ là điểm bắt đầu được tính bằng $softmax(S \cdot T_i)$, và là điểm kết thúc bằng $softmax(E \cdot T_i)$, trong đó $T_i$ là biểu diễn cuối cùng của token thứ $i$ trong đoạn văn.
+    \item \textbf{Gán nhãn chuỗi (Single Sentence Tagging Tasks):} Ví dụ: Named Entity Recognition (NER).
+    Đối với mỗi token trong câu đầu vào, BERT cần dự đoán một nhãn (ví dụ: PER, ORG, LOC, O). Biểu diễn cuối cùng của mỗi token $T_i$ được đưa qua một lớp softmax để phân loại.
+\end{itemize}
+
+%% Thêm hình minh họa cách fine-tuning BERT cho các tác vụ khác nhau ở đây
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=\textwidth]{img/pretraining_finetuning.png}
+    \caption{Cách tinh chỉnh BERT cho các tác vụ NLP khác nhau (Nguồn: \cite{devlin2018bert}). (a) Phân loại cặp câu, (b) Phân loại một câu, (c) Trả lời câu hỏi, (d) Gán nhãn chuỗi.}
+    \label{fig:bert_finetuning_tasks}
+\end{figure}
+
+%% =========================================================================
+%% CHƯƠNG 5: THỰC NGHIỆM VỚI BERT (VÍ DỤ ỨNG DỤNG)
+%% =========================================================================
+\section{Thực nghiệm với BERT: Phân loại Cảm xúc Văn bản}
+\label{sec:thuc_nghiem_bert}
+Để minh họa khả năng ứng dụng của BERT, chương này trình bày quy trình thực nghiệm áp dụng BERT cho bài toán phân loại cảm xúc văn bản (Sentiment Analysis). Đây là một tác vụ NLP phổ biến, nhằm xác định thái độ hoặc cảm xúc (ví dụ: tích cực, tiêu cực, trung tính) được thể hiện trong một đoạn văn bản.
+
+\subsection{Lựa chọn Bài toán và Bộ dữ liệu}
+\label{ssec:lua_chon_bai_toan_dataset}
+\subsubsection{Bài toán Phân loại Cảm xúc}
+Bài toán được chọn là phân loại cảm xúc nhị phân (binary sentiment classification), tức là phân loại một đoạn văn bản (ví dụ: một bình luận về sản phẩm, một đánh giá phim) thành hai lớp: "Tích cực" (Positive) hoặc "Tiêu cực" (Negative).
+
+\subsubsection{Bộ dữ liệu}
+Một bộ dữ liệu phổ biến thường được sử dụng cho bài toán này là \textbf{IMDB Movie Reviews dataset} \cite{maas2011learning}.
+\begin{itemize}
+    \item \textbf{Mô tả:} Bộ dữ liệu này chứa 50,000 bình luận phim được lấy từ trang web Internet Movie Database (IMDB).
+    \item \textbf{Phân chia:} Được chia thành 25,000 bình luận cho tập huấn luyện (training set) và 25,000 bình luận cho tập kiểm thử (test set). Mỗi tập này lại được chia đều thành 12,500 bình luận tích cực và 12,500 bình luận tiêu cực.
+    \item \textbf{Đặc điểm:} Các bình luận có độ dài đa dạng và chứa ngôn ngữ tự nhiên, đời thường.
+\end{itemize}
+%% Ghi chú: Nếu nhóm có thể tìm hoặc tự xây dựng một bộ dữ liệu tiếng Việt tương tự,
+%% việc áp dụng sẽ mang tính thực tiễn cao hơn trong bối cảnh Việt Nam.
+%% Ví dụ: bình luận sản phẩm từ các trang thương mại điện tử, đánh giá ứng dụng.
+%% Nếu sử dụng bộ dữ liệu tiếng Việt, cần cân nhắc sử dụng một mô hình BERT đã tiền huấn luyện cho tiếng Việt
+%% như PhoBERT (vinai/phobert-base hoặc vinai/phobert-large) \cite{nguyen2020phobert}.
+
+\subsection{Quy trình Thực nghiệm}
+\label{ssec:quy_trinh_thuc_nghiem_sa}
+
+\subsubsection{Tiền xử lý Dữ liệu}
+\begin{enumerate}
+    \item \textbf{Làm sạch văn bản (Text Cleaning):} Loại bỏ các thẻ HTML (nếu có trong bình luận IMDB), chuyển văn bản về chữ thường (lowercase). Có thể cân nhắc loại bỏ các ký tự đặc biệt không cần thiết.
+    \item \textbf{Tokenization:} Sử dụng tokenizer của BERT (ví dụ: \texttt{BertTokenizer} từ thư viện Hugging Face Transformers). Đối với IMDB, nếu dùng \texttt{bert-base-uncased}, tokenizer sẽ sử dụng WordPiece.
+    \begin{verbatim}
+    Ví dụ: "This movie is great!" 
+    -> ["[CLS]", "this", "movie", "is", "great", "!", "[SEP]"]
+    \end{verbatim}
+    \item \textbf{Chuyển đổi Tokens thành IDs:} Ánh xạ mỗi token sang ID tương ứng trong bộ từ vựng của BERT.
+    \item \textbf{Padding và Truncation:} Đảm bảo tất cả các chuỗi đầu vào có cùng một độ dài cố định (ví dụ: \texttt{max\_length = 256 tokens}). Các chuỗi ngắn hơn \texttt{max\_length} sẽ được đệm (padding) bằng token \texttt{[PAD]}. Các chuỗi dài hơn sẽ bị cắt bớt (truncation). %% Đã sửa lỗi hiển thị ở đây
+    \item \textbf{Tạo Attention Masks:} Tạo một attention mask để chỉ cho mô hình biết token nào là token thực sự và token nào là token đệm (để không tính toán attention trên các token đệm).
+\end{enumerate}
+
+\subsubsection{Mô hình}
+\begin{enumerate}
+    \item \textbf{Sử dụng BERT đã tiền huấn luyện:} Tải một mô hình BERT đã tiền huấn luyện, ví dụ \texttt{bert-base-uncased} từ Hugging Face Transformers.
+    \item \textbf{Thêm lớp Phân loại (Classification Head):}
+    Phía trên output của token \texttt{[CLS]} từ BERT (là một vector có kích thước $H=768$ đối với \texttt{bert-base-uncased}), thêm:
+    \begin{itemize}
+        \item Một lớp \texttt{Dropout} để chống quá khớp (overfitting), ví dụ dropout rate là 0.1.
+        \item Một lớp \texttt{Linear} (fully connected layer) với $H$ đầu vào và $K$ đầu ra, trong đó $K$ là số lớp cảm xúc (ở đây $K=2$: Positive, Negative).
+        \item Không cần hàm \texttt{softmax} ở lớp cuối này nếu sử dụng \texttt{CrossEntropyLoss}, vì nó đã bao gồm \texttt{LogSoftmax} và \texttt{NLLLoss}.
+    \end{itemize}
+    Mô hình hoàn chỉnh sẽ là \texttt{BertForSequenceClassification} trong thư viện Hugging Face.
+\end{enumerate}
+
+\subsubsection{Huấn luyện (Fine-tuning)}
+\begin{enumerate}
+    \item \textbf{Hàm mất mát (Loss Function):} Sử dụng \texttt{CrossEntropyLoss}, phù hợp cho bài toán phân loại đa lớp (hoặc nhị phân).
+    \item \textbf{Trình tối ưu (Optimizer):} Sử dụng \texttt{AdamW} (Adam with weight decay), một biến thể của Adam thường được dùng cho Transformer. Tốc độ học (learning rate) ban đầu có thể chọn nhỏ, ví dụ $2e-5$ hoặc $3e-5$.
+    \item \textbf{Lịch trình Tốc độ học (Learning Rate Scheduler):} Thường sử dụng một lịch trình tuyến tính với một giai đoạn khởi động (warmup), ví dụ \texttt{get\_linear\_schedule\_with\_warmup}. %% Đã sửa lỗi hiển thị ở đây
+    \item \textbf{Chia dữ liệu:} Chia tập huấn luyện IMDB thành tập huấn luyện nhỏ hơn và một tập validation (ví dụ: 80\% train, 20\% validation) để theo dõi hiệu suất trong quá trình huấn luyện và tránh quá khớp. Tập kiểm thử IMDB gốc được giữ riêng để đánh giá cuối cùng.
+    \item \textbf{Thông số huấn luyện:}
+    \begin{itemize}
+        \item Kích thước batch (Batch size): Ví dụ 16 hoặc 32 (tùy thuộc vào bộ nhớ GPU).
+        \item Số epochs: Ví dụ 2-4 epochs. BERT thường hội tụ nhanh trong quá trình tinh chỉnh.
+    \end{itemize}
+    \item \textbf{Quá trình huấn luyện:} Lặp qua dữ liệu huấn luyện theo từng batch, tính toán loss, thực hiện backpropagation và cập nhật trọng số mô hình. Sau mỗi epoch (hoặc sau một số bước nhất định), đánh giá mô hình trên tập validation.
+\end{enumerate}
+
+\subsection{Đánh giá Kết quả}
+\label{ssec:danh_gia_ket_qua_sa}
+Sau khi huấn luyện xong, mô hình tốt nhất (thường là mô hình có hiệu suất cao nhất trên tập validation) được đánh giá trên tập kiểm thử IMDB. Các độ đo thường được sử dụng bao gồm:
+\begin{itemize}
+    \item \textbf{Accuracy (Độ chính xác):} Tỷ lệ số mẫu được phân loại đúng trên tổng số mẫu.
+    $$ \text{Accuracy} = \frac{\text{TP} + \text{TN}}{\text{TP} + \text{TN} + \text{FP} + \text{FN}} $$
+    \item \textbf{Precision (Độ chuẩn):} Trong số các mẫu được dự đoán là Positive, có bao nhiêu mẫu thực sự là Positive.
+    $$ \text{Precision} = \frac{\text{TP}}{\text{TP} + \text{FP}} $$
+    \item \textbf{Recall (Độ phủ, hay Độ nhạy):} Trong số các mẫu thực sự là Positive, có bao nhiêu mẫu được dự đoán là Positive.
+    $$ \text{Recall} = \frac{\text{TP}}{\text{TP} + \text{FN}} $$
+    \item \textbf{F1-score:} Trung bình điều hòa của Precision và Recall.
+    $$ \text{F1-score} = 2 \times \frac{\text{Precision} \times \text{Recall}}{\text{Precision} + \text{Recall}} $$
+    (TP: True Positive, TN: True Negative, FP: False Positive, FN: False Negative)
+    \item \textbf{Confusion Matrix (Ma trận nhầm lẫn):} Một bảng cho thấy số lượng dự đoán đúng và sai cho từng lớp, giúp hiểu rõ hơn về các loại lỗi mà mô hình mắc phải.
+\end{itemize}
+
+%% Ví dụ về bảng kết quả (thay bằng kết quả thực tế của nhóm hoặc từ các bài báo tham khảo)
+\begin{table}[H]
+    \centering
+    \caption{Kết quả ví dụ của BERT trên tập kiểm thử IMDB (giả định).}
+    \label{tab:imdb_results_example}
+    \begin{tabular}{lc}
+        \toprule
+        \textbf{Độ đo} & \textbf{Giá trị} \\
+        \midrule
+        Accuracy & 0.935 \\
+        Precision (Positive) & 0.93 \\
+        Recall (Positive) & 0.94 \\
+        F1-score (Positive) & 0.935 \\
+        Precision (Negative) & 0.94 \\
+        Recall (Negative) & 0.93 \\
+        F1-score (Negative) & 0.935 \\
+        \bottomrule
+    \end{tabular}
+\end{table}
+%% Lưu ý: Các giá trị trong bảng trên là ví dụ, cần được thay thế bằng kết quả thực tế.
+%% BERT-base-uncased thường đạt accuracy khoảng 93-94% trên IMDB.
+
+\subsection{Thảo luận và Hướng phát triển}
+\label{ssec:thao_luan_huong_phat_trien_sa}
+\subsubsection{Phân tích Kết quả}
+(Phần này nhóm cần tự điền dựa trên kết quả thực nghiệm nếu có)
+\begin{itemize}
+    \item Mô hình BERT có đạt được hiệu suất tốt trên bộ dữ liệu IMDB không? So sánh với các baseline (ví dụ: mô hình Naive Bayes, LSTM) hoặc các kết quả đã công bố khác.
+    \item Phân tích các trường hợp lỗi điển hình từ confusion matrix. Mô hình thường nhầm lẫn ở những loại bình luận nào? (Ví dụ: bình luận có chứa sự mỉa mai, câu phức tạp, từ ngữ đa nghĩa).
+\end{itemize}
+
+\subsubsection{Những Thách thức Gặp phải}
+(Phần này nhóm cần tự điền dựa trên kinh nghiệm thực tế)
+\begin{itemize}
+    \item \textbf{Giới hạn tài nguyên tính toán:} Huấn luyện BERT, ngay cả khi chỉ fine-tuning, cũng đòi hỏi GPU có bộ nhớ tương đối lớn. Thời gian huấn luyện có thể kéo dài nếu không có GPU mạnh.
+    \item \textbf{Lựa chọn siêu tham số:} Việc tìm ra bộ siêu tham số tối ưu (learning rate, batch size, số epochs) có thể cần nhiều thử nghiệm.
+    \item \textbf{Xử lý dữ liệu tiếng Việt (nếu có):} Nếu làm với dữ liệu tiếng Việt, các thách thức có thể bao gồm việc tìm tokenizer phù hợp, xử lý các vấn đề đặc thù của tiếng Việt (dấu câu, thanh điệu, từ ghép).
+\end{itemize}
+
+\subsubsection{Hướng Cải thiện Tiềm năng}
+\begin{itemize}
+    \item \textbf{Thử nghiệm với các mô hình BERT lớn hơn hoặc biến thể khác:} Ví dụ, `bert-large-uncased` hoặc các mô hình mới hơn như RoBERTa, ALBERT, ELECTRA (nếu phù hợp với phạm vi đồ án).
+    \item \textbf{Tinh chỉnh siêu tham số (Hyperparameter Tuning):} Sử dụng các kỹ thuật như Grid Search, Random Search, hoặc các công cụ tự động như Optuna, Ray Tune.
+    \item \textbf{Kỹ thuật Augmentation Dữ liệu (Data Augmentation):} Nếu dữ liệu huấn luyện hạn chế, có thể áp dụng các kỹ thuật như back-translation, synonym replacement để tăng cường dữ liệu.
+    \item \textbf{Ensemble Models:} Kết hợp dự đoán từ nhiều mô hình BERT khác nhau hoặc kết hợp BERT với các loại mô hình khác.
+    \item \textbf{Phân tích lỗi chi tiết hơn:} Sử dụng các công cụ diễn giải mô hình (model interpretability tools) để hiểu rõ hơn tại sao BERT đưa ra dự đoán cụ thể.
+\end{itemize}
+Chương thực nghiệm này cho thấy BERT, với khả năng học các biểu diễn ngữ nghĩa mạnh mẽ, có thể được tinh chỉnh hiệu quả cho các tác vụ NLP cụ thể như phân loại cảm xúc, đạt được kết quả ấn tượng.
+
+%% =========================================================================
+%% CHƯƠNG 6: KẾT QUẢ VÀ SO SÁNH
+%% =========================================================================
+\section{Kết quả và So sánh}
+\label{sec:ket_qua_so_sanh}
+Bài báo gốc của BERT \cite{devlin2018bert} đã trình bày kết quả vượt trội trên nhiều bộ dữ liệu benchmark tiêu chuẩn.
+
+\subsection{Kết quả trên GLUE Benchmark}
+\label{ssec:ket_qua_glue}
+GLUE (General Language Understanding Evaluation) \cite{wang2018glue} là một tập hợp các tác vụ đa dạng nhằm đánh giá khả năng hiểu ngôn ngữ tự nhiên của mô hình. BERT đã đạt được những cải thiện đáng kể so với các mô hình trước đó trên tất cả các tác vụ của GLUE.
+
+%% Bảng kết quả GLUE (Lấy từ bài báo BERT hoặc cập nhật nếu có)
+\begin{table}[H]
+    \centering
+    \caption{Kết quả của BERT so với các mô hình khác trên GLUE test set. Các kết quả được lấy từ \cite{devlin2018bert}. BERT\textsubscript{LARGE} đạt điểm trung bình GLUE là 80.5.}
+    \label{tab:glue_results}
+    \resizebox{\textwidth}{!}{% Resize table to fit within text width
+    \begin{tabular}{lcccccccccc}
+        \toprule
+        \textbf{Model} & \textbf{MNLI-(m/mm)} & \textbf{QQP} & \textbf{QNLI} & \textbf{SST-2} & \textbf{CoLA} & \textbf{STS-B} & \textbf{MRPC} & \textbf{RTE} & \textbf{Avg.} \\
+        & (Acc) & (Acc/F1) & (Acc) & (Acc) & (Matthews) & (Pearson/Spearman) & (Acc/F1) & (Acc) & \\
+        \midrule
+        OpenAI GPT & 82.1/81.4 & 70.3/88.3 & 88.1 & 91.3 & 35.0 & 80.0/78.8 & 82.3/87.0 & 56.0 & 72.8 \\
+        ELMo+Attn & 76.4/76.1 & 64.8/85.0 & 81.0 & 90.4 & 36.0 & 73.7/72.4 & 84.9/89.1 & 56.8 & 70.0 \\
+        \midrule
+        BERT\textsubscript{BASE} & 84.6/83.4 & 71.2/89.2 & 90.5 & 93.5 & 52.1 & 85.8/84.9 & 88.9/91.8 & 66.4 & 78.3 \\
+        BERT\textsubscript{LARGE} & \textbf{86.7}/\textbf{85.9} & \textbf{72.1}/\textbf{89.3} & \textbf{92.7} & \textbf{94.9} & \textbf{60.5} & \textbf{86.5}/\textbf{85.9} & \textbf{89.3}/\textbf{92.3} & \textbf{70.1} & \textbf{80.5} \\
+        \bottomrule
+    \end{tabular}%
+    }
+\end{table}
+%% Lưu ý: Bảng này cần được kiểm tra lại số liệu từ bài báo gốc cho chính xác.
+%% Cân nhắc chia nhỏ bảng hoặc sử dụng \resizebox nếu bảng quá rộng.
+
+\subsection{Kết quả trên SQuAD (Stanford Question Answering Dataset)}
+\label{ssec:ket_qua_squad}
+SQuAD là một bộ dữ liệu phổ biến cho tác vụ trả lời câu hỏi dựa trên việc đọc hiểu đoạn văn.
+\begin{itemize}
+    \item \textbf{SQuAD v1.1:} BERT\textsubscript{LARGE} đạt F1 score là 93.2 trên test set, vượt qua con người (F1=91.2).
+    \item \textbf{SQuAD v2.0:} Tác vụ này khó hơn vì một số câu hỏi không có câu trả lời trong đoạn văn. BERT\textsubscript{LARGE} đạt F1 score là 83.1.
+\end{itemize}
+
+%% Bảng kết quả SQuAD (Lấy từ bài báo BERT hoặc cập nhật nếu có)
+\begin{table}[H]
+    \centering
+    \caption{Kết quả của BERT trên SQuAD v1.1 và v2.0 test sets (Nguồn: \cite{devlin2018bert}).}
+    \label{tab:squad_results}
+    \begin{tabular}{lcccc}
+        \toprule
+        \textbf{Model} & \multicolumn{2}{c}{\textbf{SQuAD v1.1}} & \multicolumn{2}{c}{\textbf{SQuAD v2.0}} \\
+         & EM & F1 & EM & F1 \\
+        \midrule
+        Human Performance & 82.3 & 91.2 & 86.8 & 89.5 \\
+        OpenAI GPT (fine-tuned) & - & - & 71.0 & 75.8 \\ % Check these values
+        ELMo + BiDAF++ (ensemble) & 81.0 & 88.5 & - & - \\ % Check these values
+        \midrule
+        BERT\textsubscript{BASE} & 80.8 & 88.5 & 73.7 & 76.3 \\
+        BERT\textsubscript{LARGE} & \textbf{84.1} & \textbf{90.9} & \textbf{79.0} & \textbf{81.8} \\ % Dev set results from paper
+        BERT\textsubscript{LARGE} (w/ TriviaQA) & \textbf{87.4} & \textbf{93.2} & \textbf{83.1} & \textbf{86.4} \\ % Test set results (ensemble/further pretraining)
+        \bottomrule
+    \end{tabular}
+\end{table}
+%% Lưu ý: Kiểm tra lại các số liệu và chú thích cho bảng này.
+%% Các kết quả "Test" thường được báo cáo sau khi submit lên leaderboard.
+
+\subsection{Phân tích Ablation Study}
+\label{ssec:ablation_study}
+Bài báo BERT cũng thực hiện các nghiên cứu loại bỏ (ablation studies) để đánh giá tầm quan trọng của các thành phần khác nhau trong mô hình:
+\begin{itemize}
+    \item \textbf{Tầm quan trọng của MLM và NSP:} Kết quả cho thấy cả hai tác vụ tiền huấn luyện đều đóng góp vào hiệu suất của BERT, đặc biệt NSP quan trọng cho các tác vụ hiểu mối quan hệ giữa các câu. Tuy nhiên, các nghiên cứu sau này đã có những phát hiện khác nhau về vai trò của NSP.
+    \item \textbf{Tầm quan trọng của tính hai chiều (Bidirectionality):} So sánh với các mô hình chỉ sử dụng ngữ cảnh từ trái sang phải (LTR) hoặc kết hợp nông LTR và RTL, BERT (sử dụng MLM hai chiều sâu sắc) cho thấy hiệu suất vượt trội, khẳng định lợi ích của việc học biểu diễn hai chiều thực sự.
+    \item \textbf{Kích thước mô hình:} BERT\textsubscript{LARGE} luôn cho kết quả tốt hơn BERT\textsubscript{BASE}, cho thấy rằng việc tăng kích thước mô hình (số lớp, kích thước ẩn, số đầu chú ý) có thể cải thiện đáng kể khả năng học biểu diễn ngôn ngữ.
+\end{itemize}
+
+%% =========================================================================
+%% CHƯƠNG 7: HẠN CHẾ VÀ HƯỚNG PHÁT TRIỂN
+%% =========================================================================
+\section{Hạn chế và Hướng Phát triển}
+\label{sec:han_che_huong_phat_trien}
+
+\subsection{Hạn chế của BERT}
+\label{ssec:han_che_bert}
+Mặc dù BERT đã đạt được những thành công to lớn, mô hình này vẫn có một số hạn chế:
+\begin{itemize}
+    \item \textbf{Chi phí tính toán cao:} Việc tiền huấn luyện BERT đòi hỏi một lượng lớn dữ liệu và tài nguyên tính toán (GPU/TPU) đáng kể. Ngay cả việc tinh chỉnh các mô hình lớn cũng có thể tốn kém.
+    \item \textbf{Sự khác biệt giữa tiền huấn luyện và tinh chỉnh (Pre-train/Fine-tune Discrepancy):} Token `[MASK]` được sử dụng trong tác vụ MLM ở giai đoạn tiền huấn luyện không xuất hiện trong dữ liệu ở giai đoạn tinh chỉnh. Mặc dù các chiến lược che từ (80-10-10) đã cố gắng giảm thiểu vấn đề này, sự khác biệt vẫn tồn tại.
+    \item \textbf{Độ dài chuỗi đầu vào cố định:} BERT thường xử lý các chuỗi có độ dài cố định (ví dụ: 512 token). Điều này có thể là một hạn chế khi xử lý các văn bản rất dài. Các mô hình sau này như Longformer \cite{beltagy2020longformer} đã cố gắng giải quyết vấn đề này.
+    \item \textbf{Tác vụ NSP chưa tối ưu:} Như đã đề cập, hiệu quả của tác vụ NSP đã bị đặt câu hỏi trong các nghiên cứu sau này. Một số mô hình như RoBERTa \cite{liu2019roberta} đã loại bỏ NSP và vẫn đạt được hiệu suất tốt hoặc thậm chí tốt hơn.
+    \item \textbf{Không phù hợp cho các tác vụ sinh văn bản (Generative Tasks):} Do bản chất là một mô hình encoder, BERT không được thiết kế trực tiếp cho các tác vụ sinh văn bản tự hồi quy như dịch máy hoặc tóm tắt văn bản (mặc dù có thể được điều chỉnh, ví dụ BART \cite{lewis2019bart}, T5 \cite{raffel2020exploring} sử dụng kiến trúc encoder-decoder).
+    \item \textbf{Khả năng diễn giải hạn chế (Limited Interpretability):} Giống như nhiều mô hình học sâu khác, việc hiểu rõ tại sao BERT đưa ra một dự đoán cụ thể vẫn là một thách thức.
+\end{itemize}
+
+\subsection{Các Hướng Phát triển Kế thừa BERT}
+\label{ssec:huong_phat_trien_ke_thua}
+BERT đã đặt nền móng cho một loạt các mô hình ngôn ngữ lớn và các hướng nghiên cứu mới trong NLP:
+\begin{itemize}
+    \item \textbf{Cải tiến quy trình tiền huấn luyện:}
+        \begin{itemize}
+            \item \textbf{RoBERTa (Robustly Optimized BERT Pretraining Approach) \cite{liu2019roberta}:} Tối ưu hóa các siêu tham số tiền huấn luyện của BERT, loại bỏ NSP, sử dụng dynamic masking, và huấn luyện trên nhiều dữ liệu hơn với batch size lớn hơn.
+            \item \textbf{ALBERT (A Lite BERT for Self-supervised Learning of Language Representations) \cite{lan2019albert}:} Giảm số lượng tham số của BERT bằng cách chia sẻ tham số giữa các lớp và tách rời ma trận embedding từ vựng, giúp mô hình nhẹ hơn và huấn luyện nhanh hơn.
+            \item \textbf{ELECTRA (Efficiently Learning an Encoder that Classifies Token Replacements Accurately) \cite{clark2020electra}:} Sử dụng một tác vụ tiền huấn luyện mới gọi là replaced token detection, hiệu quả hơn MLM về mặt tính toán. Mô hình học cách phân biệt token "thật" và token "giả" được tạo ra bởi một generator nhỏ.
+            \item \textbf{SpanBERT \cite{joshi2020spanbert}:} Che các đoạn (span) từ liên tiếp thay vì các từ đơn lẻ và huấn luyện mô hình dự đoán toàn bộ đoạn bị che từ các token ở biên của đoạn đó.
+        \end{itemize}
+    \item \textbf{Mở rộng cho các ngôn ngữ khác và đa ngôn ngữ:}
+        \begin{itemize}
+            \item \textbf{mBERT (Multilingual BERT):} Phiên bản BERT được tiền huấn luyện trên dữ liệu từ hơn 100 ngôn ngữ.
+            \item \textbf{XLM-R (Cross-lingual Language Model - RoBERTa) \cite{conneau2019unsupervised}:} Một mô hình đa ngôn ngữ dựa trên RoBERTa, đạt hiệu suất mạnh mẽ trên các tác vụ cross-lingual.
+            \item Các mô hình đặc thù cho từng ngôn ngữ, ví dụ PhoBERT cho tiếng Việt \cite{nguyen2020phobert}, CamemBERT cho tiếng Pháp \cite{martin2019camembert}.
+        \end{itemize}
+    \item \textbf{Kết hợp kiến thức bên ngoài (Knowledge-enhanced LMs):} Các mô hình như ERNIE (Enhanced Representation through Knowledge Integration) \cite{sun2019ernie}, KnowBERT \cite{peters2019knowledge} cố gắng tích hợp kiến thức từ các knowledge graph vào quá trình tiền huấn luyện.
+    \item \textbf{Hiệu quả tính toán và mô hình nhỏ hơn:} DistilBERT \cite{sanh2019distilbert}, TinyBERT \cite{jiao2019tinybert} sử dụng các kỹ thuật chưng cất kiến thức (knowledge distillation) để tạo ra các phiên bản BERT nhỏ hơn, nhanh hơn mà vẫn giữ được phần lớn hiệu suất.
+    \item \textbf{Ứng dụng trong các lĩnh vực chuyên biệt:} BioBERT \cite{lee2020biobert} cho lĩnh vực y sinh, SciBERT \cite{beltagy2019scibert} cho văn bản khoa học.
+    \item \textbf{Các mô hình Encoder-Decoder dựa trên Transformer:} BART \cite{lewis2019bart}, T5 \cite{raffel2020exploring} mở rộng ý tưởng tiền huấn luyện cho các tác vụ sinh văn bản.
+\end{itemize}
+Sự phát triển không ngừng của các mô hình dựa trên Transformer, khởi nguồn từ những ý tưởng đột phá của BERT, tiếp tục định hình tương lai của Xử lý Ngôn ngữ Tự nhiên.
+
+%% =========================================================================
+%% KẾT LUẬN
+%% =========================================================================
+\section{Kết luận}
+\label{sec:ket_luan}
+BERT (Bidirectional Encoder Representations from Transformers) đã tạo ra một cuộc cách mạng trong lĩnh vực Xử lý Ngôn ngữ Tự nhiên. Bằng cách giới thiệu một phương pháp tiền huấn luyện các biểu diễn ngôn ngữ sâu sắc hai chiều dựa trên kiến trúc Transformer encoder và hai tác vụ tiền huấn luyện mới là Masked Language Model (MLM) và Next Sentence Prediction (NSP), BERT đã thành công trong việc nắm bắt các đặc trưng ngữ nghĩa và cú pháp phong phú từ một lượng lớn dữ liệu không gán nhãn.
+
+Kiến trúc hai chiều sâu sắc cho phép BERT hiểu ngữ cảnh của một từ dựa trên tất cả các từ xung quanh nó, cả bên trái và bên phải, trong tất cả các lớp của mô hình. Điều này mang lại lợi thế đáng kể so với các mô hình một chiều hoặc hai chiều nông trước đó. Quy trình tinh chỉnh đơn giản của BERT cho phép nó dễ dàng thích ứng và đạt được hiệu suất vượt trội trên một loạt các tác vụ NLP, từ phân loại văn bản, suy luận ngôn ngữ tự nhiên đến trả lời câu hỏi, mà không cần những thay đổi kiến trúc phức tạp đặc thù cho từng tác vụ.
+
+Thành công vang dội của BERT, được minh chứng qua việc thiết lập hàng loạt kỷ lục mới trên các bộ dữ liệu benchmark tiêu chuẩn như GLUE và SQuAD, đã khẳng định sức mạnh của phương pháp tiền huấn luyện hai chiều sâu. Quan trọng hơn, BERT không chỉ là một mô hình cụ thể mà còn là một "công thức" và một triết lý thiết kế, định hình lại cách tiếp cận các bài toán NLP. Nó đã mở đường cho sự phát triển của một thế hệ các mô hình ngôn ngữ lớn (LLMs) dựa trên Transformer, thúc đẩy mạnh mẽ các ứng dụng AI dựa trên ngôn ngữ và tiếp tục là nguồn cảm hứng cho nhiều nghiên cứu tiên tiến trong lĩnh vực này.
+
+Trong khuôn khổ đồ án này, nhóm đã trình bày chi tiết về bối cảnh ra đời, kiến trúc cốt lõi, các cơ chế hoạt động chính của BERT, bao gồm cơ chế tự chú ý, chú ý đa đầu, các tác vụ tiền huấn luyện MLM và NSP, cũng như quy trình tinh chỉnh cho các tác vụ cụ thể. Một ví dụ thực nghiệm về việc áp dụng BERT cho bài toán phân loại cảm xúc cũng đã được đề xuất và phân tích. Mặc dù có những hạn chế về chi phí tính toán và một số khía cạnh của tác vụ tiền huấn luyện, những đóng góp nền tảng của BERT cho sự phát triển của NLP là không thể phủ nhận và tiếp tục có ảnh hưởng sâu rộng.
