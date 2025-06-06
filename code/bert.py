@@ -1,7 +1,3 @@
-# %% [markdown]
-# # Libraries
-
-# %%
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
@@ -15,134 +11,133 @@ from dataclasses import dataclass
 import matplotlib.pyplot as plt
 import seaborn as sns
 
-# %% [markdown]
-# # Configuration
-
-# %%
+# ========================= Cấu hình (Configuration) =========================
+# Lớp này chứa các siêu tham số (hyperparameter) cho mô hình BERT,
+# tương ứng với các ký hiệu trong bài báo (Mục 3, "Model Architecture"):
+# - num_hidden_layers: Số tầng Transformer (L)
+# - hidden_size: Kích thước ẩn (H)
+# - num_attention_heads: Số lượng attention head (A)
+# - intermediate_size: Kích thước tầng feed-forward (4*H)
 @dataclass
 class BertConfig:
-    """BERT configuration"""
-    vocab_size: int = 30522                     # Size of vocabulary
-    hidden_size: int = 768                      # Hidden size (d_model)
-    num_hidden_layers: int = 12                 # Number of transformer blocks
-    num_attention_heads: int = 12               # Number of attention heads
-    intermediate_size: int = 3072               # FFN intermediate size
-    hidden_dropout_prob: float = 0.1            # Dropout for hidden layers
-    attention_probs_dropout_prob: float = 0.1   # Dropout for attention
-    max_position_embeddings: int = 512          # Maximum sequence length
-    type_vocab_size: int = 2                    # Token type vocab size
-    initializer_range: float = 0.02             # Weight initialization std
-    layer_norm_eps: float = 1e-12               # Layer norm epsilon
-    
+    """Cấu hình cho mô hình BERT"""
+    vocab_size: int = 30522                     # Kích thước bộ từ vựng
+    hidden_size: int = 768                      # Kích thước ẩn (d_model)
+    num_hidden_layers: int = 12                 # Số khối transformer
+    num_attention_heads: int = 12               # Số lượng attention head
+    intermediate_size: int = 3072               # Kích thước tầng trung gian của FFN
+    hidden_dropout_prob: float = 0.1            # Dropout cho các tầng ẩn
+    attention_probs_dropout_prob: float = 0.1   # Dropout cho attention
+    max_position_embeddings: int = 512          # Độ dài chuỗi tối đa
+    type_vocab_size: int = 2                    # Kích thước từ vựng của loại token (segment A/B)
+    initializer_range: float = 0.02             # Độ lệch chuẩn khởi tạo trọng số
+    layer_norm_eps: float = 1e-12               # Epsilon cho Layer Norm
+
     def __post_init__(self):
+        # Đảm bảo kích thước ẩn có thể chia hết cho số lượng head
         assert self.hidden_size % self.num_attention_heads == 0, \
-            f"hidden_size ({self.hidden_size}) must be divisible by num_attention_heads ({self.num_attention_heads})"
+            f"hidden_size ({self.hidden_size}) phải chia hết cho num_attention_heads ({self.num_attention_heads})"
 
-# %% [markdown]
-# # Attentions
-
-# %%
+# ========================= Cơ chế Attention (Attentions) =========================
 class ScaledDotProductAttention(nn.Module):
     """
-    Scaled Dot-Product Attention with detailed mathematical explanation
-    
+    Scaled Dot-Product Attention - Cơ chế attention cốt lõi của Transformer.
+    Công thức được mô tả trong bài báo "Attention Is All You Need":
     Attention(Q,K,V) = softmax(QK^T / sqrt(d_k))V
-    
-    This addresses the problem of dot products growing large in magnitude
-    for large d_k, pushing softmax into regions with extremely small gradients.
+
+    Việc chia cho sqrt(d_k) giúp ổn định gradient khi d_k có giá trị lớn.
     """
-    
+
     def __init__(self, temperature: float = 1.0, dropout: float = 0.1):
         super().__init__()
         self.temperature = temperature
         self.dropout = nn.Dropout(dropout)
-        
+
     def forward(
-        self, 
+        self,
         query: torch.Tensor,     # [batch, n_heads, seq_len, d_k]
         key: torch.Tensor,       # [batch, n_heads, seq_len, d_k]
         value: torch.Tensor,     # [batch, n_heads, seq_len, d_v]
-        mask: Optional[torch.Tensor] = None,
+        mask: Optional[torch.Tensor] = None, # mask để che đi các vị trí không cần attend
         return_attention: bool = False
     ) -> Union[torch.Tensor, Tuple[torch.Tensor, torch.Tensor]]:
         """
         Args:
-            query: Query tensor
-            key: Key tensor  
-            value: Value tensor
-            mask: Attention mask (1 for positions to attend, 0 for masked)
-            return_attention: Whether to return attention weights
+            query: Tensor Query
+            key: Tensor Key
+            value: Tensor Value
+            mask: Attention mask (1 cho vị trí attend, 0 cho vị trí bị che)
+            return_attention: Cờ để quyết định có trả về trọng số attention hay không
         """
         batch_size, n_heads, seq_len, d_k = query.size()
-        
-        # Compute attention scores
-        # Einstein notation for clarity: bhqd,bhkd->bhqk
+
+        # Tính điểm attention
         scores = torch.matmul(query, key.transpose(-2, -1)) / (math.sqrt(d_k) * self.temperature)
-        
-        # Apply mask if provided
+
+        # Áp dụng mask nếu có
         if mask is not None:
-            # Expand mask for all heads
+            # Mở rộng mask cho tất cả các head
             if mask.dim() == 2:  # [batch, seq_len]
                 mask = mask.unsqueeze(1).unsqueeze(1)  # [batch, 1, 1, seq_len]
             elif mask.dim() == 3:  # [batch, seq_len, seq_len]
                 mask = mask.unsqueeze(1)  # [batch, 1, seq_len, seq_len]
-            
-            # Fill masked positions with -inf so they become 0 after softmax
+
+            # Điền các vị trí bị mask bằng giá trị rất nhỏ (-inf) để sau softmax sẽ thành 0
             scores = scores.masked_fill(mask == 0, -1e9)
-        
-        # Apply softmax to get attention probabilities
+
+        # Áp dụng softmax để có được xác suất attention
         attn_weights = F.softmax(scores, dim=-1)
         attn_weights = self.dropout(attn_weights)
-        
-        # Apply attention to values
-        # Einstein notation: bhqk,bhkd->bhqd
+
+        # Áp dụng attention lên value
         output = torch.matmul(attn_weights, value)
-        
+
         if return_attention:
             return output, attn_weights
         return output
 
 class MultiHeadAttention(nn.Module):
     """
-    Multi-Head Attention allows the model to jointly attend to information
-    from different representation subspaces at different positions.
-    
+    Multi-Head Attention cho phép mô hình cùng lúc chú ý đến thông tin
+    từ các không gian biểu diễn (representation subspaces) khác nhau.
+    Đây là thành phần chính trong khối Transformer của BERT.
+
     MultiHead(Q,K,V) = Concat(head_1, ..., head_h)W^O
-    where head_i = Attention(QW_i^Q, KW_i^K, VW_i^V)
+    trong đó head_i = Attention(QW_i^Q, KW_i^K, VW_i^V)
     """
-    
+
     def __init__(self, d_model: int, n_heads: int, dropout: float = 0.1):
         super().__init__()
-        assert d_model % n_heads == 0, "d_model must be divisible by n_heads"
-        
+        assert d_model % n_heads == 0, "d_model phải chia hết cho n_heads"
+
         self.d_model = d_model
         self.n_heads = n_heads
-        self.d_k = d_model // n_heads
-        self.d_v = d_model // n_heads
-        
-        # Linear projections for Q, K, V
+        self.d_k = d_model // n_heads # Kích thước của key
+        self.d_v = d_model // n_heads # Kích thước của value
+
+        # Các phép chiếu tuyến tính (linear projections) cho Q, K, V
         self.w_q = nn.Linear(d_model, d_model, bias=False)
         self.w_k = nn.Linear(d_model, d_model, bias=False)
         self.w_v = nn.Linear(d_model, d_model, bias=False)
-        self.w_o = nn.Linear(d_model, d_model)
-        
+        self.w_o = nn.Linear(d_model, d_model) # Phép chiếu đầu ra
+
         self.attention = ScaledDotProductAttention(dropout=dropout)
         self.dropout = nn.Dropout(dropout)
-        
-        # Initialize weights
+
+        # Khởi tạo trọng số
         self._init_weights()
-        
+
     def _init_weights(self):
-        # Xavier uniform initialization
+        # Khởi tạo Xavier uniform
         for module in [self.w_q, self.w_k, self.w_v, self.w_o]:
             nn.init.xavier_uniform_(module.weight)
             if hasattr(module, 'bias') and module.bias is not None:
                 nn.init.constant_(module.bias, 0.)
-                
+
     def forward(
-        self, 
+        self,
         query: torch.Tensor,
-        key: torch.Tensor, 
+        key: torch.Tensor,
         value: torch.Tensor,
         mask: Optional[torch.Tensor] = None,
         return_attention: bool = False
@@ -150,70 +145,68 @@ class MultiHeadAttention(nn.Module):
         """
         Args:
             query, key, value: [batch_size, seq_len, d_model]
-            mask: [batch_size, seq_len] or [batch_size, seq_len, seq_len]
+            mask: [batch_size, seq_len] hoặc [batch_size, seq_len, seq_len]
         Returns:
             output: [batch_size, seq_len, d_model]
-            attention_weights: [batch_size, n_heads, seq_len, seq_len] (if return_attention=True)
+            attention_weights: [batch_size, n_heads, seq_len, seq_len] (nếu return_attention=True)
         """
         batch_size, seq_len, _ = query.size()
-        
-        # 1. Linear projections in batch from d_model => h x d_k
+
+        # 1. Chiếu tuyến tính và chia thành các head
         # [batch, seq_len, d_model] -> [batch, seq_len, n_heads, d_k] -> [batch, n_heads, seq_len, d_k]
         Q = self.w_q(query).view(batch_size, seq_len, self.n_heads, self.d_k).transpose(1, 2)
         K = self.w_k(key).view(batch_size, seq_len, self.n_heads, self.d_k).transpose(1, 2)
         V = self.w_v(value).view(batch_size, seq_len, self.n_heads, self.d_v).transpose(1, 2)
-        
-        # 2. Apply attention on all the projected vectors in batch
+
+        # 2. Áp dụng attention trên tất cả các head
         if return_attention:
             attn_output, attn_weights = self.attention(Q, K, V, mask=mask, return_attention=True)
         else:
             attn_output = self.attention(Q, K, V, mask=mask, return_attention=False)
             attn_weights = None
-        
-        # 3. "Concat" using a view and apply a final linear
+
+        # 3. Ghép (concat) các head lại và áp dụng phép chiếu tuyến tính cuối cùng
         # [batch, n_heads, seq_len, d_v] -> [batch, seq_len, n_heads, d_v] -> [batch, seq_len, d_model]
         attn_output = attn_output.transpose(1, 2).contiguous().view(
             batch_size, seq_len, self.d_model
         )
-        
-        # 4. Final linear projection
+
+        # 4. Phép chiếu tuyến tính cuối cùng
         output = self.w_o(attn_output)
         output = self.dropout(output)
-        
+
         if return_attention:
             return output, attn_weights
         return output
 
-# %% [markdown]
-# # Feed-Forward Network
-
-# %%
+# ========================= Mạng Feed-Forward (Feed-Forward Network) =========================
 class PositionwiseFeedForward(nn.Module):
     """
-    Position-wise Feed-Forward Network
+    Mạng Feed-Forward theo từng vị trí (Position-wise Feed-Forward Network).
+    Đây là thành phần thứ hai trong một khối Transformer.
     FFN(x) = max(0, xW_1 + b_1)W_2 + b_2
-    
-    BERT uses GELU activation instead of ReLU for smoother gradients
+
+    BERT sử dụng hàm kích hoạt GELU thay vì ReLU.
     """
-    
+
     def __init__(self, d_model: int, d_ff: int, dropout: float = 0.1, activation: str = 'gelu'):
         super().__init__()
         self.linear1 = nn.Linear(d_model, d_ff)
         self.linear2 = nn.Linear(d_ff, d_model)
         self.dropout = nn.Dropout(dropout)
-        
-        # Activation function
+
+        # Hàm kích hoạt
         self.activation = self._get_activation_fn(activation)
-        
+
     def _get_activation_fn(self, activation: str):
-        """Get activation function by name"""
+        """Lấy hàm kích hoạt theo tên"""
         if activation == "relu":
             return F.relu
         elif activation == "gelu":
             return F.gelu
         else:
-            raise ValueError(f"Activation '{activation}' not supported")
-            
+            raise ValueError(f"Hàm kích hoạt '{activation}' không được hỗ trợ")
+
     def forward(self, x: torch.Tensor) -> torch.Tensor:
         """
         Args:
@@ -223,134 +216,132 @@ class PositionwiseFeedForward(nn.Module):
         """
         return self.linear2(self.dropout(self.activation(self.linear1(x))))
 
-# ========================= Transformer Block =========================
+# ========================= Khối Transformer (Transformer Block) =========================
 class TransformerBlock(nn.Module):
     """
-    Transformer block with pre-norm architecture (used in BERT)
-    
-    Each block contains:
+    Một khối Transformer hoàn chỉnh. Trong BERT, các khối này được xếp chồng lên nhau.
+    Mỗi khối bao gồm:
     1. Multi-head self-attention
     2. Position-wise feed-forward network
-    Both with residual connections and layer normalization
+    Cả hai đều có kết nối phần dư (residual connections) và chuẩn hóa tầng (layer normalization).
     """
-    
+
     def __init__(self, d_model: int, n_heads: int, d_ff: int, dropout: float = 0.1):
         super().__init__()
-        
-        # Sub-layers
+
+        # Các tầng con
         self.attention = MultiHeadAttention(d_model, n_heads, dropout)
         self.feed_forward = PositionwiseFeedForward(d_model, d_ff, dropout)
-        
-        # Layer normalization
+
+        # Chuẩn hóa tầng
         self.norm1 = nn.LayerNorm(d_model, eps=1e-12)
         self.norm2 = nn.LayerNorm(d_model, eps=1e-12)
-        
+
         # Dropout
         self.dropout = nn.Dropout(dropout)
-        
+
     def forward(
-        self, 
-        x: torch.Tensor, 
+        self,
+        x: torch.Tensor,
         mask: Optional[torch.Tensor] = None,
         return_attention: bool = False
     ) -> Union[torch.Tensor, Tuple[torch.Tensor, torch.Tensor]]:
         """
         Args:
             x: [batch_size, seq_len, d_model]
-            mask: [batch_size, seq_len] or None
-            return_attention: Whether to return attention weights
+            mask: [batch_size, seq_len] hoặc None
+            return_attention: Cờ để quyết định có trả về trọng số attention hay không
         """
-        # Self-attention with residual connection and layer norm
+        # Tầng self-attention với kết nối phần dư và chuẩn hóa
         if return_attention:
             attn_output, attn_weights = self.attention(x, x, x, mask, return_attention=True)
         else:
             attn_output = self.attention(x, x, x, mask, return_attention=False)
             attn_weights = None
-            
+
         x = self.norm1(x + self.dropout(attn_output))
-        
-        # Feed-forward with residual connection and layer norm
+
+        # Tầng feed-forward với kết nối phần dư và chuẩn hóa
         ff_output = self.feed_forward(x)
         x = self.norm2(x + self.dropout(ff_output))
-        
+
         if return_attention:
             return x, attn_weights
         return x
 
-# %% [markdown]
-# # Embeddings
-
-# %%
+# ========================= Embeddings =========================
 class BertEmbeddings(nn.Module):
     """
-    BERT embeddings consist of:
-    1. Token embeddings (from vocabulary)
-    2. Position embeddings (learned, not sinusoidal)
-    3. Token type embeddings (for sentence A/B distinction)
-    
-    The final embedding is the sum of all three, followed by LayerNorm and dropout
+    Tạo ra biểu diễn đầu vào cho BERT.
+    Theo Hình 2 trong bài báo, embedding đầu vào là tổng của 3 thành phần:
+    1. Token embeddings: Biểu diễn của từ/token.
+    2. Position embeddings: Biểu diễn vị trí của token trong chuỗi (BERT học được).
+    3. Token type (Segment) embeddings: Phân biệt câu A và câu B.
+
+    Sau khi cộng, đầu ra được chuẩn hóa (LayerNorm) và áp dụng dropout.
     """
-    
+
     def __init__(self, config: BertConfig):
         super().__init__()
+        # Padding_idx=0 chỉ định rằng token padding sẽ có vector embedding là zero.
         self.word_embeddings = nn.Embedding(config.vocab_size, config.hidden_size, padding_idx=0)
         self.position_embeddings = nn.Embedding(config.max_position_embeddings, config.hidden_size)
         self.token_type_embeddings = nn.Embedding(config.type_vocab_size, config.hidden_size)
-        
+
         self.LayerNorm = nn.LayerNorm(config.hidden_size, eps=config.layer_norm_eps)
         self.dropout = nn.Dropout(config.hidden_dropout_prob)
-        
-        # Create position IDs buffer
+
+        # Tạo buffer cho position_ids để không được coi là tham số của mô hình
         self.register_buffer(
-            "position_ids", 
+            "position_ids",
             torch.arange(config.max_position_embeddings).expand((1, -1))
         )
-        
+
     def forward(
-        self, 
+        self,
         input_ids: torch.Tensor,
         token_type_ids: Optional[torch.Tensor] = None,
         position_ids: Optional[torch.Tensor] = None
     ) -> torch.Tensor:
         """
         Args:
-            input_ids: [batch_size, seq_len]
-            token_type_ids: [batch_size, seq_len] or None
-            position_ids: [batch_size, seq_len] or None
+            input_ids: [batch_size, seq_len] - ID của các token
+            token_type_ids: [batch_size, seq_len] - ID của segment (0 hoặc 1)
+            position_ids: [batch_size, seq_len] - ID của vị trí
         Returns:
             embeddings: [batch_size, seq_len, hidden_size]
         """
         seq_length = input_ids.size(1)
-        
-        # Get position IDs
+
+        # Lấy position IDs
         if position_ids is None:
             position_ids = self.position_ids[:, :seq_length]
-            
-        # Get token type IDs (default to 0 if not provided)
+
+        # Lấy token type IDs (mặc định là 0 nếu không được cung cấp)
         if token_type_ids is None:
             token_type_ids = torch.zeros_like(input_ids)
-        
-        # Get embeddings
+
+        # Lấy các embeddings tương ứng
         words_embeddings = self.word_embeddings(input_ids)
         position_embeddings = self.position_embeddings(position_ids)
         token_type_embeddings = self.token_type_embeddings(token_type_ids)
-        
-        # Sum all embeddings
+
+        # Cộng 3 loại embedding lại với nhau
         embeddings = words_embeddings + position_embeddings + token_type_embeddings
-        
-        # Apply LayerNorm and dropout
+
+        # Áp dụng LayerNorm và dropout
         embeddings = self.LayerNorm(embeddings)
         embeddings = self.dropout(embeddings)
-        
+
         return embeddings
 
-# %% [markdown]
-# # BERT Encoder
-
-# %%
+# ========================= Bộ mã hóa BERT (BERT Encoder) =========================
 class BertEncoder(nn.Module):
-    """Stack of Transformer blocks"""
-    
+    """
+    Bộ mã hóa của BERT, bao gồm một chồng các khối Transformer (TransformerBlock).
+    Đây chính là "multi-layer bidirectional Transformer encoder" được nhắc đến trong bài báo.
+    """
+
     def __init__(self, config: BertConfig):
         super().__init__()
         self.layers = nn.ModuleList([
@@ -361,9 +352,9 @@ class BertEncoder(nn.Module):
                 dropout=config.hidden_dropout_prob
             ) for _ in range(config.num_hidden_layers)
         ])
-        
+
     def forward(
-        self, 
+        self,
         hidden_states: torch.Tensor,
         attention_mask: Optional[torch.Tensor] = None,
         output_attentions: bool = False,
@@ -371,83 +362,83 @@ class BertEncoder(nn.Module):
     ) -> Dict[str, torch.Tensor]:
         """
         Args:
-            hidden_states: [batch_size, seq_len, hidden_size]
-            attention_mask: [batch_size, seq_len] or None
-            output_attentions: Whether to output attention weights
-            output_hidden_states: Whether to output all hidden states
+            hidden_states: Trạng thái ẩn đầu vào [batch_size, seq_len, hidden_size]
+            attention_mask: Mask cho attention [batch_size, seq_len]
+            output_attentions: Cờ trả về trọng số attention
+            output_hidden_states: Cờ trả về tất cả các trạng thái ẩn
         Returns:
-            Dictionary containing:
-                - last_hidden_state: [batch_size, seq_len, hidden_size]
-                - hidden_states: List of hidden states (if output_hidden_states=True)
-                - attentions: List of attention weights (if output_attentions=True)
+            Một dictionary chứa:
+                - last_hidden_state: Trạng thái ẩn của tầng cuối cùng
+                - hidden_states: Danh sách các trạng thái ẩn (nếu output_hidden_states=True)
+                - attentions: Danh sách các trọng số attention (nếu output_attentions=True)
         """
         all_hidden_states = [] if output_hidden_states else None
         all_attentions = [] if output_attentions else None
-        
+
         for i, layer in enumerate(self.layers):
             if output_hidden_states:
                 all_hidden_states.append(hidden_states)
-                
+
+            layer_outputs = layer(
+                hidden_states,
+                mask=attention_mask,
+                return_attention=output_attentions
+            )
+
             if output_attentions:
-                hidden_states, attn_weights = layer(hidden_states, attention_mask, return_attention=True)
+                hidden_states, attn_weights = layer_outputs
                 all_attentions.append(attn_weights)
             else:
-                hidden_states = layer(hidden_states, attention_mask, return_attention=False)
-        
+                hidden_states = layer_outputs
+
         if output_hidden_states:
             all_hidden_states.append(hidden_states)
-            
-        outputs = {
-            'last_hidden_state': hidden_states
-        }
-        
+
+        outputs = {'last_hidden_state': hidden_states}
         if output_hidden_states:
             outputs['hidden_states'] = all_hidden_states
         if output_attentions:
             outputs['attentions'] = all_attentions
-            
+
         return outputs
 
-# %% [markdown]
-# # BERT Pooler
 
-# %%
+# ========================= BERT Pooler =========================
 class BertPooler(nn.Module):
     """
-    Pool the [CLS] token representation for classification tasks
+    Lấy biểu diễn của token [CLS] và biến đổi nó để dùng cho các tác vụ phân loại câu.
+    Trong bài báo, đây là vector 'C' (Mục 3.1).
     """
-    
+
     def __init__(self, config: BertConfig):
         super().__init__()
         self.dense = nn.Linear(config.hidden_size, config.hidden_size)
         self.activation = nn.Tanh()
-        
+
     def forward(self, hidden_states: torch.Tensor) -> torch.Tensor:
         """
         Args:
-            hidden_states: [batch_size, seq_len, hidden_size]
+            hidden_states: Trạng thái ẩn từ tầng cuối của encoder [batch_size, seq_len, hidden_size]
         Returns:
-            pooled_output: [batch_size, hidden_size]
+            pooled_output: Biểu diễn tổng hợp của chuỗi [batch_size, hidden_size]
         """
-        # Take the hidden state of the first token ([CLS])
+        # Lấy trạng thái ẩn của token đầu tiên ([CLS])
         first_token_tensor = hidden_states[:, 0]
         pooled_output = self.dense(first_token_tensor)
         pooled_output = self.activation(pooled_output)
         return pooled_output
 
-# %% [markdown]
-# # Prediction Heads
-
-# %%
+# ========================= Các đầu dự đoán (Prediction Heads) =========================
 class BertPredictionHeadTransform(nn.Module):
-    """Transform for MLM predictions"""
-    
+    """
+    Một tầng biến đổi (dense -> gelu -> layernorm) được áp dụng trước đầu dự đoán MLM.
+    """
     def __init__(self, config: BertConfig):
         super().__init__()
         self.dense = nn.Linear(config.hidden_size, config.hidden_size)
         self.activation = F.gelu
         self.LayerNorm = nn.LayerNorm(config.hidden_size, eps=config.layer_norm_eps)
-        
+
     def forward(self, hidden_states: torch.Tensor) -> torch.Tensor:
         hidden_states = self.dense(hidden_states)
         hidden_states = self.activation(hidden_states)
@@ -455,72 +446,74 @@ class BertPredictionHeadTransform(nn.Module):
         return hidden_states
 
 class BertLMPredictionHead(nn.Module):
-    """Language Model prediction head for MLM"""
-    
+    """
+    Đầu dự đoán cho tác vụ Masked Language Model (MLM).
+    Nó dự đoán token gốc từ biểu diễn ẩn của các token bị che.
+    """
     def __init__(self, config: BertConfig):
         super().__init__()
         self.transform = BertPredictionHeadTransform(config)
-        
-        # The output weights are the same as the input embeddings, but there is
-        # an output-only bias for each token.
+
+        # Tầng decoder để chiếu từ hidden_size về vocab_size.
+        # Trọng số của decoder được chia sẻ với ma trận word_embeddings (weight tying).
         self.decoder = nn.Linear(config.hidden_size, config.vocab_size, bias=False)
         self.bias = nn.Parameter(torch.zeros(config.vocab_size))
-        
-        # Need a link between the two variables so that the bias is correctly resized with `resize_token_embeddings`
         self.decoder.bias = self.bias
-        
+
     def forward(self, hidden_states: torch.Tensor) -> torch.Tensor:
         hidden_states = self.transform(hidden_states)
         hidden_states = self.decoder(hidden_states)
         return hidden_states
 
 class BertPreTrainingHeads(nn.Module):
-    """Pre-training heads for MLM and NSP"""
-    
+    """
+    Kết hợp hai đầu dự đoán cho hai tác vụ pre-training:
+    1. Masked Language Modeling (MLM).
+    2. Next Sentence Prediction (NSP).
+    """
     def __init__(self, config: BertConfig):
         super().__init__()
         self.predictions = BertLMPredictionHead(config)
-        self.seq_relationship = nn.Linear(config.hidden_size, 2)
-        
+        self.seq_relationship = nn.Linear(config.hidden_size, 2) # 2 class: IsNext, NotNext
+
     def forward(
-        self, 
+        self,
         sequence_output: torch.Tensor,
         pooled_output: torch.Tensor
     ) -> Tuple[torch.Tensor, torch.Tensor]:
         """
         Args:
-            sequence_output: [batch_size, seq_len, hidden_size]
-            pooled_output: [batch_size, hidden_size]
+            sequence_output: Đầu ra của encoder cho toàn chuỗi [batch_size, seq_len, hidden_size]
+            pooled_output: Đầu ra của pooler (từ token [CLS]) [batch_size, hidden_size]
         Returns:
-            prediction_scores: [batch_size, seq_len, vocab_size]
-            seq_relationship_score: [batch_size, 2]
+            prediction_scores: Logits cho tác vụ MLM [batch_size, seq_len, vocab_size]
+            seq_relationship_score: Logits cho tác vụ NSP [batch_size, 2]
         """
         prediction_scores = self.predictions(sequence_output)
         seq_relationship_score = self.seq_relationship(pooled_output)
         return prediction_scores, seq_relationship_score
 
-# %% [markdown]
-# # BERT Model
-
-# %%
+# ========================= Mô hình BERT (BERT Model) =========================
 class BertModel(nn.Module):
     """
-    BERT model with all components integrated
+    Mô hình BERT hoàn chỉnh, tích hợp các thành phần:
+    Embeddings -> Encoder -> Pooler.
+    Đây là mô hình lõi, có thể được sử dụng cho pre-training hoặc fine-tuning.
     """
-    
+
     def __init__(self, config: BertConfig):
         super().__init__()
         self.config = config
-        
+
         self.embeddings = BertEmbeddings(config)
         self.encoder = BertEncoder(config)
         self.pooler = BertPooler(config)
-        
-        # Initialize weights
+
+        # Khởi tạo trọng số
         self.apply(self._init_weights)
-        
+
     def _init_weights(self, module):
-        """Initialize the weights"""
+        """Khởi tạo trọng số cho các tầng theo cấu hình"""
         if isinstance(module, nn.Linear):
             module.weight.data.normal_(mean=0.0, std=self.config.initializer_range)
             if module.bias is not None:
@@ -532,25 +525,7 @@ class BertModel(nn.Module):
         elif isinstance(module, nn.LayerNorm):
             module.bias.data.zero_()
             module.weight.data.fill_(1.0)
-    
-    def get_extended_attention_mask(self, attention_mask: torch.Tensor) -> torch.Tensor:
-        """
-        Convert attention mask from [batch_size, seq_len] to [batch_size, 1, 1, seq_len]
-        for compatibility with multi-head attention
-        """
-        if attention_mask.dim() == 2:
-            extended_attention_mask = attention_mask.unsqueeze(1).unsqueeze(1)
-        elif attention_mask.dim() == 3:
-            extended_attention_mask = attention_mask.unsqueeze(1)
-        else:
-            raise ValueError(f"Wrong shape for attention_mask (shape {attention_mask.shape})")
-            
-        # Convert to float and apply mask
-        extended_attention_mask = extended_attention_mask.to(dtype=torch.float32)
-        extended_attention_mask = (1.0 - extended_attention_mask) * -10000.0
-        
-        return extended_attention_mask
-    
+
     def forward(
         self,
         input_ids: torch.Tensor,
@@ -561,94 +536,75 @@ class BertModel(nn.Module):
         output_hidden_states: bool = False
     ) -> Dict[str, torch.Tensor]:
         """
-        Args:
-            input_ids: [batch_size, seq_len]
-            attention_mask: [batch_size, seq_len] or None
-            token_type_ids: [batch_size, seq_len] or None
-            position_ids: [batch_size, seq_len] or None
-            output_attentions: Whether to output attention weights
-            output_hidden_states: Whether to output all hidden states
-        Returns:
-            Dictionary containing model outputs
+        Luồng xử lý chính của mô hình BERT.
         """
-        # Create attention mask if not provided
+        # Tạo attention mask nếu không được cung cấp
         if attention_mask is None:
             attention_mask = torch.ones_like(input_ids)
-        
-        # Get embeddings
+
+        # 1. Lấy embeddings
         embedding_output = self.embeddings(
             input_ids=input_ids,
             token_type_ids=token_type_ids,
             position_ids=position_ids
         )
-        
-        # Pass through encoder
+
+        # 2. Đưa qua encoder
         encoder_outputs = self.encoder(
             hidden_states=embedding_output,
             attention_mask=attention_mask,
             output_attentions=output_attentions,
             output_hidden_states=output_hidden_states
         )
-        
+
         sequence_output = encoder_outputs['last_hidden_state']
+
+        # 3. Đưa qua pooler
         pooled_output = self.pooler(sequence_output)
-        
+
         outputs = {
             'last_hidden_state': sequence_output,
-            'pooler_output': pooled_output
+            'pooler_output': pooled_output,
         }
-        
-        if output_hidden_states:
+        if 'hidden_states' in encoder_outputs:
             outputs['hidden_states'] = encoder_outputs['hidden_states']
-        if output_attentions:
-            outputs['attentions'] = encoder_outputs['attentions']
-            
+        if 'attentions' in encoder_outputs:
+             outputs['attentions'] = encoder_outputs['attentions']
+
         return outputs
 
-# %% [markdown]
-# # BERT Pre-trained Model
-
-# %%
+# ========================= Mô hình BERT cho Pre-training =========================
 class BertForPreTraining(nn.Module):
-    """BERT model with pre-training heads"""
-    
+    """
+    Mô hình BERT với các đầu pre-training (MLM và NSP).
+    Mô hình này được sử dụng để huấn luyện BERT từ dữ liệu không nhãn (unlabeled text).
+    """
+
     def __init__(self, config: BertConfig):
         super().__init__()
         self.bert = BertModel(config)
         self.cls = BertPreTrainingHeads(config)
-        
-        # Tie weights between input embeddings and output embeddings
+
+        # Chia sẻ trọng số (weight tying) giữa input embeddings và output decoder
         self.tie_weights()
-        
+
     def tie_weights(self):
-        """Tie the weights between input embeddings and output embeddings"""
+        """Chia sẻ trọng số giữa word_embeddings và decoder của MLM head."""
         self.cls.predictions.decoder.weight = self.bert.embeddings.word_embeddings.weight
-        
+
     def forward(
         self,
         input_ids: torch.Tensor,
         attention_mask: Optional[torch.Tensor] = None,
         token_type_ids: Optional[torch.Tensor] = None,
         position_ids: Optional[torch.Tensor] = None,
-        labels: Optional[torch.Tensor] = None,
-        next_sentence_label: Optional[torch.Tensor] = None,
+        labels: Optional[torch.Tensor] = None,         # Nhãn cho MLM
+        next_sentence_label: Optional[torch.Tensor] = None, # Nhãn cho NSP
         output_attentions: bool = False,
         output_hidden_states: bool = False
     ) -> Dict[str, torch.Tensor]:
         """
-        Forward pass for pre-training
-        
-        Args:
-            input_ids: [batch_size, seq_len]
-            attention_mask: [batch_size, seq_len] or None
-            token_type_ids: [batch_size, seq_len] or None
-            position_ids: [batch_size, seq_len] or None
-            labels: [batch_size, seq_len] - labels for MLM (-100 for non-masked tokens)
-            next_sentence_label: [batch_size] - labels for NSP (0 or 1)
-            output_attentions: Whether to output attention weights
-            output_hidden_states: Whether to output all hidden states
-        Returns:
-            Dictionary containing losses and predictions
+        Luồng xử lý và tính toán loss cho quá trình pre-training.
         """
         outputs = self.bert(
             input_ids=input_ids,
@@ -658,87 +614,84 @@ class BertForPreTraining(nn.Module):
             output_attentions=output_attentions,
             output_hidden_states=output_hidden_states
         )
-        
+
         sequence_output = outputs['last_hidden_state']
         pooled_output = outputs['pooler_output']
-        
+
+        # Lấy điểm dự đoán từ các đầu pre-training
         prediction_scores, seq_relationship_score = self.cls(sequence_output, pooled_output)
-        
+
         total_loss = None
+        mlm_loss = None
+        nsp_loss = None
         if labels is not None and next_sentence_label is not None:
-            loss_fct = nn.CrossEntropyLoss()
-            
-            # MLM loss
-            masked_lm_loss = loss_fct(
+            loss_fct = nn.CrossEntropyLoss() # Bỏ qua index -100
+
+            # Tính loss cho MLM
+            mlm_loss = loss_fct(
                 prediction_scores.view(-1, prediction_scores.size(-1)),
                 labels.view(-1)
             )
-            
-            # NSP loss
-            next_sentence_loss = loss_fct(
+
+            # Tính loss cho NSP
+            nsp_loss = loss_fct(
                 seq_relationship_score.view(-1, 2),
                 next_sentence_label.view(-1)
             )
-            
-            total_loss = masked_lm_loss + next_sentence_loss
-            
+
+            # Tổng loss là tổng của hai loss trên
+            total_loss = mlm_loss + nsp_loss
+
         return {
             'loss': total_loss,
-            'mlm_loss': masked_lm_loss if labels is not None else None,
-            'nsp_loss': next_sentence_loss if next_sentence_label is not None else None,
+            'mlm_loss': mlm_loss,
+            'nsp_loss': nsp_loss,
             'prediction_logits': prediction_scores,
             'seq_relationship_logits': seq_relationship_score,
             'hidden_states': outputs.get('hidden_states'),
             'attentions': outputs.get('attentions')
         }
 
-# %% [markdown]
-# # BERT Classification ModeL
-
-# %%
+# ========================= Mô hình BERT cho Phân loại Chuỗi =========================
 class BertForSequenceClassification(nn.Module):
-    """BERT for sequence classification tasks"""
-    
+    """
+    Mô hình BERT cho tác vụ phân loại chuỗi (fine-tuning).
+    Ví dụ: phân loại cảm xúc, phân loại chủ đề.
+    Mô hình này thêm một tầng tuyến tính (linear layer) đơn giản vào sau BertPooler.
+    """
+
     def __init__(self, config: BertConfig, num_labels: int):
         super().__init__()
         self.num_labels = num_labels
         self.bert = BertModel(config)
         self.dropout = nn.Dropout(config.hidden_dropout_prob)
         self.classifier = nn.Linear(config.hidden_size, num_labels)
-        
+
     def forward(
         self,
         input_ids: torch.Tensor,
         attention_mask: Optional[torch.Tensor] = None,
         token_type_ids: Optional[torch.Tensor] = None,
-        labels: Optional[torch.Tensor] = None
+        labels: Optional[torch.Tensor] = None # Nhãn phân loại
     ) -> Dict[str, torch.Tensor]:
         """
-        Forward pass for classification
-        
-        Args:
-            input_ids: [batch_size, seq_len]
-            attention_mask: [batch_size, seq_len] or None
-            token_type_ids: [batch_size, seq_len] or None
-            labels: [batch_size] - classification labels
-        Returns:
-            Dictionary containing loss and logits
+        Luồng xử lý và tính toán loss cho tác vụ phân loại.
         """
         outputs = self.bert(
             input_ids=input_ids,
             attention_mask=attention_mask,
             token_type_ids=token_type_ids
         )
-        
+
         pooled_output = outputs['pooler_output']
         pooled_output = self.dropout(pooled_output)
         logits = self.classifier(pooled_output)
-        
+
         loss = None
         if labels is not None:
             loss_fct = nn.CrossEntropyLoss()
             loss = loss_fct(logits.view(-1, self.num_labels), labels.view(-1))
-            
+
         return {
             'loss': loss,
             'logits': logits,
@@ -746,177 +699,146 @@ class BertForSequenceClassification(nn.Module):
             'pooler_output': outputs['pooler_output']
         }
 
-# %% [markdown]
-# # Dataset Implementation
-
-# %%
+# ========================= Cài đặt Dataset =========================
 class BertDataset(Dataset):
     """
-    Dataset for BERT pre-training with MLM and NSP tasks
-    
-    Implements the 80-10-10 masking strategy:
-    - 80% of the time: Replace with [MASK] token
-    - 10% of the time: Replace with random token
-    - 10% of the time: Keep original token
+    Dataset cho quá trình pre-training BERT với hai tác vụ MLM và NSP.
+    Lớp này thực hiện việc tạo các cặp câu và chiến lược che token (masking).
+    Chiến lược masking (Mục 3.1):
+    - 80% thời gian: Thay thế bằng token [MASK]
+    - 10% thời gian: Thay thế bằng một token ngẫu nhiên
+    - 10% thời gian: Giữ nguyên token gốc
     """
-    
+
     def __init__(
         self,
         texts: List[str],
         tokenizer: BertTokenizer,
         max_length: int = 512,
         mlm_probability: float = 0.15,
-        short_seq_prob: float = 0.1
     ):
         self.texts = texts
         self.tokenizer = tokenizer
         self.max_length = max_length
         self.mlm_probability = mlm_probability
-        self.short_seq_prob = short_seq_prob
-        
-        # Pre-process texts into sentences
+
+        # Tiền xử lý văn bản thành các câu trong các tài liệu
         self.documents = self._preprocess_texts()
-        
+
     def _preprocess_texts(self) -> List[List[str]]:
-        """Split texts into sentences"""
+        """Tách văn bản thành các câu"""
         documents = []
         for text in self.texts:
-            # Simple sentence splitting
+            # Tách câu đơn giản bằng dấu chấm
             sentences = [s.strip() for s in text.split('.') if s.strip()]
             if sentences:
                 documents.append(sentences)
         return documents
-    
+
     def _get_random_sentence(self, exclude_doc_idx: int) -> str:
-        """Get a random sentence from a different document"""
-        if len(self.documents) == 1:
-            return ""
-        
+        """Lấy một câu ngẫu nhiên từ một tài liệu khác"""
+        if len(self.documents) == 1: return ""
         doc_idx = random.choice([i for i in range(len(self.documents)) if i != exclude_doc_idx])
-        if self.documents[doc_idx]:
-            return random.choice(self.documents[doc_idx])
+        if self.documents[doc_idx]: return random.choice(self.documents[doc_idx])
         return ""
-    
+
     def _create_training_instance(self, doc_idx: int) -> Tuple[str, str, int]:
-        """Create a training instance with sentence A, sentence B, and NSP label"""
+        """Tạo một mẫu huấn luyện với câu A, câu B và nhãn NSP"""
         document = self.documents[doc_idx]
-        
-        # Get sentence A
         sent_idx_a = random.randint(0, len(document) - 1)
         sent_a = document[sent_idx_a]
-        
-        # Create sentence B and NSP label
+
+        # Tạo câu B và nhãn NSP (is_next)
         if random.random() < 0.5 and sent_idx_a < len(document) - 1:
-            # Next sentence (positive example)
+            # 50% là câu tiếp theo (ví dụ dương)
             sent_b = document[sent_idx_a + 1]
             is_next = 1
         else:
-            # Random sentence (negative example)
+            # 50% là câu ngẫu nhiên (ví dụ âm)
             sent_b = self._get_random_sentence(doc_idx)
             is_next = 0
-            
+
         return sent_a, sent_b, is_next
-    
+
     def _truncate_seq_pair(self, tokens_a: List[int], tokens_b: List[int], max_length: int):
-        """Truncate sequence pair to fit max_length"""
-        while len(tokens_a) + len(tokens_b) > max_length - 3:  # Account for [CLS], [SEP], [SEP]
+        """Cắt bớt cặp chuỗi để vừa với độ dài tối đa"""
+        # -3 cho các token [CLS], [SEP], [SEP]
+        while len(tokens_a) + len(tokens_b) > max_length - 3:
             if len(tokens_a) > len(tokens_b):
                 tokens_a.pop()
             else:
                 tokens_b.pop()
-    
+
     def _create_masked_lm_predictions(
         self,
-        tokens: List[int],
-        mlm_probability: float
+        tokens: List[int]
     ) -> Tuple[List[int], List[int]]:
         """
-        Create masked language model predictions
-        
+        Tạo các dự đoán cho masked language model.
         Returns:
-            output_tokens: Tokens with masking applied
-            output_labels: Original tokens at masked positions (-100 for non-masked)
+            output_tokens: Các token đã áp dụng masking.
+            output_labels: Các token gốc ở vị trí bị mask (-100 cho vị trí không bị mask).
         """
         output_tokens = tokens.copy()
-        output_labels = [-100] * len(tokens)  # -100 is ignored by CrossEntropyLoss
-        
-        # Get candidates for masking (exclude [CLS], [SEP], [PAD])
-        candidate_indices = []
-        for i, token in enumerate(tokens):
-            if token not in [self.tokenizer.cls_token_id,
-                           self.tokenizer.sep_token_id,
-                           self.tokenizer.pad_token_id]:
-                candidate_indices.append(i)
-        
-        # Sample indices to mask
+        # -100 được CrossEntropyLoss bỏ qua khi tính loss
+        output_labels = [-100] * len(tokens)
+
+        # Lấy các vị trí có thể mask (không phải token đặc biệt)
+        candidate_indices = [i for i, token in enumerate(tokens) if token not in
+                             [self.tokenizer.cls_token_id, self.tokenizer.sep_token_id, self.tokenizer.pad_token_id]]
+
+        # Chọn ngẫu nhiên 15% các vị trí để mask
         random.shuffle(candidate_indices)
-        num_to_mask = max(1, int(len(candidate_indices) * mlm_probability))
+        num_to_mask = max(1, int(len(candidate_indices) * self.mlm_probability))
         mask_indices = candidate_indices[:num_to_mask]
-        
+
         for idx in mask_indices:
-            # 80% of the time, replace with [MASK]
+            # Lưu nhãn (token gốc)
+            output_labels[idx] = tokens[idx]
+
+            # 80% thay bằng [MASK]
             if random.random() < 0.8:
                 output_tokens[idx] = self.tokenizer.mask_token_id
-            else:
-                # 10% of the time, replace with random token
-                if random.random() < 0.5:
-                    output_tokens[idx] = random.randint(0, self.tokenizer.vocab_size - 1)
-                # 10% of the time, keep original token
-                
-            output_labels[idx] = tokens[idx]
-            
+            # 10% thay bằng token ngẫu nhiên
+            elif random.random() < 0.5: # (0.5 của 20% còn lại là 10%)
+                output_tokens[idx] = random.randint(0, self.tokenizer.vocab_size - 1)
+            # 10% giữ nguyên token gốc
+
         return output_tokens, output_labels
-    
+
     def __len__(self) -> int:
-        return len(self.documents) * 100  # Create multiple instances per document
-    
+        # Tạo nhiều mẫu huấn luyện từ mỗi tài liệu
+        return len(self.documents) * 10
+
     def __getitem__(self, idx: int) -> Dict[str, torch.Tensor]:
-        # Get document index
         doc_idx = idx % len(self.documents)
-        
-        # Create training instance
+
+        # 1. Tạo cặp câu cho NSP
         sent_a, sent_b, is_next = self._create_training_instance(doc_idx)
-        
-        # Tokenize sentences
-        tokens_a = self.tokenizer.tokenize(sent_a)
-        tokens_b = self.tokenizer.tokenize(sent_b) if sent_b else []
-        
-        # Convert to token IDs
-        tokens_a = self.tokenizer.convert_tokens_to_ids(tokens_a)
-        tokens_b = self.tokenizer.convert_tokens_to_ids(tokens_b)
-        
-        # Truncate to fit max_length
+
+        # 2. Tokenize và cắt bớt
+        tokens_a = self.tokenizer.convert_tokens_to_ids(self.tokenizer.tokenize(sent_a))
+        tokens_b = self.tokenizer.convert_tokens_to_ids(self.tokenizer.tokenize(sent_b)) if sent_b else []
         self._truncate_seq_pair(tokens_a, tokens_b, self.max_length)
-        
-        # Build input sequence: [CLS] A [SEP] B [SEP]
-        tokens = [self.tokenizer.cls_token_id]
-        segment_ids = [0]
-        
-        tokens.extend(tokens_a)
-        segment_ids.extend([0] * len(tokens_a))
-        
-        tokens.append(self.tokenizer.sep_token_id)
-        segment_ids.append(0)
-        
+
+        # 3. Xây dựng chuỗi đầu vào: [CLS] A [SEP] B [SEP]
+        tokens = [self.tokenizer.cls_token_id] + tokens_a + [self.tokenizer.sep_token_id]
+        segment_ids = [0] * len(tokens)
         if tokens_b:
-            tokens.extend(tokens_b)
-            segment_ids.extend([1] * len(tokens_b))
-            
-            tokens.append(self.tokenizer.sep_token_id)
-            segment_ids.append(1)
-        
-        # Create attention mask
-        attention_mask = [1] * len(tokens)
-        
-        # Pad sequences
-        padding_length = self.max_length - len(tokens)
-        tokens.extend([self.tokenizer.pad_token_id] * padding_length)
-        segment_ids.extend([0] * padding_length)
+            tokens += tokens_b + [self.tokenizer.sep_token_id]
+            segment_ids += [1] * (len(tokens_b) + 1)
+
+        # 4. Tạo MLM predictions
+        masked_tokens, mlm_labels = self._create_masked_lm_predictions(tokens)
+
+        # 5. Padding
+        attention_mask = [1] * len(masked_tokens)
+        padding_length = self.max_length - len(masked_tokens)
+        masked_tokens.extend([self.tokenizer.pad_token_id] * padding_length)
         attention_mask.extend([0] * padding_length)
-        
-        # Create MLM predictions
-        masked_tokens, mlm_labels = self._create_masked_lm_predictions(tokens, self.mlm_probability)
-        
+        segment_ids.extend([0] * padding_length)
+        mlm_labels.extend([-100] * padding_length)
+
         return {
             'input_ids': torch.tensor(masked_tokens, dtype=torch.long),
             'attention_mask': torch.tensor(attention_mask, dtype=torch.long),
@@ -925,15 +847,10 @@ class BertDataset(Dataset):
             'next_sentence_label': torch.tensor(is_next, dtype=torch.long)
         }
 
-# %% [markdown]
-# # Training Utilities
-
-# %%
+# ========================= Các tiện ích Huấn luyện (Training Utilities) =========================
 class BertTrainer:
-    """
-    Enhanced trainer class for BERT pre-training
-    """
-    
+    """Lớp tiện ích để thực hiện quá trình huấn luyện BERT"""
+
     def __init__(
         self,
         model: torch.nn.Module,
@@ -947,287 +864,160 @@ class BertTrainer:
         gradient_accumulation_steps: int = 1,
         mixed_precision: bool = False
     ):
-        # Auto-detect device if not specified
-        if device is None:
-            self.device = 'cuda' if torch.cuda.is_available() else 'cpu'
-        else:
-            self.device = device
-            
+        self.device = device or ('cuda' if torch.cuda.is_available() else 'cpu')
         self.model = model.to(self.device)
         self.train_dataloader = train_dataloader
         self.val_dataloader = val_dataloader
         self.max_grad_norm = max_grad_norm
         self.gradient_accumulation_steps = gradient_accumulation_steps
         self.mixed_precision = mixed_precision
-        
-        # Optimizer with weight decay
+
+        # Optimizer AdamW, không áp dụng weight decay cho bias và LayerNorm
         no_decay = ['bias', 'LayerNorm.weight']
         optimizer_grouped_parameters = [
-            {
-                'params': [p for n, p in model.named_parameters()
-                          if not any(nd in n for nd in no_decay)],
-                'weight_decay': weight_decay,
-            },
-            {
-                'params': [p for n, p in model.named_parameters()
-                          if any(nd in n for nd in no_decay)],
-                'weight_decay': 0.0,
-            }
+            {'params': [p for n, p in model.named_parameters() if not any(nd in n for nd in no_decay)], 'weight_decay': weight_decay},
+            {'params': [p for n, p in model.named_parameters() if any(nd in n for nd in no_decay)], 'weight_decay': 0.0}
         ]
-        
         self.optimizer = torch.optim.AdamW(optimizer_grouped_parameters, lr=learning_rate)
-        
-        # Learning rate scheduler with warmup
-        total_steps = len(train_dataloader) * 10  # Assuming 10 epochs
-        self.scheduler = self._get_linear_schedule_with_warmup(
-            self.optimizer, warmup_steps, total_steps
-        )
-        
-        # Mixed precision training
-        if self.mixed_precision and self.device == 'cuda':
-            self.scaler = torch.cuda.amp.GradScaler()
-        else:
-            self.scaler = None
-            
-        # Training history
-        self.train_losses = []
-        self.val_losses = []
-        self.learning_rates = []
-        
+
+        # Scheduler để điều chỉnh learning rate (warmup rồi giảm tuyến tính)
+        total_steps = len(train_dataloader) // gradient_accumulation_steps * 10 # Giả sử 10 epochs
+        self.scheduler = self._get_linear_schedule_with_warmup(self.optimizer, warmup_steps, total_steps)
+
+        # Hỗ trợ huấn luyện với độ chính xác hỗn hợp (mixed precision)
+        self.scaler = torch.cuda.amp.GradScaler() if self.mixed_precision and self.device == 'cuda' else None
+
+        # Lưu lịch sử huấn luyện
+        self.train_losses, self.val_losses, self.learning_rates = [], [], []
+
     def _get_linear_schedule_with_warmup(self, optimizer, num_warmup_steps, num_training_steps):
-        """Create a schedule with a learning rate that decreases linearly after warmup"""
+        """Tạo scheduler với learning rate tăng tuyến tính trong warmup, sau đó giảm tuyến tính"""
         def lr_lambda(current_step):
             if current_step < num_warmup_steps:
                 return float(current_step) / float(max(1, num_warmup_steps))
-            return max(
-                0.0, float(num_training_steps - current_step) /
-                float(max(1, num_training_steps - num_warmup_steps))
-            )
+            return max(0.0, float(num_training_steps - current_step) / float(max(1, num_training_steps - num_warmup_steps)))
         return torch.optim.lr_scheduler.LambdaLR(optimizer, lr_lambda)
-    
+
     def train_epoch(self) -> Dict[str, float]:
-        """Train for one epoch"""
+        """Huấn luyện trong một epoch"""
         self.model.train()
-        total_loss = 0
-        total_mlm_loss = 0
-        total_nsp_loss = 0
-        num_batches = 0
-        
+        total_loss, total_mlm_loss, total_nsp_loss = 0, 0, 0
         from tqdm import tqdm
-        progress_bar = tqdm(self.train_dataloader, desc="Training")
-        
+        progress_bar = tqdm(self.train_dataloader, desc="Đang huấn luyện")
+
+        self.optimizer.zero_grad()
         for batch_idx, batch in enumerate(progress_bar):
-            # Move batch to device
             batch = {k: v.to(self.device) for k, v in batch.items()}
-            
-            # Mixed precision training
-            if self.mixed_precision and self.device == 'cuda':
-                with torch.cuda.amp.autocast():
-                    outputs = self.model(
-                        input_ids=batch['input_ids'],
-                        attention_mask=batch['attention_mask'],
-                        token_type_ids=batch['token_type_ids'],
-                        labels=batch['labels'],
-                        next_sentence_label=batch['next_sentence_label']
-                    )
-                    loss = outputs['loss'] / self.gradient_accumulation_steps
-            else:
-                outputs = self.model(
-                    input_ids=batch['input_ids'],
-                    attention_mask=batch['attention_mask'],
-                    token_type_ids=batch['token_type_ids'],
-                    labels=batch['labels'],
-                    next_sentence_label=batch['next_sentence_label']
-                )
-                loss = outputs['loss'] / self.gradient_accumulation_steps
+
+            # Forward pass với mixed precision
+            with torch.cuda.amp.autocast(enabled=self.scaler is not None):
+                outputs = self.model(**batch)
+                loss = outputs['loss']
+            if loss is None: continue
+
+            loss = loss / self.gradient_accumulation_steps
             
             # Backward pass
-            if self.scaler is not None:
+            if self.scaler:
                 self.scaler.scale(loss).backward()
             else:
                 loss.backward()
-            
-            # Update weights
+
+            # Cập nhật trọng số sau mỗi `gradient_accumulation_steps`
             if (batch_idx + 1) % self.gradient_accumulation_steps == 0:
-                # Gradient clipping
-                if self.scaler is not None:
-                    self.scaler.unscale_(self.optimizer)
-                    
+                # Cắt gradient để tránh bùng nổ gradient
+                if self.scaler: self.scaler.unscale_(self.optimizer)
                 torch.nn.utils.clip_grad_norm_(self.model.parameters(), self.max_grad_norm)
                 
-                # Optimizer step
-                if self.scaler is not None:
+                # Cập nhật optimizer và scheduler
+                if self.scaler:
                     self.scaler.step(self.optimizer)
                     self.scaler.update()
                 else:
                     self.optimizer.step()
-                    
                 self.scheduler.step()
                 self.optimizer.zero_grad()
-            
-            # Track losses
-            total_loss += loss.item() * self.gradient_accumulation_steps
-            if outputs.get('mlm_loss') is not None:
-                total_mlm_loss += outputs['mlm_loss'].item()
-            if outputs.get('nsp_loss') is not None:
-                total_nsp_loss += outputs['nsp_loss'].item()
-            num_batches += 1
-            
-            # Update progress bar
-            current_lr = self.scheduler.get_last_lr()[0]
-            progress_bar.set_postfix({
-                'loss': f"{loss.item() * self.gradient_accumulation_steps:.4f}",
-                'lr': f"{current_lr:.2e}"
-            })
-            
-            # Log learning rate
-            if batch_idx % 100 == 0:
-                self.learning_rates.append(current_lr)
+
+            # Ghi nhận loss
+            total_loss += outputs['loss'].item()
+            if outputs['mlm_loss'] is not None: total_mlm_loss += outputs['mlm_loss'].item()
+            if outputs['nsp_loss'] is not None: total_nsp_loss += outputs['nsp_loss'].item()
+            progress_bar.set_postfix({'loss': f"{outputs['loss'].item():.4f}", 'lr': f"{self.scheduler.get_last_lr()[0]:.2e}"})
+            self.learning_rates.append(self.scheduler.get_last_lr()[0])
         
-        # Average losses
+        num_batches = len(self.train_dataloader)
         avg_loss = total_loss / num_batches
-        avg_mlm_loss = total_mlm_loss / num_batches if total_mlm_loss > 0 else 0
-        avg_nsp_loss = total_nsp_loss / num_batches if total_nsp_loss > 0 else 0
-        
         self.train_losses.append(avg_loss)
-        
         return {
             'loss': avg_loss,
-            'mlm_loss': avg_mlm_loss,
-            'nsp_loss': avg_nsp_loss
+            'mlm_loss': total_mlm_loss / num_batches,
+            'nsp_loss': total_nsp_loss / num_batches
         }
-    
+
     def validate(self) -> Dict[str, float]:
-        """Validate the model"""
-        if self.val_dataloader is None:
-            return {}
-            
+        """Đánh giá mô hình trên tập validation"""
+        if self.val_dataloader is None: return {}
         self.model.eval()
-        total_loss = 0
-        total_mlm_loss = 0
-        total_nsp_loss = 0
-        num_batches = 0
-        
+        total_loss, total_mlm_loss, total_nsp_loss = 0, 0, 0
         with torch.no_grad():
-            for batch in tqdm(self.val_dataloader, desc="Validation"):
+            for batch in tqdm(self.val_dataloader, desc="Đang đánh giá"):
                 batch = {k: v.to(self.device) for k, v in batch.items()}
-                
-                outputs = self.model(
-                    input_ids=batch['input_ids'],
-                    attention_mask=batch['attention_mask'],
-                    token_type_ids=batch['token_type_ids'],
-                    labels=batch['labels'],
-                    next_sentence_label=batch['next_sentence_label']
-                )
-                
-                total_loss += outputs['loss'].item()
-                if outputs.get('mlm_loss') is not None:
-                    total_mlm_loss += outputs['mlm_loss'].item()
-                if outputs.get('nsp_loss') is not None:
-                    total_nsp_loss += outputs['nsp_loss'].item()
-                num_batches += 1
+                outputs = self.model(**batch)
+                if outputs['loss'] is not None: total_loss += outputs['loss'].item()
+                if outputs['mlm_loss'] is not None: total_mlm_loss += outputs['mlm_loss'].item()
+                if outputs['nsp_loss'] is not None: total_nsp_loss += outputs['nsp_loss'].item()
         
+        num_batches = len(self.val_dataloader)
         avg_loss = total_loss / num_batches
-        avg_mlm_loss = total_mlm_loss / num_batches if total_mlm_loss > 0 else 0
-        avg_nsp_loss = total_nsp_loss / num_batches if total_nsp_loss > 0 else 0
-        
         self.val_losses.append(avg_loss)
-        
         return {
             'loss': avg_loss,
-            'mlm_loss': avg_mlm_loss,
-            'nsp_loss': avg_nsp_loss
+            'mlm_loss': total_mlm_loss / num_batches,
+            'nsp_loss': total_nsp_loss / num_batches
         }
     
     def train(self, num_epochs: int, save_dir: Optional[str] = None):
-        """Main training loop"""
-        print(f"Starting training for {num_epochs} epochs...")
-        print(f"Device: {self.device}")
-        print(f"Mixed Precision: {self.mixed_precision}")
-        print(f"Gradient Accumulation Steps: {self.gradient_accumulation_steps}")
-        
+        """Vòng lặp huấn luyện chính"""
+        print(f"Bắt đầu huấn luyện {num_epochs} epochs trên thiết bị: {self.device}")
         best_val_loss = float('inf')
-        
         for epoch in range(num_epochs):
-            print(f"\n{'='*50}")
-            print(f"Epoch {epoch + 1}/{num_epochs}")
-            print(f"{'='*50}")
-            
-            # Train
+            print(f"\n{'='*50}\nEpoch {epoch + 1}/{num_epochs}\n{'='*50}")
             train_metrics = self.train_epoch()
-            print(f"\nTraining metrics:")
-            print(f"  Average loss: {train_metrics['loss']:.4f}")
-            print(f"  MLM loss: {train_metrics['mlm_loss']:.4f}")
-            print(f"  NSP loss: {train_metrics['nsp_loss']:.4f}")
-            
-            # Validate
-            if self.val_dataloader:
-                val_metrics = self.validate()
-                print(f"\nValidation metrics:")
-                print(f"  Average loss: {val_metrics['loss']:.4f}")
-                print(f"  MLM loss: {val_metrics['mlm_loss']:.4f}")
-                print(f"  NSP loss: {val_metrics['nsp_loss']:.4f}")
-                
-                # Save best model
+            print(f"\nKết quả huấn luyện: Loss={train_metrics['loss']:.4f}, MLM Loss={train_metrics['mlm_loss']:.4f}, NSP Loss={train_metrics['nsp_loss']:.4f}")
+            val_metrics = self.validate()
+            if val_metrics:
+                print(f"Kết quả đánh giá: Loss={val_metrics['loss']:.4f}, MLM Loss={val_metrics['mlm_loss']:.4f}, NSP Loss={val_metrics['nsp_loss']:.4f}")
                 if save_dir and val_metrics['loss'] < best_val_loss:
                     best_val_loss = val_metrics['loss']
                     self.save_checkpoint(save_dir, epoch + 1, is_best=True)
-            
-            # Save regular checkpoint
-            if save_dir and (epoch + 1) % 5 == 0:
-                self.save_checkpoint(save_dir, epoch + 1)
-    
+            if save_dir: self.save_checkpoint(save_dir, epoch + 1)
+
     def save_checkpoint(self, save_dir: str, epoch: int, is_best: bool = False):
-        """Save model checkpoint"""
+        """Lưu checkpoint của mô hình"""
         import os
         os.makedirs(save_dir, exist_ok=True)
-        
-        checkpoint = {
-            'epoch': epoch,
-            'model_state_dict': self.model.state_dict(),
-            'optimizer_state_dict': self.optimizer.state_dict(),
-            'scheduler_state_dict': self.scheduler.state_dict(),
-            'train_losses': self.train_losses,
-            'val_losses': self.val_losses,
-            'learning_rates': self.learning_rates,
-        }
-        
-        if is_best:
-            path = os.path.join(save_dir, 'best_model.pt')
-        else:
-            path = os.path.join(save_dir, f'checkpoint_epoch_{epoch}.pt')
-            
-        torch.save(checkpoint, path)
-        print(f"Checkpoint saved: {path}")
-    
+        path = os.path.join(save_dir, 'best_model.pt' if is_best else f'checkpoint_epoch_{epoch}.pt')
+        torch.save({
+            'epoch': epoch, 'model_state_dict': self.model.state_dict(),
+            'optimizer_state_dict': self.optimizer.state_dict(), 'scheduler_state_dict': self.scheduler.state_dict(),
+            'train_losses': self.train_losses, 'val_losses': self.val_losses,
+        }, path)
+        print(f"Đã lưu checkpoint: {path}")
+
     def plot_training_history(self):
-        """Plot training history"""
+        """Vẽ biểu đồ lịch sử huấn luyện"""
         fig, axes = plt.subplots(1, 2, figsize=(12, 4))
-        
-        # Plot losses
         axes[0].plot(self.train_losses, label='Train Loss')
-        if self.val_losses:
-            axes[0].plot(self.val_losses, label='Val Loss')
-        axes[0].set_xlabel('Epoch')
-        axes[0].set_ylabel('Loss')
-        axes[0].set_title('Training and Validation Loss')
-        axes[0].legend()
-        axes[0].grid(True)
-        
-        # Plot learning rate
+        if self.val_losses: axes[0].plot(self.val_losses, label='Val Loss')
+        axes[0].set(xlabel='Epoch', ylabel='Loss', title='Training & Validation Loss')
+        axes[0].legend(); axes[0].grid(True)
         axes[1].plot(self.learning_rates)
-        axes[1].set_xlabel('Steps (x100)')
-        axes[1].set_ylabel('Learning Rate')
-        axes[1].set_title('Learning Rate Schedule')
+        axes[1].set(xlabel='Steps', ylabel='Learning Rate', title='Learning Rate Schedule')
         axes[1].grid(True)
-        
-        plt.tight_layout()
-        plt.show()
+        plt.tight_layout(); plt.show()
 
-# %% [markdown]
-# # Visualization
 
-# %%
+# ========================= Trực quan hóa (Visualization) =========================
 def visualize_attention(
     model: BertModel,
     tokenizer: BertTokenizer,
@@ -1235,130 +1025,148 @@ def visualize_attention(
     layer_idx: int = -1,
     head_idx: int = 0
 ):
-    """
-    Visualize attention weights for a given text
-    
-    Args:
-        model: BERT model
-        tokenizer: BERT tokenizer
-        text: Input text
-        layer_idx: Which layer to visualize (-1 for last layer)
-        head_idx: Which attention head to visualize
-    """
-    # Tokenize
-    inputs = tokenizer.encode_plus(
-        text,
-        return_tensors='pt',
-        add_special_tokens=True,
-        max_length=512,
-        truncation=True
-    )
-    
-    # Get model outputs with attention
+    """Trực quan hóa trọng số attention cho một đoạn văn bản"""
+    inputs = tokenizer.encode_plus(text, return_tensors='pt', add_special_tokens=True, max_length=512, truncation=True)
     model.eval()
     with torch.no_grad():
-        outputs = model(
-            input_ids=inputs['input_ids'],
-            attention_mask=inputs['attention_mask'],
-            output_attentions=True
-        )
+        outputs = model(**inputs, output_attentions=True)
     
-    # Get attention weights
-    attentions = outputs['attentions']  # List of tensors, one per layer
-    attention = attentions[layer_idx]    # [batch, n_heads, seq_len, seq_len]
-    attention = attention[0, head_idx]   # [seq_len, seq_len]
-    
-    # Get tokens
+    attention = outputs['attentions'][layer_idx][0, head_idx]
     tokens = tokenizer.convert_ids_to_tokens(inputs['input_ids'][0])
     
-    # Plot
     plt.figure(figsize=(10, 8))
-    sns.heatmap(
-        attention.numpy(),
-        xticklabels=tokens,
-        yticklabels=tokens,
-        cmap='Blues',
-        cbar_kws={'label': 'Attention Weight'}
-    )
-    plt.title(f'Attention Weights - Layer {layer_idx}, Head {head_idx}')
-    plt.xlabel('Keys')
-    plt.ylabel('Queries')
-    plt.xticks(rotation=45, ha='right')
-    plt.yticks(rotation=0)
-    plt.tight_layout()
-    plt.show()
+    sns.heatmap(attention.numpy(), xticklabels=tokens, yticklabels=tokens, cmap='Blues')
+    plt.title(f'Trọng số Attention - Tầng {layer_idx}, Head {head_idx}')
+    plt.xlabel('Keys'); plt.ylabel('Queries')
+    plt.xticks(rotation=45, ha='right'); plt.yticks(rotation=0)
+    plt.tight_layout(); plt.show()
 
-# %% [markdown]
-# # Testing
-
-# %%
+# ========================= Kiểm thử (Testing) =========================
 def test_attention_mechanism():
-    """Test the attention mechanism with a simple example"""
-    print("Testing Attention Mechanism...")
-    
-    # Create simple input
-    batch_size, seq_len, d_model = 2, 5, 64
-    n_heads = 8
-    
-    # Random input
-    x = torch.randn(batch_size, seq_len, d_model)
-    
-    # Create attention module
-    mha = MultiHeadAttention(d_model, n_heads)
-    
-    # Forward pass
-    output = mha(x, x, x)
-    
-    print(f"Input shape: {x.shape}")
-    print(f"Output shape: {output.shape}")
-    assert output.shape == x.shape, "Output shape mismatch!"
-    print("✓ Attention mechanism test passed!")
+    """Kiểm tra cơ chế attention"""
+    print("Kiểm tra cơ chế Attention...")
+    mha = MultiHeadAttention(d_model=64, n_heads=8)
+    x = torch.randn(2, 5, 64) # batch_size=2, seq_len=5, d_model=64
+    output, _ = mha(x, x, x, return_attention=True)
+    print(f"Kích thước đầu vào: {x.shape}")
+    print(f"Kích thước đầu ra: {output.shape}")
+    assert output.shape == x.shape, "Lỗi: Kích thước đầu ra không khớp!"
+    print("✓ Kiểm tra cơ chế attention thành công!")
 
 def test_bert_model():
-    """Test the complete BERT model"""
-    print("\nTesting BERT Model...")
-    
-    # Create config
-    config = BertConfig(
-        vocab_size=1000,
-        hidden_size=128,
-        num_hidden_layers=2,
-        num_attention_heads=4,
-        intermediate_size=512
-    )
-    
-    # Create model
+    """Kiểm tra toàn bộ mô hình BERT"""
+    print("\nKiểm tra mô hình BERT...")
+    config = BertConfig(vocab_size=1000, hidden_size=128, num_hidden_layers=2, num_attention_heads=4, intermediate_size=512)
     model = BertForPreTraining(config)
-    
-    # Create dummy input
-    batch_size = 4
-    seq_len = 20
-    input_ids = torch.randint(0, config.vocab_size, (batch_size, seq_len))
-    attention_mask = torch.ones(batch_size, seq_len)
-    token_type_ids = torch.zeros(batch_size, seq_len, dtype=torch.long)
-    labels = torch.randint(0, config.vocab_size, (batch_size, seq_len))
-    labels[torch.rand(batch_size, seq_len) > 0.15] = -100  # Mask most positions
-    next_sentence_label = torch.randint(0, 2, (batch_size,))
-    
-    # Forward pass
-    outputs = model(
-        input_ids=input_ids,
-        attention_mask=attention_mask,
-        token_type_ids=token_type_ids,
-        labels=labels,
-        next_sentence_label=next_sentence_label
-    )
-    
-    print(f"Loss: {outputs['loss'].item():.4f}")
-    print(f"MLM predictions shape: {outputs['prediction_logits'].shape}")
-    print(f"NSP predictions shape: {outputs['seq_relationship_logits'].shape}")
-    print("✓ BERT model test passed!")
 
-# %%
- # Run tests
+    # Tạo dữ liệu giả
+
+    
+    input_ids = torch.randint(0, config.vocab_size, (4, 20))
+    labels = torch.full_like(input_ids, -100)
+    # Tạo một mặt nạ duy nhất để tái sử dụng
+    mask = torch.rand_like(input_ids.float()) < 0.15
+    # Sử dụng cùng một mặt nạ cho cả hai bên của phép gán
+    labels[mask] = input_ids[mask]
+    # labels[torch.rand_like(input_ids.float()) < 0.15] = input_ids[torch.rand_like(input_ids.float()) < 0.15]
+    next_sentence_label = torch.randint(0, 2, (4,))
+
+    outputs = model(input_ids=input_ids, labels=labels, next_sentence_label=next_sentence_label)
+
+    print(f"Loss: {outputs['loss'].item():.4f}")
+    print(f"Kích thước logits MLM: {outputs['prediction_logits'].shape}")
+    print(f"Kích thước logits NSP: {outputs['seq_relationship_logits'].shape}")
+    print("✓ Kiểm tra mô hình BERT thành công!")
+
 test_attention_mechanism()
 test_bert_model()
 
 print("\n" + "="*50)
-print("All tests passed! The BERT implementation is working correctly.")
+print("Tất cả các kiểm thử đã thành công! Việc cài đặt BERT đang hoạt động chính xác.")
 print("="*50)
+
+if __name__ == '__main__':
+    # Chạy các kiểm thử
+
+    # Ví dụ về tạo dữ liệu và huấn luyện
+    # Cảnh báo: Việc huấn luyện thực tế đòi hỏi một lượng lớn dữ liệu và tài nguyên tính toán.
+    # Đoạn mã dưới đây chỉ mang tính minh họa.
+
+    print("\nBắt đầu ví dụ huấn luyện nhỏ...")
+    try:
+        # 1. Khởi tạo Tokenizer
+        tokenizer = BertTokenizer.from_pretrained('bert-base-uncased')
+
+        # 2. Tạo dữ liệu giả
+        sample_texts = [
+            "BERT is a model for language understanding. It was developed by Google.",
+            "The model is based on the Transformer architecture. It uses bidirectional self-attention.",
+            "Pre-training is done on a large corpus. Fine-tuning is for specific tasks.",
+            "There are two pre-training tasks. Masked LM and Next Sentence Prediction.",
+            "This implementation is a simplified version. It helps to understand the core concepts."
+        ]
+
+        # 3. Tạo Dataset và DataLoader
+        dataset = BertDataset(texts=sample_texts, tokenizer=tokenizer, max_length=64)
+        dataloader = DataLoader(dataset, batch_size=2, shuffle=True)
+
+        # 4. Khởi tạo mô hình và cấu hình
+        config = BertConfig(
+            vocab_size=tokenizer.vocab_size,
+            hidden_size=256,
+            num_hidden_layers=4,
+            num_attention_heads=4,
+            intermediate_size=1024,
+            max_position_embeddings=64
+        )
+        model = BertForPreTraining(config)
+
+        # 5. Khởi tạo Trainer
+        trainer = BertTrainer(
+            model=model,
+            train_dataloader=dataloader,
+            learning_rate=5e-5,
+            warmup_steps=100,
+            gradient_accumulation_steps=1
+        )
+
+        # 6. Huấn luyện trong 1 epoch
+        trainer.train(num_epochs=1)
+
+        # 7. Vẽ biểu đồ
+        trainer.plot_training_history()
+        print("✓ Ví dụ huấn luyện nhỏ hoàn thành.")
+
+        # 8. Testing
+        input_sentence = "BERT is a [MASK]."
+        
+        # Tokenize input
+        inputs = tokenizer(input_sentence, return_tensors='pt')
+        
+        # Get model predictions
+        model.eval()
+        with torch.no_grad():
+            outputs = model(**inputs)
+            
+        # Get prediction scores for masked token
+        prediction_scores = outputs['prediction_logits']
+        masked_token_index = (inputs['input_ids'] == tokenizer.mask_token_id).nonzero(as_tuple=True)[1]
+        
+        # Get top 5 predictions
+        top_5_predictions = torch.topk(prediction_scores[0, masked_token_index], k=5)
+        
+        # Print results
+        print("\nKiểm tra dự đoán [MASK] :")
+        print(f"Câu mẫu: {input_sentence}")
+        print("\nTop 5 dự đoán cho [MASK]:")
+        for score, idx in zip(top_5_predictions.values[0], top_5_predictions.indices[0]):
+            predicted_token = tokenizer.convert_ids_to_tokens(idx.item())
+            print(f"- {predicted_token}: {score.item():.4f}")
+            
+        # Visualize attention for the input sentence
+        print("\nVisualize trọng số attention...")
+        visualize_attention(model.bert, tokenizer, input_sentence)
+
+    except Exception as e:
+        print(f"\nLỗi trong quá trình chạy ví dụ huấn luyện: {e}")
+        print("Vui lòng đảm bảo đã cài đặt các thư viện cần thiết (torch, transformers, tqdm, matplotlib, seaborn).")
