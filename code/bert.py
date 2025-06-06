@@ -1060,8 +1060,6 @@ def test_bert_model():
     model = BertForPreTraining(config)
 
     # Tạo dữ liệu giả
-
-    
     input_ids = torch.randint(0, config.vocab_size, (4, 20))
     labels = torch.full_like(input_ids, -100)
     # Tạo một mặt nạ duy nhất để tái sử dụng
