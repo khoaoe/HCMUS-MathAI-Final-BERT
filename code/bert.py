@@ -18,6 +18,8 @@ import seaborn as sns
 # - hidden_size: Kích thước ẩn (H)
 # - num_attention_heads: Số lượng attention head (A)
 # - intermediate_size: Kích thước tầng feed-forward (4*H)
+
+
 @dataclass
 class BertConfig:
     """Cấu hình cho mô hình BERT"""
@@ -29,7 +31,8 @@ class BertConfig:
     hidden_dropout_prob: float = 0.1            # Dropout cho các tầng ẩn
     attention_probs_dropout_prob: float = 0.1   # Dropout cho attention
     max_position_embeddings: int = 512          # Độ dài chuỗi tối đa
-    type_vocab_size: int = 2                    # Kích thước từ vựng của loại token (segment A/B)
+    # Kích thước từ vựng của loại token (segment A/B)
+    type_vocab_size: int = 2
     initializer_range: float = 0.02             # Độ lệch chuẩn khởi tạo trọng số
     layer_norm_eps: float = 1e-12               # Epsilon cho Layer Norm
 
@@ -39,6 +42,8 @@ class BertConfig:
             f"hidden_size ({self.hidden_size}) phải chia hết cho num_attention_heads ({self.num_attention_heads})"
 
 # ========================= Cơ chế Attention (Attentions) =========================
+
+
 class ScaledDotProductAttention(nn.Module):
     """
     Scaled Dot-Product Attention - Cơ chế attention cốt lõi của Transformer.
@@ -58,7 +63,8 @@ class ScaledDotProductAttention(nn.Module):
         query: torch.Tensor,     # [batch, n_heads, seq_len, d_k]
         key: torch.Tensor,       # [batch, n_heads, seq_len, d_k]
         value: torch.Tensor,     # [batch, n_heads, seq_len, d_v]
-        mask: Optional[torch.Tensor] = None, # mask để che đi các vị trí không cần attend
+        # mask để che đi các vị trí không cần attend
+        mask: Optional[torch.Tensor] = None,
         return_attention: bool = False
     ) -> Union[torch.Tensor, Tuple[torch.Tensor, torch.Tensor]]:
         """
@@ -72,7 +78,8 @@ class ScaledDotProductAttention(nn.Module):
         batch_size, n_heads, seq_len, d_k = query.size()
 
         # Tính điểm attention
-        scores = torch.matmul(query, key.transpose(-2, -1)) / (math.sqrt(d_k) * self.temperature)
+        scores = torch.matmul(query, key.transpose(-2, -1)) / \
+            (math.sqrt(d_k) * self.temperature)
 
         # Áp dụng mask nếu có
         if mask is not None:
@@ -96,6 +103,7 @@ class ScaledDotProductAttention(nn.Module):
             return output, attn_weights
         return output
 
+
 class MultiHeadAttention(nn.Module):
     """
     Multi-Head Attention cho phép mô hình cùng lúc chú ý đến thông tin
@@ -112,14 +120,14 @@ class MultiHeadAttention(nn.Module):
 
         self.d_model = d_model
         self.n_heads = n_heads
-        self.d_k = d_model // n_heads # Kích thước của key
-        self.d_v = d_model // n_heads # Kích thước của value
+        self.d_k = d_model // n_heads  # Kích thước của key
+        self.d_v = d_model // n_heads  # Kích thước của value
 
         # Các phép chiếu tuyến tính (linear projections) cho Q, K, V
         self.w_q = nn.Linear(d_model, d_model, bias=False)
         self.w_k = nn.Linear(d_model, d_model, bias=False)
         self.w_v = nn.Linear(d_model, d_model, bias=False)
-        self.w_o = nn.Linear(d_model, d_model) # Phép chiếu đầu ra
+        self.w_o = nn.Linear(d_model, d_model)  # Phép chiếu đầu ra
 
         self.attention = ScaledDotProductAttention(dropout=dropout)
         self.dropout = nn.Dropout(dropout)
@@ -154,15 +162,20 @@ class MultiHeadAttention(nn.Module):
 
         # 1. Chiếu tuyến tính và chia thành các head
         # [batch, seq_len, d_model] -> [batch, seq_len, n_heads, d_k] -> [batch, n_heads, seq_len, d_k]
-        Q = self.w_q(query).view(batch_size, seq_len, self.n_heads, self.d_k).transpose(1, 2)
-        K = self.w_k(key).view(batch_size, seq_len, self.n_heads, self.d_k).transpose(1, 2)
-        V = self.w_v(value).view(batch_size, seq_len, self.n_heads, self.d_v).transpose(1, 2)
+        Q = self.w_q(query).view(batch_size, seq_len,
+                                 self.n_heads, self.d_k).transpose(1, 2)
+        K = self.w_k(key).view(batch_size, seq_len,
+                               self.n_heads, self.d_k).transpose(1, 2)
+        V = self.w_v(value).view(batch_size, seq_len,
+                                 self.n_heads, self.d_v).transpose(1, 2)
 
         # 2. Áp dụng attention trên tất cả các head
         if return_attention:
-            attn_output, attn_weights = self.attention(Q, K, V, mask=mask, return_attention=True)
+            attn_output, attn_weights = self.attention(
+                Q, K, V, mask=mask, return_attention=True)
         else:
-            attn_output = self.attention(Q, K, V, mask=mask, return_attention=False)
+            attn_output = self.attention(
+                Q, K, V, mask=mask, return_attention=False)
             attn_weights = None
 
         # 3. Ghép (concat) các head lại và áp dụng phép chiếu tuyến tính cuối cùng
@@ -180,6 +193,8 @@ class MultiHeadAttention(nn.Module):
         return output
 
 # ========================= Mạng Feed-Forward (Feed-Forward Network) =========================
+
+
 class PositionwiseFeedForward(nn.Module):
     """
     Mạng Feed-Forward theo từng vị trí (Position-wise Feed-Forward Network).
@@ -217,6 +232,8 @@ class PositionwiseFeedForward(nn.Module):
         return self.linear2(self.dropout(self.activation(self.linear1(x))))
 
 # ========================= Khối Transformer (Transformer Block) =========================
+
+
 class TransformerBlock(nn.Module):
     """
     Một khối Transformer hoàn chỉnh. Trong BERT, các khối này được xếp chồng lên nhau.
@@ -254,7 +271,8 @@ class TransformerBlock(nn.Module):
         """
         # Tầng self-attention với kết nối phần dư và chuẩn hóa
         if return_attention:
-            attn_output, attn_weights = self.attention(x, x, x, mask, return_attention=True)
+            attn_output, attn_weights = self.attention(
+                x, x, x, mask, return_attention=True)
         else:
             attn_output = self.attention(x, x, x, mask, return_attention=False)
             attn_weights = None
@@ -270,6 +288,8 @@ class TransformerBlock(nn.Module):
         return x
 
 # ========================= Embeddings =========================
+
+
 class BertEmbeddings(nn.Module):
     """
     Tạo ra biểu diễn đầu vào cho BERT.
@@ -284,11 +304,15 @@ class BertEmbeddings(nn.Module):
     def __init__(self, config: BertConfig):
         super().__init__()
         # Padding_idx=0 chỉ định rằng token padding sẽ có vector embedding là zero.
-        self.word_embeddings = nn.Embedding(config.vocab_size, config.hidden_size, padding_idx=0)
-        self.position_embeddings = nn.Embedding(config.max_position_embeddings, config.hidden_size)
-        self.token_type_embeddings = nn.Embedding(config.type_vocab_size, config.hidden_size)
+        self.word_embeddings = nn.Embedding(
+            config.vocab_size, config.hidden_size, padding_idx=0)
+        self.position_embeddings = nn.Embedding(
+            config.max_position_embeddings, config.hidden_size)
+        self.token_type_embeddings = nn.Embedding(
+            config.type_vocab_size, config.hidden_size)
 
-        self.LayerNorm = nn.LayerNorm(config.hidden_size, eps=config.layer_norm_eps)
+        self.LayerNorm = nn.LayerNorm(
+            config.hidden_size, eps=config.layer_norm_eps)
         self.dropout = nn.Dropout(config.hidden_dropout_prob)
 
         # Tạo buffer cho position_ids để không được coi là tham số của mô hình
@@ -336,6 +360,8 @@ class BertEmbeddings(nn.Module):
         return embeddings
 
 # ========================= Bộ mã hóa BERT (BERT Encoder) =========================
+
+
 class BertEncoder(nn.Module):
     """
     Bộ mã hóa của BERT, bao gồm một chồng các khối Transformer (TransformerBlock).
@@ -429,15 +455,19 @@ class BertPooler(nn.Module):
         return pooled_output
 
 # ========================= Các đầu dự đoán (Prediction Heads) =========================
+
+
 class BertPredictionHeadTransform(nn.Module):
     """
     Một tầng biến đổi (dense -> gelu -> layernorm) được áp dụng trước đầu dự đoán MLM.
     """
+
     def __init__(self, config: BertConfig):
         super().__init__()
         self.dense = nn.Linear(config.hidden_size, config.hidden_size)
         self.activation = F.gelu
-        self.LayerNorm = nn.LayerNorm(config.hidden_size, eps=config.layer_norm_eps)
+        self.LayerNorm = nn.LayerNorm(
+            config.hidden_size, eps=config.layer_norm_eps)
 
     def forward(self, hidden_states: torch.Tensor) -> torch.Tensor:
         hidden_states = self.dense(hidden_states)
@@ -445,18 +475,21 @@ class BertPredictionHeadTransform(nn.Module):
         hidden_states = self.LayerNorm(hidden_states)
         return hidden_states
 
+
 class BertLMPredictionHead(nn.Module):
     """
     Đầu dự đoán cho tác vụ Masked Language Model (MLM).
     Nó dự đoán token gốc từ biểu diễn ẩn của các token bị che.
     """
+
     def __init__(self, config: BertConfig):
         super().__init__()
         self.transform = BertPredictionHeadTransform(config)
 
         # Tầng decoder để chiếu từ hidden_size về vocab_size.
         # Trọng số của decoder được chia sẻ với ma trận word_embeddings (weight tying).
-        self.decoder = nn.Linear(config.hidden_size, config.vocab_size, bias=False)
+        self.decoder = nn.Linear(
+            config.hidden_size, config.vocab_size, bias=False)
         self.bias = nn.Parameter(torch.zeros(config.vocab_size))
         self.decoder.bias = self.bias
 
@@ -465,16 +498,19 @@ class BertLMPredictionHead(nn.Module):
         hidden_states = self.decoder(hidden_states)
         return hidden_states
 
+
 class BertPreTrainingHeads(nn.Module):
     """
     Kết hợp hai đầu dự đoán cho hai tác vụ pre-training:
     1. Masked Language Modeling (MLM).
     2. Next Sentence Prediction (NSP).
     """
+
     def __init__(self, config: BertConfig):
         super().__init__()
         self.predictions = BertLMPredictionHead(config)
-        self.seq_relationship = nn.Linear(config.hidden_size, 2) # 2 class: IsNext, NotNext
+        self.seq_relationship = nn.Linear(
+            config.hidden_size, 2)  # 2 class: IsNext, NotNext
 
     def forward(
         self,
@@ -494,6 +530,8 @@ class BertPreTrainingHeads(nn.Module):
         return prediction_scores, seq_relationship_score
 
 # ========================= Mô hình BERT (BERT Model) =========================
+
+
 class BertModel(nn.Module):
     """
     Mô hình BERT hoàn chỉnh, tích hợp các thành phần:
@@ -515,11 +553,13 @@ class BertModel(nn.Module):
     def _init_weights(self, module):
         """Khởi tạo trọng số cho các tầng theo cấu hình"""
         if isinstance(module, nn.Linear):
-            module.weight.data.normal_(mean=0.0, std=self.config.initializer_range)
+            module.weight.data.normal_(
+                mean=0.0, std=self.config.initializer_range)
             if module.bias is not None:
                 module.bias.data.zero_()
         elif isinstance(module, nn.Embedding):
-            module.weight.data.normal_(mean=0.0, std=self.config.initializer_range)
+            module.weight.data.normal_(
+                mean=0.0, std=self.config.initializer_range)
             if module.padding_idx is not None:
                 module.weight.data[module.padding_idx].zero_()
         elif isinstance(module, nn.LayerNorm):
@@ -569,11 +609,13 @@ class BertModel(nn.Module):
         if 'hidden_states' in encoder_outputs:
             outputs['hidden_states'] = encoder_outputs['hidden_states']
         if 'attentions' in encoder_outputs:
-             outputs['attentions'] = encoder_outputs['attentions']
+            outputs['attentions'] = encoder_outputs['attentions']
 
         return outputs
 
 # ========================= Mô hình BERT cho Pre-training =========================
+
+
 class BertForPreTraining(nn.Module):
     """
     Mô hình BERT với các đầu pre-training (MLM và NSP).
@@ -599,7 +641,7 @@ class BertForPreTraining(nn.Module):
         token_type_ids: Optional[torch.Tensor] = None,
         position_ids: Optional[torch.Tensor] = None,
         labels: Optional[torch.Tensor] = None,         # Nhãn cho MLM
-        next_sentence_label: Optional[torch.Tensor] = None, # Nhãn cho NSP
+        next_sentence_label: Optional[torch.Tensor] = None,  # Nhãn cho NSP
         output_attentions: bool = False,
         output_hidden_states: bool = False
     ) -> Dict[str, torch.Tensor]:
@@ -619,13 +661,14 @@ class BertForPreTraining(nn.Module):
         pooled_output = outputs['pooler_output']
 
         # Lấy điểm dự đoán từ các đầu pre-training
-        prediction_scores, seq_relationship_score = self.cls(sequence_output, pooled_output)
+        prediction_scores, seq_relationship_score = self.cls(
+            sequence_output, pooled_output)
 
         total_loss = None
         mlm_loss = None
         nsp_loss = None
         if labels is not None and next_sentence_label is not None:
-            loss_fct = nn.CrossEntropyLoss() # Bỏ qua index -100
+            loss_fct = nn.CrossEntropyLoss()  # Bỏ qua index -100
 
             # Tính loss cho MLM
             mlm_loss = loss_fct(
@@ -653,6 +696,8 @@ class BertForPreTraining(nn.Module):
         }
 
 # ========================= Mô hình BERT cho Phân loại Chuỗi =========================
+
+
 class BertForSequenceClassification(nn.Module):
     """
     Mô hình BERT cho tác vụ phân loại chuỗi (fine-tuning).
@@ -672,7 +717,7 @@ class BertForSequenceClassification(nn.Module):
         input_ids: torch.Tensor,
         attention_mask: Optional[torch.Tensor] = None,
         token_type_ids: Optional[torch.Tensor] = None,
-        labels: Optional[torch.Tensor] = None # Nhãn phân loại
+        labels: Optional[torch.Tensor] = None  # Nhãn phân loại
     ) -> Dict[str, torch.Tensor]:
         """
         Luồng xử lý và tính toán loss cho tác vụ phân loại.
@@ -700,6 +745,8 @@ class BertForSequenceClassification(nn.Module):
         }
 
 # ========================= Cài đặt Dataset =========================
+
+
 class BertDataset(Dataset):
     """
     Dataset cho quá trình pre-training BERT với hai tác vụ MLM và NSP.
@@ -737,9 +784,12 @@ class BertDataset(Dataset):
 
     def _get_random_sentence(self, exclude_doc_idx: int) -> str:
         """Lấy một câu ngẫu nhiên từ một tài liệu khác"""
-        if len(self.documents) == 1: return ""
-        doc_idx = random.choice([i for i in range(len(self.documents)) if i != exclude_doc_idx])
-        if self.documents[doc_idx]: return random.choice(self.documents[doc_idx])
+        if len(self.documents) == 1:
+            return ""
+        doc_idx = random.choice(
+            [i for i in range(len(self.documents)) if i != exclude_doc_idx])
+        if self.documents[doc_idx]:
+            return random.choice(self.documents[doc_idx])
         return ""
 
     def _create_training_instance(self, doc_idx: int) -> Tuple[str, str, int]:
@@ -789,7 +839,8 @@ class BertDataset(Dataset):
 
         # Chọn ngẫu nhiên 15% các vị trí để mask
         random.shuffle(candidate_indices)
-        num_to_mask = max(1, int(len(candidate_indices) * self.mlm_probability))
+        num_to_mask = max(
+            1, int(len(candidate_indices) * self.mlm_probability))
         mask_indices = candidate_indices[:num_to_mask]
 
         for idx in mask_indices:
@@ -800,8 +851,9 @@ class BertDataset(Dataset):
             if random.random() < 0.8:
                 output_tokens[idx] = self.tokenizer.mask_token_id
             # 10% thay bằng token ngẫu nhiên
-            elif random.random() < 0.5: # (0.5 của 20% còn lại là 10%)
-                output_tokens[idx] = random.randint(0, self.tokenizer.vocab_size - 1)
+            elif random.random() < 0.5:  # (0.5 của 20% còn lại là 10%)
+                output_tokens[idx] = random.randint(
+                    0, self.tokenizer.vocab_size - 1)
             # 10% giữ nguyên token gốc
 
         return output_tokens, output_labels
@@ -817,12 +869,15 @@ class BertDataset(Dataset):
         sent_a, sent_b, is_next = self._create_training_instance(doc_idx)
 
         # 2. Tokenize và cắt bớt
-        tokens_a = self.tokenizer.convert_tokens_to_ids(self.tokenizer.tokenize(sent_a))
-        tokens_b = self.tokenizer.convert_tokens_to_ids(self.tokenizer.tokenize(sent_b)) if sent_b else []
+        tokens_a = self.tokenizer.convert_tokens_to_ids(
+            self.tokenizer.tokenize(sent_a))
+        tokens_b = self.tokenizer.convert_tokens_to_ids(
+            self.tokenizer.tokenize(sent_b)) if sent_b else []
         self._truncate_seq_pair(tokens_a, tokens_b, self.max_length)
 
         # 3. Xây dựng chuỗi đầu vào: [CLS] A [SEP] B [SEP]
-        tokens = [self.tokenizer.cls_token_id] + tokens_a + [self.tokenizer.sep_token_id]
+        tokens = [self.tokenizer.cls_token_id] + \
+            tokens_a + [self.tokenizer.sep_token_id]
         segment_ids = [0] * len(tokens)
         if tokens_b:
             tokens += tokens_b + [self.tokenizer.sep_token_id]
@@ -848,6 +903,8 @@ class BertDataset(Dataset):
         }
 
 # ========================= Các tiện ích Huấn luyện (Training Utilities) =========================
+
+
 class BertTrainer:
     """Lớp tiện ích để thực hiện quá trình huấn luyện BERT"""
 
@@ -864,7 +921,8 @@ class BertTrainer:
         gradient_accumulation_steps: int = 1,
         mixed_precision: bool = False
     ):
-        self.device = device or ('cuda' if torch.cuda.is_available() else 'cpu')
+        self.device = device or (
+            'cuda' if torch.cuda.is_available() else 'cpu')
         self.model = model.to(self.device)
         self.train_dataloader = train_dataloader
         self.val_dataloader = val_dataloader
@@ -875,17 +933,23 @@ class BertTrainer:
         # Optimizer AdamW, không áp dụng weight decay cho bias và LayerNorm
         no_decay = ['bias', 'LayerNorm.weight']
         optimizer_grouped_parameters = [
-            {'params': [p for n, p in model.named_parameters() if not any(nd in n for nd in no_decay)], 'weight_decay': weight_decay},
-            {'params': [p for n, p in model.named_parameters() if any(nd in n for nd in no_decay)], 'weight_decay': 0.0}
+            {'params': [p for n, p in model.named_parameters() if not any(
+                nd in n for nd in no_decay)], 'weight_decay': weight_decay},
+            {'params': [p for n, p in model.named_parameters() if any(
+                nd in n for nd in no_decay)], 'weight_decay': 0.0}
         ]
-        self.optimizer = torch.optim.AdamW(optimizer_grouped_parameters, lr=learning_rate)
+        self.optimizer = torch.optim.AdamW(
+            optimizer_grouped_parameters, lr=learning_rate)
 
         # Scheduler để điều chỉnh learning rate (warmup rồi giảm tuyến tính)
-        total_steps = len(train_dataloader) // gradient_accumulation_steps * 10 # Giả sử 10 epochs
-        self.scheduler = self._get_linear_schedule_with_warmup(self.optimizer, warmup_steps, total_steps)
+        # Giả sử 10 epochs
+        total_steps = len(train_dataloader) // gradient_accumulation_steps * 10
+        self.scheduler = self._get_linear_schedule_with_warmup(
+            self.optimizer, warmup_steps, total_steps)
 
         # Hỗ trợ huấn luyện với độ chính xác hỗn hợp (mixed precision)
-        self.scaler = torch.cuda.amp.GradScaler() if self.mixed_precision and self.device == 'cuda' else None
+        self.scaler = torch.cuda.amp.GradScaler(
+        ) if self.mixed_precision and self.device == 'cuda' else None
 
         # Lưu lịch sử huấn luyện
         self.train_losses, self.val_losses, self.learning_rates = [], [], []
@@ -913,10 +977,11 @@ class BertTrainer:
             with torch.cuda.amp.autocast(enabled=self.scaler is not None):
                 outputs = self.model(**batch)
                 loss = outputs['loss']
-            if loss is None: continue
+            if loss is None:
+                continue
 
             loss = loss / self.gradient_accumulation_steps
-            
+
             # Backward pass
             if self.scaler:
                 self.scaler.scale(loss).backward()
@@ -926,9 +991,11 @@ class BertTrainer:
             # Cập nhật trọng số sau mỗi `gradient_accumulation_steps`
             if (batch_idx + 1) % self.gradient_accumulation_steps == 0:
                 # Cắt gradient để tránh bùng nổ gradient
-                if self.scaler: self.scaler.unscale_(self.optimizer)
-                torch.nn.utils.clip_grad_norm_(self.model.parameters(), self.max_grad_norm)
-                
+                if self.scaler:
+                    self.scaler.unscale_(self.optimizer)
+                torch.nn.utils.clip_grad_norm_(
+                    self.model.parameters(), self.max_grad_norm)
+
                 # Cập nhật optimizer và scheduler
                 if self.scaler:
                     self.scaler.step(self.optimizer)
@@ -940,11 +1007,14 @@ class BertTrainer:
 
             # Ghi nhận loss
             total_loss += outputs['loss'].item()
-            if outputs['mlm_loss'] is not None: total_mlm_loss += outputs['mlm_loss'].item()
-            if outputs['nsp_loss'] is not None: total_nsp_loss += outputs['nsp_loss'].item()
-            progress_bar.set_postfix({'loss': f"{outputs['loss'].item():.4f}", 'lr': f"{self.scheduler.get_last_lr()[0]:.2e}"})
+            if outputs['mlm_loss'] is not None:
+                total_mlm_loss += outputs['mlm_loss'].item()
+            if outputs['nsp_loss'] is not None:
+                total_nsp_loss += outputs['nsp_loss'].item()
+            progress_bar.set_postfix(
+                {'loss': f"{outputs['loss'].item():.4f}", 'lr': f"{self.scheduler.get_last_lr()[0]:.2e}"})
             self.learning_rates.append(self.scheduler.get_last_lr()[0])
-        
+
         num_batches = len(self.train_dataloader)
         avg_loss = total_loss / num_batches
         self.train_losses.append(avg_loss)
@@ -956,17 +1026,21 @@ class BertTrainer:
 
     def validate(self) -> Dict[str, float]:
         """Đánh giá mô hình trên tập validation"""
-        if self.val_dataloader is None: return {}
+        if self.val_dataloader is None:
+            return {}
         self.model.eval()
         total_loss, total_mlm_loss, total_nsp_loss = 0, 0, 0
         with torch.no_grad():
             for batch in tqdm(self.val_dataloader, desc="Đang đánh giá"):
                 batch = {k: v.to(self.device) for k, v in batch.items()}
                 outputs = self.model(**batch)
-                if outputs['loss'] is not None: total_loss += outputs['loss'].item()
-                if outputs['mlm_loss'] is not None: total_mlm_loss += outputs['mlm_loss'].item()
-                if outputs['nsp_loss'] is not None: total_nsp_loss += outputs['nsp_loss'].item()
-        
+                if outputs['loss'] is not None:
+                    total_loss += outputs['loss'].item()
+                if outputs['mlm_loss'] is not None:
+                    total_mlm_loss += outputs['mlm_loss'].item()
+                if outputs['nsp_loss'] is not None:
+                    total_nsp_loss += outputs['nsp_loss'].item()
+
         num_batches = len(self.val_dataloader)
         avg_loss = total_loss / num_batches
         self.val_losses.append(avg_loss)
@@ -975,28 +1049,33 @@ class BertTrainer:
             'mlm_loss': total_mlm_loss / num_batches,
             'nsp_loss': total_nsp_loss / num_batches
         }
-    
+
     def train(self, num_epochs: int, save_dir: Optional[str] = None):
         """Vòng lặp huấn luyện chính"""
-        print(f"Bắt đầu huấn luyện {num_epochs} epochs trên thiết bị: {self.device}")
+        print(
+            f"Bắt đầu huấn luyện {num_epochs} epochs trên thiết bị: {self.device}")
         best_val_loss = float('inf')
         for epoch in range(num_epochs):
             print(f"\n{'='*50}\nEpoch {epoch + 1}/{num_epochs}\n{'='*50}")
             train_metrics = self.train_epoch()
-            print(f"\nKết quả huấn luyện: Loss={train_metrics['loss']:.4f}, MLM Loss={train_metrics['mlm_loss']:.4f}, NSP Loss={train_metrics['nsp_loss']:.4f}")
+            print(
+                f"\nKết quả huấn luyện: Loss={train_metrics['loss']:.4f}, MLM Loss={train_metrics['mlm_loss']:.4f}, NSP Loss={train_metrics['nsp_loss']:.4f}")
             val_metrics = self.validate()
             if val_metrics:
-                print(f"Kết quả đánh giá: Loss={val_metrics['loss']:.4f}, MLM Loss={val_metrics['mlm_loss']:.4f}, NSP Loss={val_metrics['nsp_loss']:.4f}")
+                print(
+                    f"Kết quả đánh giá: Loss={val_metrics['loss']:.4f}, MLM Loss={val_metrics['mlm_loss']:.4f}, NSP Loss={val_metrics['nsp_loss']:.4f}")
                 if save_dir and val_metrics['loss'] < best_val_loss:
                     best_val_loss = val_metrics['loss']
                     self.save_checkpoint(save_dir, epoch + 1, is_best=True)
-            if save_dir: self.save_checkpoint(save_dir, epoch + 1)
+            if save_dir:
+                self.save_checkpoint(save_dir, epoch + 1)
 
     def save_checkpoint(self, save_dir: str, epoch: int, is_best: bool = False):
         """Lưu checkpoint của mô hình"""
         import os
         os.makedirs(save_dir, exist_ok=True)
-        path = os.path.join(save_dir, 'best_model.pt' if is_best else f'checkpoint_epoch_{epoch}.pt')
+        path = os.path.join(
+            save_dir, 'best_model.pt' if is_best else f'checkpoint_epoch_{epoch}.pt')
         torch.save({
             'epoch': epoch, 'model_state_dict': self.model.state_dict(),
             'optimizer_state_dict': self.optimizer.state_dict(), 'scheduler_state_dict': self.scheduler.state_dict(),
@@ -1008,13 +1087,18 @@ class BertTrainer:
         """Vẽ biểu đồ lịch sử huấn luyện"""
         fig, axes = plt.subplots(1, 2, figsize=(12, 4))
         axes[0].plot(self.train_losses, label='Train Loss')
-        if self.val_losses: axes[0].plot(self.val_losses, label='Val Loss')
-        axes[0].set(xlabel='Epoch', ylabel='Loss', title='Training & Validation Loss')
-        axes[0].legend(); axes[0].grid(True)
+        if self.val_losses:
+            axes[0].plot(self.val_losses, label='Val Loss')
+        axes[0].set(xlabel='Epoch', ylabel='Loss',
+                    title='Training & Validation Loss')
+        axes[0].legend()
+        axes[0].grid(True)
         axes[1].plot(self.learning_rates)
-        axes[1].set(xlabel='Steps', ylabel='Learning Rate', title='Learning Rate Schedule')
+        axes[1].set(xlabel='Steps', ylabel='Learning Rate',
+                    title='Learning Rate Schedule')
         axes[1].grid(True)
-        plt.tight_layout(); plt.show()
+        plt.tight_layout()
+        plt.show()
 
 
 # ========================= Trực quan hóa (Visualization) =========================
@@ -1026,37 +1110,46 @@ def visualize_attention(
     head_idx: int = 0
 ):
     """Trực quan hóa trọng số attention cho một đoạn văn bản"""
-    inputs = tokenizer.encode_plus(text, return_tensors='pt', add_special_tokens=True, max_length=512, truncation=True)
+    inputs = tokenizer.encode_plus(
+        text, return_tensors='pt', add_special_tokens=True, max_length=512, truncation=True)
     model.eval()
     with torch.no_grad():
         outputs = model(**inputs, output_attentions=True)
-    
+
     attention = outputs['attentions'][layer_idx][0, head_idx]
     tokens = tokenizer.convert_ids_to_tokens(inputs['input_ids'][0])
-    
+
     plt.figure(figsize=(10, 8))
-    sns.heatmap(attention.numpy(), xticklabels=tokens, yticklabels=tokens, cmap='Blues')
+    sns.heatmap(attention.numpy(), xticklabels=tokens,
+                yticklabels=tokens, cmap='Blues')
     plt.title(f'Trọng số Attention - Tầng {layer_idx}, Head {head_idx}')
-    plt.xlabel('Keys'); plt.ylabel('Queries')
-    plt.xticks(rotation=45, ha='right'); plt.yticks(rotation=0)
-    plt.tight_layout(); plt.show()
+    plt.xlabel('Keys')
+    plt.ylabel('Queries')
+    plt.xticks(rotation=45, ha='right')
+    plt.yticks(rotation=0)
+    plt.tight_layout()
+    plt.show()
 
 # ========================= Kiểm thử (Testing) =========================
+
+
 def test_attention_mechanism():
     """Kiểm tra cơ chế attention"""
     print("Kiểm tra cơ chế Attention...")
     mha = MultiHeadAttention(d_model=64, n_heads=8)
-    x = torch.randn(2, 5, 64) # batch_size=2, seq_len=5, d_model=64
+    x = torch.randn(2, 5, 64)  # batch_size=2, seq_len=5, d_model=64
     output, _ = mha(x, x, x, return_attention=True)
     print(f"Kích thước đầu vào: {x.shape}")
     print(f"Kích thước đầu ra: {output.shape}")
     assert output.shape == x.shape, "Lỗi: Kích thước đầu ra không khớp!"
     print("✓ Kiểm tra cơ chế attention thành công!")
 
+
 def test_bert_model():
     """Kiểm tra toàn bộ mô hình BERT"""
-    print("\nKiểm tra mô hình BERT...")
-    config = BertConfig(vocab_size=1000, hidden_size=128, num_hidden_layers=2, num_attention_heads=4, intermediate_size=512)
+    print("Kiểm tra mô hình BERT...")
+    config = BertConfig(vocab_size=1000, hidden_size=128,
+                        num_hidden_layers=2, num_attention_heads=4, intermediate_size=512)
     model = BertForPreTraining(config)
 
     # Tạo dữ liệu giả
@@ -1069,18 +1162,26 @@ def test_bert_model():
     # labels[torch.rand_like(input_ids.float()) < 0.15] = input_ids[torch.rand_like(input_ids.float()) < 0.15]
     next_sentence_label = torch.randint(0, 2, (4,))
 
-    outputs = model(input_ids=input_ids, labels=labels, next_sentence_label=next_sentence_label)
+    outputs = model(input_ids=input_ids, labels=labels,
+                    next_sentence_label=next_sentence_label)
 
     print(f"Loss: {outputs['loss'].item():.4f}")
     print(f"Kích thước logits MLM: {outputs['prediction_logits'].shape}")
     print(f"Kích thước logits NSP: {outputs['seq_relationship_logits'].shape}")
     print("✓ Kiểm tra mô hình BERT thành công!")
 
+
 def quick_demo():
+    print("\nBắt đầu minh họa huấn luyện nhỏ...")
+    print("\n" + "="*50)
+
     # 1. Khởi tạo Tokenizer
+    print("\n1. Khởi tạo Tokenizer...")
     tokenizer = BertTokenizer.from_pretrained('bert-base-uncased')
+    print("\n")
 
     # 2. Tạo dữ liệu giả
+    print("\n2. Tạo dữ liệu giả...")
     sample_texts = [
         "BERT is a model for language understanding. It was developed by Google.",
         "The model is based on the Transformer architecture. It uses bidirectional self-attention.",
@@ -1088,12 +1189,20 @@ def quick_demo():
         "There are two pre-training tasks. Masked LM and Next Sentence Prediction.",
         "This implementation is a simplified version. It helps to understand the core concepts."
     ]
+    print(f"Tổng số câu mẫu: {len(sample_texts)}")
+    print("\n")
 
     # 3. Tạo Dataset và DataLoader
-    dataset = BertDataset(texts=sample_texts, tokenizer=tokenizer, max_length=64)
+    print("\n3. Tạo Dataset và DataLoader...")
+    dataset = BertDataset(texts=sample_texts,
+                          tokenizer=tokenizer, max_length=64)
     dataloader = DataLoader(dataset, batch_size=2, shuffle=True)
+    print("Tổng số mẫu trong Dataset:", len(dataset))
+    print("Số lượng batch trong DataLoader:", len(dataloader))
+    print("\n")
 
     # 4. Khởi tạo mô hình và cấu hình
+    print("\n4. Khởi tạo mô hình BERT...")
     config = BertConfig(
         vocab_size=tokenizer.vocab_size,
         hidden_size=256,
@@ -1103,8 +1212,13 @@ def quick_demo():
         max_position_embeddings=64
     )
     model = BertForPreTraining(config)
+    print(f"Cấu hình mô hình: {config}")
+    print(
+        f"Kích thước mô hình: {sum(p.numel() for p in model.parameters() if p.requires_grad)} parameters")
+    print("\n")
 
     # 5. Khởi tạo Trainer
+    print("\n5. Khởi tạo Trainer...")
     trainer = BertTrainer(
         model=model,
         train_dataloader=dataloader,
@@ -1112,43 +1226,54 @@ def quick_demo():
         warmup_steps=100,
         gradient_accumulation_steps=1
     )
+    print("Thiết bị huấn luyện:", trainer.device)
+    print("\n")
 
     # 6. Huấn luyện trong 1 epoch
+    print("\n6. Bắt đầu huấn luyện mô hình...")
     trainer.train(num_epochs=1)
+    print("Huấn luyện hoàn thành!")
+    print("\n")
 
     # 7. Vẽ biểu đồ
+    print("\n7. Vẽ biểu đồ lịch sử huấn luyện...")
     trainer.plot_training_history()
-    print("✓ Ví dụ huấn luyện nhỏ hoàn thành.")
+
+    print("\n✓ Ví dụ huấn luyện nhỏ hoàn thành.")
 
     # 8. Testing
+    print("\n8. Testing...")
     input_sentence = "BERT is a [MASK]."
-    
+
     # Tokenize input
     inputs = tokenizer(input_sentence, return_tensors='pt')
-    
+
     # Get model predictions
     model.eval()
     with torch.no_grad():
         outputs = model(**inputs)
-        
+
     # Get prediction scores for masked token
     prediction_scores = outputs['prediction_logits']
-    masked_token_index = (inputs['input_ids'] == tokenizer.mask_token_id).nonzero(as_tuple=True)[1]
-    
+    masked_token_index = (
+        inputs['input_ids'] == tokenizer.mask_token_id).nonzero(as_tuple=True)[1]
+
     # Get top 5 predictions
-    top_5_predictions = torch.topk(prediction_scores[0, masked_token_index], k=5)
-    
+    top_5_predictions = torch.topk(
+        prediction_scores[0, masked_token_index], k=5)
+
     # Print results
     print("\nKiểm tra dự đoán [MASK] :")
     print(f"Câu mẫu: {input_sentence}")
-    print("\nTop 5 dự đoán cho [MASK]:")
+    print("Top 5 dự đoán cho [MASK]:")
     for score, idx in zip(top_5_predictions.values[0], top_5_predictions.indices[0]):
         predicted_token = tokenizer.convert_ids_to_tokens(idx.item())
         print(f"- {predicted_token}: {score.item():.4f}")
-        
+
     # Visualize attention for the input sentence
     print("\nVisualize trọng số attention...")
     visualize_attention(model.bert, tokenizer, input_sentence)
+
 
 if __name__ == '__main__':
     # Chạy các kiểm thử
@@ -1160,7 +1285,6 @@ if __name__ == '__main__':
     print("="*50)
 
     # Minh họa về tạo dữ liệu và huấn luyện
-    print("\nBắt đầu ví dụ huấn luyện nhỏ...")
     try:
         quick_demo()
 
