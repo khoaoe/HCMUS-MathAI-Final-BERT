@@ -1062,9 +1062,9 @@ def test_bert_model():
     # Tạo dữ liệu giả
     input_ids = torch.randint(0, config.vocab_size, (4, 20))
     labels = torch.full_like(input_ids, -100)
-    # Tạo một mặt nạ duy nhất để tái sử dụng
+    # Tạo một mask duy nhất để tái sử dụng
     mask = torch.rand_like(input_ids.float()) < 0.15
-    # Sử dụng cùng một mặt nạ cho cả hai bên của phép gán
+    # Sử dụng cùng một mask cho cả hai bên của phép gán
     labels[mask] = input_ids[mask]
     # labels[torch.rand_like(input_ids.float()) < 0.15] = input_ids[torch.rand_like(input_ids.float()) < 0.15]
     next_sentence_label = torch.randint(0, 2, (4,))
@@ -1076,20 +1076,17 @@ def test_bert_model():
     print(f"Kích thước logits NSP: {outputs['seq_relationship_logits'].shape}")
     print("✓ Kiểm tra mô hình BERT thành công!")
 
-test_attention_mechanism()
-test_bert_model()
-
-print("\n" + "="*50)
-print("Tất cả các kiểm thử đã thành công! Việc cài đặt BERT đang hoạt động chính xác.")
-print("="*50)
 
 if __name__ == '__main__':
     # Chạy các kiểm thử
+    test_attention_mechanism()
+    test_bert_model()
 
-    # Ví dụ về tạo dữ liệu và huấn luyện
-    # Cảnh báo: Việc huấn luyện thực tế đòi hỏi một lượng lớn dữ liệu và tài nguyên tính toán.
-    # Đoạn mã dưới đây chỉ mang tính minh họa.
+    print("\n" + "="*50)
+    print("Tất cả các kiểm thử đã thành công! Việc cài đặt BERT đang hoạt động chính xác.")
+    print("="*50)
 
+    # Minh họa về tạo dữ liệu và huấn luyện
     print("\nBắt đầu ví dụ huấn luyện nhỏ...")
     try:
         # 1. Khởi tạo Tokenizer
