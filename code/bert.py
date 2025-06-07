@@ -1056,7 +1056,7 @@ class BertTrainer:
             f"Bắt đầu huấn luyện {num_epochs} epochs trên thiết bị: {self.device}")
         best_val_loss = float('inf')
         for epoch in range(num_epochs):
-            print(f"\n{'='*50}\nEpoch {epoch + 1}/{num_epochs}\n{'='*50}")
+            print(f"{'='*50}\nEpoch {epoch + 1}/{num_epochs}\n{'='*50}")
             train_metrics = self.train_epoch()
             print(
                 f"\nKết quả huấn luyện: Loss={train_metrics['loss']:.4f}, MLM Loss={train_metrics['mlm_loss']:.4f}, NSP Loss={train_metrics['nsp_loss']:.4f}")
@@ -1171,9 +1171,12 @@ def test_bert_model():
     print("✓ Kiểm tra mô hình BERT thành công!")
 
 
-def quick_demo():
-    print("\nBắt đầu minh họa huấn luyện nhỏ...")
-    print("\n" + "="*50)
+def quick_demo(device: str = 'cpu', input_sentence: str = "BERT is a [MASK]."):
+    print("="*50)
+    print("Bắt đầu minh họa huấn luyện nhỏ...")
+    print("="*50)
+
+    print(f"\nSử dụng thiết bị: {device}")
 
     # 1. Khởi tạo Tokenizer
     print("\n1. Khởi tạo Tokenizer...")
@@ -1187,7 +1190,12 @@ def quick_demo():
         "The model is based on the Transformer architecture. It uses bidirectional self-attention.",
         "Pre-training is done on a large corpus. Fine-tuning is for specific tasks.",
         "There are two pre-training tasks. Masked LM and Next Sentence Prediction.",
-        "This implementation is a simplified version. It helps to understand the core concepts."
+        "This implementation is a simplified version. It helps to understand the core concepts.",
+        "BERT can be used for various NLP tasks. Examples include sentiment analysis and question answering.",
+        "The model can handle long sequences. It uses position embeddings to maintain order.",
+        "BERT has achieved state-of-the-art results. It is widely used in the NLP community.",
+        "The model is trained on large datasets. It requires significant computational resources.",
+        "BERT's architecture allows for deep understanding. It captures context from both directions."
     ]
     print(f"Tổng số câu mẫu: {len(sample_texts)}")
     print("\n")
@@ -1224,27 +1232,26 @@ def quick_demo():
         train_dataloader=dataloader,
         learning_rate=5e-5,
         warmup_steps=100,
-        gradient_accumulation_steps=1
+        gradient_accumulation_steps=1,
+        device=device,
+        mixed_precision=torch.cuda.is_available()  # Sử dụng mixed precision nếu có GPU
     )
     print("Thiết bị huấn luyện:", trainer.device)
     print("\n")
 
     # 6. Huấn luyện trong 1 epoch
     print("\n6. Bắt đầu huấn luyện mô hình...")
-    trainer.train(num_epochs=1)
+    trainer.train(num_epochs=3)
     print("Huấn luyện hoàn thành!")
     print("\n")
 
     # 7. Vẽ biểu đồ
     print("\n7. Vẽ biểu đồ lịch sử huấn luyện...")
     trainer.plot_training_history()
-
-    print("\n✓ Ví dụ huấn luyện nhỏ hoàn thành.")
+    print("\n")
 
     # 8. Testing
     print("\n8. Testing...")
-    input_sentence = "BERT is a [MASK]."
-
     # Tokenize input
     inputs = tokenizer(input_sentence, return_tensors='pt')
 
@@ -1263,16 +1270,18 @@ def quick_demo():
         prediction_scores[0, masked_token_index], k=5)
 
     # Print results
-    print("\nKiểm tra dự đoán [MASK] :")
-    print(f"Câu mẫu: {input_sentence}")
-    print("Top 5 dự đoán cho [MASK]:")
+    print(f"Câu mẫu cần dự đoán: {input_sentence}")
+    print("\nTop 5 dự đoán cho [MASK]:")
     for score, idx in zip(top_5_predictions.values[0], top_5_predictions.indices[0]):
         predicted_token = tokenizer.convert_ids_to_tokens(idx.item())
-        print(f"- {predicted_token}: {score.item():.4f}")
+        print(f"- {predicted_token}: score={score.item():.4f}")
 
     # Visualize attention for the input sentence
     print("\nVisualize trọng số attention...")
     visualize_attention(model.bert, tokenizer, input_sentence)
+    print("\n")
+
+    print("\n✓ Ví dụ huấn luyện nhỏ hoàn thành.")
 
 
 if __name__ == '__main__':
