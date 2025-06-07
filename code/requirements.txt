@@ -3,3 +3,7 @@ transformers
 matplotlib
 seaborn
 tqdm
+numpy
+scikit-learn
+datasets
+fsspec
