@@ -569,9 +569,9 @@ Thực nghiệm được thiết kế theo nguyên tắc \textit{progressive com
 
 \begin{figure}[H]
 \centering
-\begin{tikzpicture}[node distance=2cm, auto,
+\begin{tikzpicture}[node distance=2cm,
     block/.style={rectangle, draw, fill=blue!20, text width=5em, text centered, rounded corners, minimum height=3em},
-    line/.style={draw, -latex'}]
+    line/.style={draw, -latex}]  
     
     \node [block] (impl) {Triển khai\\Components};
     \node [block, right of=impl, node distance=4cm] (verify) {Kiểm tra\\Chức năng};
@@ -640,8 +640,7 @@ Total Parameters & $\sim$15M & $\sim$110M \\
 Mỗi thành phần được kiểm tra riêng biệt để đảm bảo tính đúng đắn của implementation:
 
 \paragraph{1. Multi-Head Attention Verification}
-\newline
-\begin{lstlisting}[language=Python, caption=Kiểm tra Multi-Head Attention]
+\begin{minted}{python}
 def test_multihead_attention():
     config = BertConfig(hidden_size=256, num_attention_heads=4)
     attention = MultiHeadAttention(config)
@@ -656,7 +655,7 @@ def test_multihead_attention():
     # Attention weights should sum to 1
     _, weights = attention(hidden_states, output_attentions=True)
     assert torch.allclose(weights.sum(dim=-1), torch.ones_like(weights.sum(dim=-1)))
-\end{lstlisting}
+\end{minted}
 
 \paragraph{2. Pre-training Loss Computation}
 Kiểm tra tính toán loss cho cả MLM và NSP:
@@ -688,7 +687,7 @@ Bộ dữ liệu IMDB Movie Reviews được sử dụng với các đặc đi�
 \end{itemize}
 
 \paragraph{Model Configuration}
-\begin{lstlisting}[language=Python, caption=Cấu hình mô hình BERT cho sentiment analysis]
+\begin{minted}{python}
 from transformers import BertForSequenceClassification, BertTokenizer
 
 # Load pre-trained model
@@ -706,7 +705,7 @@ tokenizer_config = {
     "padding": "max_length",
     "return_tensors": "pt"
 }
-\end{lstlisting}
+\end{minted}
 
 \subsubsection{Quy trình Fine-tuning}
 
@@ -747,9 +746,14 @@ Quá trình training được monitor qua các metrics:
     legend pos=north east,
     legend style={font=\footnotesize}
 ]
-% Training loss curve
-\addplot[color=blue, thick, smooth] coordinates {
-    (0, 0.693) (10, 0.65) (20, 0.58) (30, 0.45) (40, 0.35) (50, 0.28)
+% Sử dụng \addplot thay vì \addplot[...] coordinates
+\addplot[color=blue, thick, smooth] table {
+    0 0.693
+    10 0.65
+    20 0.58
+    30 0.45
+    40 0.35
+    50 0.28
 };
 \addlegendentry{Training Loss}
 
@@ -793,24 +797,16 @@ Ma trận nhầm lẫn cho thấy chi tiết về các lỗi phân loại:
 \begin{figure}[H]
 \centering
 \begin{tikzpicture}
-    \matrix (m) [matrix of nodes,
-        nodes={minimum size=2cm, anchor=center},
+    \matrix (m) [
+        matrix of nodes,
+        nodes={minimum size=2cm, draw, anchor=center},
         row sep=-\pgflinewidth,
-        column sep=-\pgflinewidth,
-        nodes in empty cells,
-        row 1/.style={nodes={draw=none, minimum size=0.5cm}},
-        column 1/.style={nodes={draw=none, minimum size=0.5cm}},
+        column sep=-\pgflinewidth
     ] {
-        & Predicted Neg & Predicted Pos \\
-        Actual Neg & |[draw, fill=green!30]| 41 & |[draw, fill=red!20]| 9 \\
-        Actual Pos & |[draw, fill=red!20]| 10 & |[draw, fill=green!30]| 40 \\
+        |[draw=none]| & |[draw=none]| Predicted Neg & |[draw=none]| Predicted Pos \\
+        |[draw=none]| Actual Neg & |[fill=green!30]| 41 & |[fill=red!20]| 9 \\
+        |[draw=none]| Actual Pos & |[fill=red!20]| 10 & |[fill=green!30]| 40 \\
     };
-    
-    % Labels
-    \node[above=0.5cm] at (m-1-2) {\textbf{Negative}};
-    \node[above=0.5cm] at (m-1-3) {\textbf{Positive}};
-    \node[left=0.5cm] at (m-2-1) {\textbf{Negative}};
-    \node[left=0.5cm] at (m-3-1) {\textbf{Positive}};
 \end{tikzpicture}
 \caption{Ma trận nhầm lẫn cho BERT fine-tuned trên IMDB test set}
 \label{fig:confusion_matrix}
@@ -846,24 +842,37 @@ Phân tích attention weights cho thấy mô hình tập trung vào các từ kh
 
 \begin{figure}[H]
 \centering
-\begin{tikzpicture}[scale=0.8]
-    % Sample sentence
+% Tăng scale để hình lớn hơn một chút và dễ nhìn hơn
+\begin{tikzpicture}[scale=1]
+    % --- Các node cho câu ---
+    % Giữ nguyên phần định nghĩa node của bạn
     \node at (0, 2) {Input:};
-    \node[draw, rectangle] (cls) at (2, 2) {[CLS]};
-    \node[draw, rectangle] (this) at (4, 2) {This};
-    \node[draw, rectangle] (movie) at (6, 2) {movie};
-    \node[draw, rectangle] (is) at (8, 2) {is};
-    \node[draw, rectangle] (absolutely) at (10.5, 2) {absolutely};
-    \node[draw, rectangle] (terrible) at (13, 2) {terrible};
-    \node[draw, rectangle] (sep) at (15, 2) {[SEP]};
+    \node[draw, rectangle] (cls) at (1.5, 2) {[CLS]};
+    \node[draw, rectangle] (this) at (3, 2) {This};
+    \node[draw, rectangle] (movie) at (4.5, 2) {movie};
+    \node[draw, rectangle] (is) at (5.8, 2) {is};
+    \node[draw, rectangle] (absolutely) at (7.8, 2) {absolutely};
+    \node[draw, rectangle] (terrible) at (10, 2) {terrible};
+    \node[draw, rectangle] (sep) at (11.5, 2) {[SEP]};
     
-    % Attention weights (simplified)
-    \draw[->, thick, red!80] (cls) -- (terrible) node[midway, above] {0.35};
-    \draw[->, thick, orange!70] (cls) -- (absolutely) node[midway, above] {0.25};
-    \draw[->, thick, yellow!70] (cls) -- (movie) node[midway, below] {0.15};
+    % --- Vẽ các mũi tên Attention bằng đường cong ---
+    % Sử dụng 'to[bend left=<góc>]' để tạo đường cong, tránh bị chồng chéo.
+    % Thêm tùy chọn 'sloped' để các con số trọng số xoay theo độ cong của mũi tên.
     
-    % Legend
-    \node at (8, 0) {Attention weights từ [CLS] token};
+    % Mũi tên đến 'terrible' (trọng số cao nhất, độ cong lớn nhất)
+    \draw[->, very thick, red!60] (cls) to[bend left=60] 
+        node[midway, above, sloped] {0.35} (terrible);
+    
+    % Mũi tên đến 'absolutely'
+    \draw[->, thick, orange!80] (cls) to[bend left=45] 
+        node[midway, above, sloped] {0.25} (absolutely);
+    
+    % Mũi tên đến 'movie' (đặt trọng số bên dưới để không bị chồng lên số khác)
+    \draw[->, thick, blue!50] (cls) to[bend left=30] 
+        node[midway, above, sloped] {0.15} (movie);
+    
+    % --- Chú thích ---
+    \node at (6.5, 0.5) {Attention weights từ token [CLS]};
 \end{tikzpicture}
 \caption{Minh họa attention weights cho sentiment classification}
 \label{fig:attention_viz}
