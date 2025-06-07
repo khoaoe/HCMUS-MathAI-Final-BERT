@@ -1076,6 +1076,80 @@ def test_bert_model():
     print(f"Kích thước logits NSP: {outputs['seq_relationship_logits'].shape}")
     print("✓ Kiểm tra mô hình BERT thành công!")
 
+def quick_demo():
+    # 1. Khởi tạo Tokenizer
+    tokenizer = BertTokenizer.from_pretrained('bert-base-uncased')
+
+    # 2. Tạo dữ liệu giả
+    sample_texts = [
+        "BERT is a model for language understanding. It was developed by Google.",
+        "The model is based on the Transformer architecture. It uses bidirectional self-attention.",
+        "Pre-training is done on a large corpus. Fine-tuning is for specific tasks.",
+        "There are two pre-training tasks. Masked LM and Next Sentence Prediction.",
+        "This implementation is a simplified version. It helps to understand the core concepts."
+    ]
+
+    # 3. Tạo Dataset và DataLoader
+    dataset = BertDataset(texts=sample_texts, tokenizer=tokenizer, max_length=64)
+    dataloader = DataLoader(dataset, batch_size=2, shuffle=True)
+
+    # 4. Khởi tạo mô hình và cấu hình
+    config = BertConfig(
+        vocab_size=tokenizer.vocab_size,
+        hidden_size=256,
+        num_hidden_layers=4,
+        num_attention_heads=4,
+        intermediate_size=1024,
+        max_position_embeddings=64
+    )
+    model = BertForPreTraining(config)
+
+    # 5. Khởi tạo Trainer
+    trainer = BertTrainer(
+        model=model,
+        train_dataloader=dataloader,
+        learning_rate=5e-5,
+        warmup_steps=100,
+        gradient_accumulation_steps=1
+    )
+
+    # 6. Huấn luyện trong 1 epoch
+    trainer.train(num_epochs=1)
+
+    # 7. Vẽ biểu đồ
+    trainer.plot_training_history()
+    print("✓ Ví dụ huấn luyện nhỏ hoàn thành.")
+
+    # 8. Testing
+    input_sentence = "BERT is a [MASK]."
+    
+    # Tokenize input
+    inputs = tokenizer(input_sentence, return_tensors='pt')
+    
+    # Get model predictions
+    model.eval()
+    with torch.no_grad():
+        outputs = model(**inputs)
+        
+    # Get prediction scores for masked token
+    prediction_scores = outputs['prediction_logits']
+    masked_token_index = (inputs['input_ids'] == tokenizer.mask_token_id).nonzero(as_tuple=True)[1]
+    
+    # Get top 5 predictions
+    top_5_predictions = torch.topk(prediction_scores[0, masked_token_index], k=5)
+    
+    # Print results
+    print("\nKiểm tra dự đoán [MASK] :")
+    print(f"Câu mẫu: {input_sentence}")
+    print("\nTop 5 dự đoán cho [MASK]:")
+    for score, idx in zip(top_5_predictions.values[0], top_5_predictions.indices[0]):
+        predicted_token = tokenizer.convert_ids_to_tokens(idx.item())
+        print(f"- {predicted_token}: {score.item():.4f}")
+        
+    # Visualize attention for the input sentence
+    print("\nVisualize trọng số attention...")
+    visualize_attention(model.bert, tokenizer, input_sentence)
+
 
 if __name__ == '__main__':
     # Chạy các kiểm thử
