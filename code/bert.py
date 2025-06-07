@@ -973,8 +973,11 @@ class BertTrainer:
         for batch_idx, batch in enumerate(progress_bar):
             batch = {k: v.to(self.device) for k, v in batch.items()}
 
+            # Trích xuất kiểu thiết bị dưới dạng chuỗi ('cuda' hoặc 'cpu')
+            device_type_str = self.device.type if isinstance(self.device, torch.device) else self.device
+
             # Forward pass với mixed precision
-            with torch.amp.autocast(device_type=self.device, dtype=torch.float16, enabled=self.scaler is not None):
+            with torch.amp.autocast(device_type=device_type_str, dtype=torch.float16, enabled=self.scaler is not None):
                 outputs = self.model(**batch)
                 loss = outputs['loss']
             if loss is None:
