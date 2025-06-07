@@ -1107,19 +1107,24 @@ def visualize_attention(
     tokenizer: BertTokenizer,
     text: str,
     layer_idx: int = -1,
-    head_idx: int = 0
+    head_idx: int = 0,
+    device: str = 'cpu'
 ):
     """Trực quan hóa trọng số attention cho một đoạn văn bản"""
     inputs = tokenizer.encode_plus(
         text, return_tensors='pt', add_special_tokens=True, max_length=512, truncation=True)
+    
+    inputs = {k: v.to(device) for k, v in inputs.items()}
+    
     model.eval()
     with torch.no_grad():
         outputs = model(**inputs, output_attentions=True)
 
-    attention = outputs['attentions'][layer_idx][0, head_idx]
-    tokens = tokenizer.convert_ids_to_tokens(inputs['input_ids'][0])
+    attention = outputs['attentions'][layer_idx][0, head_idx].cpu() 
+    tokens = tokenizer.convert_ids_to_tokens(inputs['input_ids'][0].cpu()) 
 
     plt.figure(figsize=(10, 8))
+    # Chuyển attention về numpy để vẽ
     sns.heatmap(attention.numpy(), xticklabels=tokens,
                 yticklabels=tokens, cmap='Blues')
     plt.title(f'Trọng số Attention - Tầng {layer_idx}, Head {head_idx}')
@@ -1281,7 +1286,7 @@ def quick_demo(device: str = 'cpu', input_sentence: str = "BERT is a [MASK]."):
 
     # Visualize attention for the input sentence
     print("\nVisualize trọng số attention...")
-    visualize_attention(model.bert, tokenizer, input_sentence)
+    visualize_attention(model.bert, tokenizer, input_sentence, device=device)
     print("\n")
 
     print("\n✓ Ví dụ huấn luyện nhỏ hoàn thành.")
