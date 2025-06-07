@@ -90,7 +90,8 @@ class ScaledDotProductAttention(nn.Module):
                 mask = mask.unsqueeze(1)  # [batch, 1, seq_len, seq_len]
 
             # Điền các vị trí bị mask bằng giá trị rất nhỏ (-inf) để sau softmax sẽ thành 0
-            scores = scores.masked_fill(mask == 0, -1e9)
+            fill_value = torch.finfo(scores.dtype).min
+            scores = scores.masked_fill(mask == 0, fill_value)
 
         # Áp dụng softmax để có được xác suất attention
         attn_weights = F.softmax(scores, dim=-1)
@@ -948,8 +949,7 @@ class BertTrainer:
             self.optimizer, warmup_steps, total_steps)
 
         # Hỗ trợ huấn luyện với độ chính xác hỗn hợp (mixed precision)
-        self.scaler = torch.cuda.amp.GradScaler(
-        ) if self.mixed_precision and self.device == 'cuda' else None
+        self.scaler = torch.amp.GradScaler('cuda') if self.mixed_precision and self.device == 'cuda' else None
 
         # Lưu lịch sử huấn luyện
         self.train_losses, self.val_losses, self.learning_rates = [], [], []
@@ -974,7 +974,7 @@ class BertTrainer:
             batch = {k: v.to(self.device) for k, v in batch.items()}
 
             # Forward pass với mixed precision
-            with torch.cuda.amp.autocast(enabled=self.scaler is not None):
+            with torch.amp.autocast(device_type=self.device, dtype=torch.float16, enabled=self.scaler is not None):
                 outputs = self.model(**batch)
                 loss = outputs['loss']
             if loss is None:
@@ -1250,15 +1250,18 @@ def quick_demo(device: str = 'cpu', input_sentence: str = "BERT is a [MASK]."):
     trainer.plot_training_history()
     print("\n")
 
-    # 8. Testing
+    # 8. Testing...
     print("\n8. Testing...")
     # Tokenize input
     inputs = tokenizer(input_sentence, return_tensors='pt')
 
+    # Chuyển các tensor đầu vào sang cùng thiết bị với model (quan trọng!)
+    inputs = {k: v.to(device) for k, v in inputs.items()}
+
     # Get model predictions
     model.eval()
     with torch.no_grad():
-        outputs = model(**inputs)
+        outputs = model(**inputs, output_attentions=True)
 
     # Get prediction scores for masked token
     prediction_scores = outputs['prediction_logits']
