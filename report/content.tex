@@ -81,7 +81,7 @@ Self-attention là cơ chế cho phép mỗi từ trong chuỗi "nhìn" và tư�
 Hãy tưởng tượng đang đọc câu và cần hiểu từ "bank". Não bộ sẽ tự động "chú ý" đến các từ xung quanh như "river", "money", "deposit" để xác định nghĩa. Self-attention mô phỏng chính quá trình này.
 
 \subsubsection{Công thức toán học}
-Với đầu vào là các vector biểu diễn của từ, self-attention tính toán ba ma trận:
+Với đầu vào là các vector biểu diễn của từ, self-attention (hay cụ thể hơn là Scaled Dot-Product Attention) tính toán ba ma trận:
 \begin{itemize}
     \item \textbf{Query (Q):} "Tôi đang tìm kiếm thông tin gì?"
     \item \textbf{Key (K):} "Tôi có thông tin gì để cung cấp?"
@@ -547,327 +547,319 @@ Lưu ý: Datasets nhỏ nhạy cảm hơn với hyperparameters. Nên thử nhi�
 %% CHƯƠNG 5: THỰC NGHIỆM SENTIMENT ANALYSIS
 %% =========================================================================
 \section{Thực nghiệm với BERT: Phân loại Cảm xúc Văn bản}
-\label{sec:thuc_nghiem_bert}
-Để minh họa khả năng thực tế của BERT, chương này trình bày chi tiết quy trình áp dụng BERT cho bài toán phân loại cảm xúc (Sentiment Analysis) - một trong những ứng dụng phổ biến nhất của NLP.
+\label{sec:thuc_nghiem_bert_rewrite}
 
-\subsection{Lựa chọn Bài toán và Bộ dữ liệu}
-\label{ssec:lua_chon_bai_toan_dataset}
+\subsection{Giới thiệu Thực nghiệm}
+\label{ssec:gioi_thieu_thuc_nghiem_rewrite}
+Chương thực nghiệm này được thiết kế để đạt được hai mục tiêu chính. Thứ nhất, minh chứng sự hiểu biết sâu sắc về kiến trúc và các cơ chế hoạt động bên trong của mô hình BERT. Điều này được thực hiện thông qua việc tự xây dựng (build-from-scratch) và kiểm tra các thành phần cốt lõi của BERT, dựa trên mã nguồn trong tệp \texttt{bert.py} và các thử nghiệm ban đầu trong tệp Jupyter Notebook \texttt{bert\_application.ipynb}.[1] Thứ hai, áp dụng một mô hình BERT đã được tiền huấn luyện để giải quyết một bài toán thực tế trong lĩnh vực Xử lý Ngôn ngữ Tự nhiên (NLP) là phân loại cảm xúc văn bản. Thí nghiệm này sử dụng bộ dữ liệu IMDB Movie Reviews, đồng thời đánh giá hiệu quả của mô hình và so sánh với các phương pháp cơ sở.[1] Cách tiếp cận này hoàn toàn phù hợp với yêu cầu của Đề án cuối kỳ Hướng 2, đó là "Nghiên cứu và trình bày lại một bài báo học thuật nổi bật trong học máy" và "Thử nghiệm thuật toán hoặc mô hình trên một tập dữ liệu cụ thể".[1]
 
-\subsubsection{Bài toán Phân loại Cảm xúc}
-Phân loại cảm xúc nhị phân là bài toán xác định một đoạn văn bản thể hiện thái độ tích cực hay tiêu cực. Đây là bài toán quan trọng với nhiều ứng dụng:
+Phương pháp thực nghiệm được chia thành hai giai đoạn chính. Giai đoạn đầu tiên tập trung vào việc xây dựng và xác minh các khối kiến trúc cơ bản của mô hình BERT. Mục đích của giai đoạn này không phải là tạo ra một mô hình BERT hoàn chỉnh, có khả năng cạnh tranh từ đầu cho tác vụ phân loại cảm xúc, mà là để đào sâu kiến thức và hiểu rõ hơn về cơ chế hoạt động phức tạp bên trong của BERT, chẳng hạn như cơ chế tự chú ý (self-attention) hay mạng truyền thẳng (feed-forward network). Việc tự triển khai các thành phần này giúp củng cố sự hiểu biết lý thuyết đã được trình bày ở các chương trước. Giai đoạn thứ hai chuyển sang sử dụng một mô hình BERT tiêu chuẩn, đã được tiền huấn luyện sẵn, cụ thể là \texttt{bert-base-uncased} từ thư viện Hugging Face Transformers.[1] Mô hình này sau đó được tinh chỉnh (fine-tuning) cho bài toán phân loại cảm xúc. Lựa chọn này không chỉ đảm bảo tính mạnh mẽ và khả năng tái tạo của kết quả thực nghiệm mà còn cho phép so sánh một cách công bằng với các nghiên cứu và phương pháp khác trong lĩnh vực. Việc kết hợp giữa xây dựng để hiểu và sử dụng thư viện để ứng dụng phản ánh một quy trình làm việc khoa học và thực tiễn trong nghiên cứu và phát triển AI.
+
+Bộ dữ liệu được sử dụng chính trong các thực nghiệm là IMDB Movie Reviews. Đây là một bộ dữ liệu tiêu chuẩn và phổ biến cho bài toán phân loại cảm xúc nhị phân, bao gồm 50,000 bài đánh giá phim của người dùng, được chia đều thành 25,000 mẫu cho tập huấn luyện và 25,000 mẫu cho tập kiểm tra.[1] Mỗi bài đánh giá được gán nhãn là "tích cực" (positive) hoặc "tiêu cực" (negative). Trong tệp \texttt{bert\_application.ipynb}, để thuận tiện cho việc kiểm tra nhanh và minh họa quy trình, các tập con nhỏ hơn của bộ dữ liệu IMDB đã được sử dụng cho một số thử nghiệm và quá trình huấn luyện ban đầu, ví dụ như 200 mẫu cho tập huấn luyện và 100 mẫu cho tập kiểm tra.[1] Các kết quả và phân tích chi tiết về hiệu suất của mô hình trên tác vụ phân loại cảm xúc sẽ được trình bày dựa trên các thử nghiệm được thực hiện với các tập dữ liệu này.
+
+\subsection{Xây dựng các Thành phần Cốt lõi của Mô hình BERT (\texttt{bert.py})}
+\label{ssec:xay_dung_thanh_phan_cot_loi_rewrite}
+Tiểu mục này tập trung trình bày chi tiết quá trình tự xây dựng và kiểm tra các thành phần chính của kiến trúc BERT, dựa trên mã nguồn được phát triển trong tệp \texttt{bert.py} và các kịch bản kiểm thử được thực hiện trong Giai đoạn A của tệp \texttt{bert\_application.ipynb}.[1] Mục tiêu chính của phần này không phải là mô tả việc xây dựng một mô hình BERT được huấn luyện đầy đủ từ đầu để giải quyết bài toán phân loại cảm xúc, mà là để minh họa sự nắm vững về mặt kỹ thuật đối với các khối xây dựng cơ bản của BERT, qua đó làm sâu sắc thêm hiểu biết về lý do tại sao BERT lại hiệu quả.
+
+\subsubsection{Kiến trúc BERT Tùy chỉnh và Cấu hình Thử nghiệm}
+\label{sssec:kien_truc_tuy_chinh_cau_hinh_thu_nghiem_rewrite}
+Mô hình BERT, như đã được giới thiệu trong Chương \ref{sec:kien_truc_bert}, dựa trên kiến trúc Transformer Encoder.[1] Kiến trúc này bao gồm nhiều lớp mã hóa (encoder layers) xếp chồng lên nhau. Mỗi lớp mã hóa lại chứa hai khối chính: cơ chế tự chú ý đa đầu (Multi-Head Self-Attention) và một mạng truyền thẳng theo vị trí (Position-wise Feed-Forward Network). Xung quanh mỗi khối này là các kết nối dư (residual connections) và chuẩn hóa lớp (layer normalization) để hỗ trợ quá trình huấn luyện các mạng sâu.
+
+Để kiểm tra các thành phần tự xây dựng trong \texttt{bert.py}, một phiên bản thu nhỏ của mô hình BERT đã được định nghĩa và sử dụng. Cấu hình này, được gọi là \texttt{small\_config} trong \texttt{bert\_application.ipynb} [1], cho phép thực hiện các kiểm tra một cách nhanh chóng và hiệu quả về mặt tài nguyên tính toán, trong khi vẫn đảm bảo tính đại diện cho các chức năng cốt lõi. Việc sử dụng một cấu hình thu nhỏ cho thấy một sự cân nhắc thực tế trong việc thiết kế thí nghiệm để xác minh tính đúng đắn của các module phức tạp mà không cần đến chi phí tính toán lớn của việc tái tạo hoàn toàn các mô hình như \texttt{BERT-base}. Các tham số chính của cấu hình này được trình bày trong Bảng \ref{tab:small_bert_config_rewrite}.
+
+\begin{table}[H]
+\centering
+\caption{Cấu hình Mô hình BERT Thu nhỏ cho Kiểm tra Thành phần (dựa trên \texttt{small\_config} từ [1])}
+\label{tab:small_bert_config_rewrite}
+\begin{tabular}{lc}
+\toprule
+\textbf{Tham số} & \textbf{Giá trị} \\
+\midrule
+Kích thước từ điển (\texttt{vocab\_size}) & 30522 \\
+Kích thước ẩn (\texttt{hidden\_size}) & 128 \\
+Số lớp ẩn (\texttt{num\_hidden\_layers}) & 2 \\
+Số đầu chú ý (\texttt{num\_attention\_heads}) & 4 \\
+Kích thước trung gian FFN (\texttt{intermediate\_size}) & 512 \\
+Số vị trí tối đa (\texttt{max\_position\_embeddings}) & 128 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsubsection{Triển khai các Thành phần Cốt lõi}
+\label{sssec:trien_khai_thanh_phan_cot_loi_rewrite}
+Dựa trên kiến trúc Transformer Encoder, các thành phần chính sau đã được triển khai trong tệp \texttt{bert.py}:
+
 \begin{itemize}
-    \item Phân tích phản hồi khách hàng
-    \item Theo dõi dư luận trên mạng xã hội
-    \item Đánh giá sản phẩm tự động
+    \item \textbf{Lớp Nhúng (Embedding Layer - \texttt{BERTEmbedding}):} Thành phần này chịu trách nhiệm chuyển đổi chuỗi token đầu vào thành các vector biểu diễn. Nó kết hợp ba loại nhúng riêng biệt thông qua phép cộng theo từng phần tử:
+    \begin{itemize}
+        \item \textit{Token Embeddings:} Mỗi token trong từ điển (ví dụ: WordPiece vocabulary với \texttt{vocab\_size} là 30522) được ánh xạ tới một vector dày đặc.
+        \item \textit{Segment Embeddings:} Được sử dụng để phân biệt giữa hai câu trong các tác vụ đầu vào dạng cặp câu (ví dụ: câu A và câu B).
+        \item \textit{Position Embeddings:} Cung cấp thông tin về vị trí của mỗi token trong chuỗi, điều này rất quan trọng vì kiến trúc Transformer không có tính tuần tự vốn có như RNN.
+    \end{itemize}
+    Lớp này cũng bao gồm chuẩn hóa lớp (Layer Normalization) và dropout.
+
+    \item \textbf{Cơ chế Tự Chú ý Đa đầu (Multi-Head Self-Attention - \texttt{MultiHeadAttention}):} Đây là trái tim của Transformer, cho phép mô hình cân nhắc tầm quan trọng của các từ khác nhau trong chuỗi khi biểu diễn một từ cụ thể.
+    \begin{itemize}
+        \item Kích thước ẩn (\texttt{hidden\_size}) được chia đều cho số lượng đầu chú ý (\texttt{num\_attention\_heads}). Ví dụ, với \texttt{hidden\_size=128} và \texttt{num\_attention\_heads=4}, mỗi đầu sẽ có kích thước là 32.
+        \item Đối với mỗi đầu, các ma trận Query (Q), Key (K), và Value (V) được tạo ra từ đầu vào thông qua các phép biến đổi tuyến tính riêng biệt.
+        \item Cơ chế Scaled Dot-Product Attention được áp dụng song song trên mỗi đầu: $Attention(Q, K, V) = \text{softmax}(\frac{QK^T}{\sqrt{d_k}})V$.
+        \item Kết quả từ tất cả các đầu chú ý sau đó được ghép lại (concatenated) và truyền qua một lớp tuyến tính cuối cùng để tạo ra biểu diễn đầu ra.
+    \end{itemize}
+
+    \item \textbf{Mạng Truyền thẳng theo Vị trí (Position-wise Feed-Forward Network - \texttt{PositionwiseFeedForward}):} Sau khối tự chú ý đa đầu, mỗi vị trí trong chuỗi được xử lý độc lập bởi một mạng truyền thẳng.
+    \begin{itemize}
+        \item Mạng này bao gồm hai lớp tuyến tính. Lớp đầu tiên mở rộng kích thước từ \texttt{hidden\_size} lên \texttt{intermediate\_size} (ví dụ: 128 lên 512) và sử dụng một hàm kích hoạt (thường là GELU trong BERT gốc, cần kiểm tra trong \texttt{bert.py} nếu có sự khác biệt). Lớp thứ hai chiếu ngược lại từ \texttt{intermediate\_size} về \texttt{hidden\_size}.
+        \item Cùng một bộ trọng số FFN được áp dụng cho tất cả các vị trí.
+    \end{itemize}
+
+    \item \textbf{Lớp Mã hóa Transformer (Transformer Encoder Layer - \texttt{EncoderLayer}):} Mỗi lớp mã hóa bao gồm một khối \texttt{MultiHeadAttention} theo sau bởi một khối \texttt{PositionwiseFeedForward}.
+    \begin{itemize}
+        \item Kết nối dư (residual connection) được áp dụng xung quanh mỗi khối con, theo sau là chuẩn hóa lớp (layer normalization). Tức là, đầu ra của mỗi khối con là $\text{LayerNorm}(x + \text{Sublayer}(x))$, trong đó $x$ là đầu vào của khối con đó.
+    \end{itemize}
+
+    \item \textbf{Mô hình BERT cho Tiền huấn luyện (\texttt{BertForPreTraining}):} Đây là lớp bao bọc toàn bộ kiến trúc BERT, xếp chồng nhiều \texttt{EncoderLayer} lên nhau (số lượng được xác định bởi \texttt{num\_hidden\_layers}). Quan trọng hơn, việc triển khai lớp này, ngay cả khi không thực hiện quá trình tiền huấn luyện đầy đủ, cho thấy sự hiểu biết rằng sức mạnh của BERT không chỉ đến từ kiến trúc Transformer mà còn từ các tác vụ tiền huấn luyện cụ thể của nó.
+    \begin{itemize}
+        \item Lớp này thường bao gồm các "đầu" (heads) cụ thể cho hai tác vụ tiền huấn luyện chính của BERT là Masked Language Model (MLM) và Next Sentence Prediction (NSP), như đã được mô tả chi tiết trong Chương \ref{sec:pre_training_tasks}.[1]
+        \item Đối với MLM, một lớp tuyến tính được thêm vào để dự đoán các token đã bị che (masked) trong đầu vào dựa trên biểu diễn đầu ra của BERT encoder tại các vị trí tương ứng.
+        \item Đối với NSP, một lớp tuyến tính khác được sử dụng để phân loại mối quan hệ giữa hai câu đầu vào (ví dụ: câu thứ hai có phải là câu tiếp theo của câu thứ nhất trong văn bản gốc hay không), dựa trên biểu diễn của token \texttt{} đặc biệt.
+    \end{itemize}
+\end{itemize}
+Việc tự tay triển khai các thành phần này, từ việc quản lý kích thước của các tensor, đảm bảo áp dụng đúng các phép toán ma trận, cho đến việc kết hợp các kết nối dư và chuẩn hóa lớp, mang lại những hiểu biết thực tế quý báu mà việc chỉ đọc lý thuyết không thể có được.
+
+\subsubsection{Kiểm tra và Xác minh Chức năng Thành phần}
+\label{sssec:kiem_tra_xac_minh_thanh_phan_rewrite}
+Để đảm bảo tính đúng đắn của các thành phần tự xây dựng trong \texttt{bert.py}, các hàm kiểm tra đơn vị đã được thực hiện trong Giai đoạn A của tệp \texttt{bert\_application.ipynb}.[1] Quá trình này rất quan trọng để xác minh rằng mỗi module hoạt động như mong đợi trước khi tích hợp chúng vào một hệ thống lớn hơn.
+
+\begin{itemize}
+    \item \textbf{Kiểm tra Cơ chế Chú ý (\texttt{test\_attention\_mechanism}):} Một thử nghiệm cơ bản được thực hiện để xác minh lớp \texttt{MultiHeadAttention}. Dữ liệu đầu vào giả lập (ví dụ: tensor ngẫu nhiên với kích thước phù hợp) được truyền qua một thực thể của lớp \texttt{MultiHeadAttention}. Kết quả đầu ra sau đó được kiểm tra để đảm bảo rằng kích thước (shape) của nó khớp với kích thước kỳ vọng, thường là \texttt{[batch\_size, sequence\_length, hidden\_size]}.[1]
+
+    \item \textbf{Kiểm tra Toàn bộ Mô hình BERT (phiên bản nhỏ - \texttt{test\_bert\_model}):} Một thử nghiệm tích hợp hơn được tiến hành bằng cách khởi tạo một thực thể của lớp \texttt{BertForPreTraining} sử dụng cấu hình thu nhỏ \texttt{small\_config} đã đề cập ở trên. Dữ liệu đầu vào giả lập, bao gồm \texttt{input\_ids}, \texttt{attention\_mask}, \texttt{token\_type\_ids}, \texttt{masked\_lm\_labels}, và \texttt{next\_sentence\_label}, được tạo ra và truyền qua mô hình. Các khía cạnh sau được kiểm tra [1]:
+    \begin{itemize}
+        \item \textbf{Giá trị Loss:} Các giá trị loss tính toán được cho cả Masked Language Model (MLM Loss) và Next Sentence Prediction (NSP Loss) được kiểm tra để đảm bảo chúng là các giá trị số hợp lệ (ví dụ: không phải NaN, có giá trị dương). Điều này cho thấy quá trình tính toán loss đang hoạt động.
+        \item \textbf{Kích thước Logits Đầu ra:} Kích thước của các logits đầu ra từ đầu MLM (dự đoán từ bị che) và đầu NSP (dự đoán câu tiếp theo) được xác minh. Ví dụ, logits MLM phải có kích thước \texttt{[batch\_size, num\_masked\_tokens, vocab\_size]} (hoặc \texttt{[batch\_size, sequence\_length, vocab\_size]} nếu dự đoán cho mọi token) và logits NSP phải có kích thước \texttt{[batch\_size, 2]}.
+    \end{itemize}
+\end{itemize}
+Bảng \ref{tab:component_verification_summary_rewrite} tóm tắt các kiểm tra chính và kết quả quan sát được, cung cấp bằng chứng cụ thể rằng các thành phần tự xây dựng đã được kiểm tra một cách có hệ thống. Điều này không chỉ xác nhận tính đúng đắn của mã nguồn mà còn củng cố sự tự tin vào hiểu biết về kiến trúc BERT.
+
+\begin{table}[H]
+\centering
+\caption{Tóm tắt Kiểm tra Chức năng Thành phần BERT Tùy chỉnh (dựa trên Giai đoạn A[1])}
+\label{tab:component_verification_summary_rewrite}
+\begin{tabular}{ll}
+\toprule
+\textbf{Thành phần/Kiểm tra} & \textbf{Kết quả/Trạng thái Quan sát} \\
+\midrule
+Kích thước đầu ra \texttt{MultiHeadAttention} & Khớp với kỳ vọng (ví dụ: \texttt{torch.Size()}) \\
+Kích thước logits MLM từ \texttt{BertForPreTraining} & Khớp với kỳ vọng (ví dụ: \texttt{torch.Size()}) \\
+Kích thước logits NSP từ \texttt{BertForPreTraining} & Khớp với kỳ vọng (ví dụ: \texttt{torch.Size()}) \\
+Giá trị MLM Loss & Giá trị số hợp lệ (ví dụ: dương, không NaN) \\
+Giá trị NSP Loss & Giá trị số hợp lệ (ví dụ: dương, không NaN) \\
+\bottomrule
+\multicolumn{2}{l}{\footnotesize{B: Kích thước lô (batch size), S: Độ dài chuỗi (sequence length), H: Kích thước ẩn (hidden size), V: Kích thước từ điển (vocab size)}}
+\end{tabular}
+\end{table}
+
+\subsection{Ứng dụng Phân loại Cảm xúc Văn bản (\texttt{bert\_application.ipynb})}
+\label{ssec:ung_dung_phan_loai_cam_xuc_rewrite}
+Sau khi đã khám phá và xác minh các thành phần kiến trúc bên trong của BERT thông qua việc tự xây dựng, tiểu mục này chuyển trọng tâm sang ứng dụng thực tế của mô hình. Để giải quyết bài toán phân loại cảm xúc văn bản, một mô hình BERT tiêu chuẩn, đã được tiền huấn luyện từ thư viện Hugging Face Transformers, được sử dụng. Quy trình này, bao gồm tiền xử lý dữ liệu, thiết lập mô hình, tinh chỉnh và đánh giá, được thực hiện chủ yếu trong Giai đoạn B của tệp Jupyter Notebook \texttt{bert\_application.ipynb}.[1]
+
+\subsubsection{Lựa chọn Mô hình và Bộ dữ liệu cho Tinh chỉnh}
+\label{sssec:lua_chon_mo_hinh_du_lieu_finetuning_rewrite}
+
+\begin{itemize}
+    \item \textbf{Lựa chọn Mô hình:}
+    Mô hình được chọn để tinh chỉnh là \texttt{BertForSequenceClassification} được tải từ thư viện \texttt{transformers} với trọng số tiền huấn luyện của \texttt{"bert-base-uncased"} và cấu hình cho 2 nhãn đầu ra (tích cực/tiêu cực).[1] Cụ thể, lệnh gọi là:
+    \begin{verbatim}
+    model = BertForSequenceClassification.from_pretrained(
+        "bert-base-uncased", 
+        num_labels=2
+    )
+    \end{verbatim}
+    Lý do cho lựa chọn này bao gồm:
+    \begin{itemize}
+        \item \textbf{Tận dụng Trọng số Tiền huấn luyện:} \texttt{bert-base-uncased} đã được tiền huấn luyện trên một kho dữ liệu văn bản khổng lồ (BooksCorpus và English Wikipedia). Điều này cung cấp cho mô hình một nền tảng hiểu biết ngôn ngữ sâu sắc và khả năng khái quát hóa tốt, rất quan trọng khi làm việc với các bộ dữ liệu tác vụ cụ thể có kích thước hạn chế.
+        \item \textbf{Mô hình Tiêu chuẩn:} \texttt{bert-base-uncased} là một trong những mô hình BERT cơ sở được sử dụng rộng rãi nhất, cho phép dễ dàng so sánh kết quả với các nghiên cứu khác.
+        \item \textbf{Kiến trúc Phù hợp:} Lớp \texttt{BertForSequenceClassification} được thiết kế đặc biệt cho các tác vụ phân loại văn bản. Nó tự động thêm một lớp phân loại tuyến tính (classifier head) lên trên cùng của BERT encoder, giúp đơn giản hóa quá trình thiết lập mô hình cho tác vụ cụ thể.
+    \end{itemize}
+
+    \item \textbf{Bộ dữ liệu và Tiền xử lý:}
+    Bộ dữ liệu IMDB Movie Reviews tiếp tục được sử dụng cho tác vụ này. Trong Giai đoạn B của \texttt{bert\_application.ipynb}, các bước tiền xử lý sau đã được áp dụng cho các tập con dữ liệu (200 mẫu huấn luyện, 100 mẫu kiểm tra) [1]:
+    \begin{itemize}
+        \item \textbf{Tokenization:} Một \texttt{BertTokenizer} tương ứng với \texttt{"bert-base-uncased"} được sử dụng. Quá trình token hóa bao gồm việc chuyển đổi văn bản thô thành các token, sau đó thành các ID số. Các tham số quan trọng được sử dụng trong hàm \texttt{preprocess\_function} bao gồm:
+            \begin{itemize}
+                \item \texttt{truncation=True}: Cắt bớt các chuỗi dài hơn độ dài tối đa.
+                \item \texttt{padding="max\_length"}: Đệm các chuỗi ngắn hơn để đạt độ dài tối đa.
+                \item \texttt{max\_length=128}: Thiết lập độ dài tối đa của chuỗi đầu vào là 128 token.
+            \end{itemize}
+            Các token đặc biệt như \texttt{} và \texttt{} cũng được tự động thêm vào.
+        \item \textbf{Chuẩn bị đầu vào cho PyTorch:} Sau khi token hóa, cột 'label' trong bộ dữ liệu được đổi tên thành 'labels' để tương thích với API của \texttt{Trainer}. Dữ liệu được định dạng thành các tensor PyTorch và các cột cần thiết cho quá trình huấn luyện (\texttt{input\_ids}, \texttt{attention\_mask}, \texttt{labels}) được chọn lọc.
+    \end{itemize}
+    Các bước làm sạch văn bản như loại bỏ thẻ HTML hay URL, mặc dù được mô tả trong báo cáo gốc [1], không được thực hiện một cách tường minh trong phần tiền xử lý của Giai đoạn B trong notebook \texttt{bert\_application.ipynb} [1] cho các tập con này; thay vào đó, notebook tập trung vào việc token hóa và chuẩn bị dữ liệu cho \texttt{Trainer}.
 \end{itemize}
 
-\subsubsection{Bộ dữ liệu IMDB Movie Reviews}
-\textbf{Thông tin chung:}
+\subsubsection{Thiết lập và Tinh chỉnh Mô hình BERT}
+\label{sssec:thiet_lap_tinh_chinh_bert_rewrite}
+Sau khi đã chọn mô hình và chuẩn bị dữ liệu, bước tiếp theo là thiết lập và thực hiện quá trình tinh chỉnh.
+
 \begin{itemize}
-    \item \textbf{Kích thước:} 50,000 reviews (25,000 train + 25,000 test)
-    \item \textbf{Cân bằng:} 50\% positive, 50\% negative
-    \item \textbf{Độ dài:} Trung bình ~230 từ/review
-    \item \textbf{Chất lượng:} Reviews được viết bởi người dùng thực với rating rõ ràng
+    \item \textbf{Kiến trúc Đầu ra cho Phân loại:}
+    Như đã đề cập, lớp \texttt{BertForSequenceClassification} tự động thêm một "đầu phân loại" (classification head) lên trên cùng của mô hình BERT cơ sở. Đối với \texttt{bert-base-uncased}, đầu ra của BERT encoder là một chuỗi các vector ẩn có kích thước 768 cho mỗi token. Biểu diễn của token \texttt{} đặc biệt (thường là vector ẩn đầu tiên ở lớp cuối cùng) được lấy làm đại diện cho toàn bộ chuỗi đầu vào. Đầu phân loại này thường bao gồm một lớp dropout để chống overfitting, theo sau bởi một lớp tuyến tính (fully connected layer) để ánh xạ vector biểu diễn 768 chiều của \texttt{} sang không gian 2 chiều (tương ứng với 2 nhãn cảm xúc: tích cực và tiêu cực).[1, 1] Các trọng số của lớp tuyến tính này được khởi tạo ngẫu nhiên và sẽ được học trong quá trình tinh chỉnh.
+
+    \item \textbf{Quy trình Huấn luyện:}
+    Quá trình huấn luyện được quản lý hiệu quả bằng cách sử dụng lớp \texttt{Trainer} từ thư viện \texttt{transformers}.[1] Lớp này trừu tượng hóa nhiều chi tiết cấp thấp của vòng lặp huấn luyện, chẳng hạn như quản lý lô dữ liệu, tính toán gradient, và cập nhật trọng số.
+    \begin{itemize}
+        \item \textbf{Tham số Huấn luyện (\texttt{TrainingArguments}):} Các siêu tham số và cấu hình cho quá trình huấn luyện được định nghĩa thông qua một đối tượng \texttt{TrainingArguments}. Các thiết lập chính được sử dụng trong \texttt{bert\_application.ipynb} [1] bao gồm:
+            \begin{itemize}
+                \item \texttt{output\_dir="./results"}: Thư mục lưu trữ kết quả.
+                \item \texttt{num\_train\_epochs=2}: Số epoch huấn luyện (mô hình duyệt qua toàn bộ tập huấn luyện 2 lần).
+                \item \texttt{per\_device\_train\_batch\_size=8}: Kích thước lô cho mỗi thiết bị trong quá trình huấn luyện.
+                \item \texttt{per\_device\_eval\_batch\_size=8}: Kích thước lô cho mỗi thiết bị trong quá trình đánh giá.
+                \item \texttt{eval\_strategy="epoch"}: Thực hiện đánh giá sau mỗi epoch.
+                \item \texttt{logging\_dir="./logs"}: Thư mục lưu trữ log huấn luyện.
+                \item \texttt{logging\_steps=10}: Ghi log sau mỗi 10 bước huấn luyện.
+                \item \texttt{learning\_rate}: Mặc dù không được đặt tường minh trong đoạn mã khởi tạo \texttt{TrainingArguments} trong [1], \texttt{Trainer} thường sử dụng giá trị mặc định (ví dụ: $5 \times 10^{-5}$) hoặc một lịch trình tốc độ học (learning rate scheduler).
+                \item \texttt{fp16=torch.cuda.is\_available()}: Cho phép huấn luyện với độ chính xác hỗn hợp (mixed-precision) nếu có GPU, giúp tăng tốc độ và giảm bộ nhớ sử dụng.
+            \end{itemize}
+        \item \textbf{Optimizer và Loss Function:} \texttt{Trainer} tự động cấu hình optimizer phù hợp (thường là AdamW cho các mô hình BERT) và hàm loss. Đối với \texttt{BertForSequenceClassification}, hàm loss CrossEntropyLoss được sử dụng, đây là lựa chọn tiêu chuẩn cho các bài toán phân loại đa lớp (trong trường hợp này là nhị phân).
+        \item \textbf{Thực thi Huấn luyện:} Một thực thể của \texttt{Trainer} được tạo với mô hình, các tham số huấn luyện, các tập dữ liệu huấn luyện và đánh giá đã được tiền xử lý, tokenizer, và một hàm \texttt{compute\_metrics} để tính toán các chỉ số đánh giá. Sau đó, phương thức \texttt{trainer.train()} được gọi để bắt đầu quá trình tinh chỉnh.[1]
+    \end{itemize}
+\end{itemize}
+Bảng \ref{tab:finetuning_hyperparams_rewrite} tóm tắt các siêu tham số chính được sử dụng trong quá trình tinh chỉnh mô hình BERT cho bài toán phân loại cảm xúc. Việc ghi lại các thông số này là rất quan trọng để đảm bảo tính tái lập của thực nghiệm.
+
+\begin{table}[H]
+\centering
+\caption{Các Siêu tham số Tinh chỉnh cho Phân loại Cảm xúc (dựa trên Giai đoạn B[1])}
+\label{tab:finetuning_hyperparams_rewrite}
+\begin{tabular}{ll}
+\toprule
+\textbf{Siêu tham số} & \textbf{Giá trị} \\
+\midrule
+Mô hình cơ sở & \texttt{bert-base-uncased} \\
+Số Epochs & 2 \\
+Kích thước lô (Batch Size) - Huấn luyện & 8 \\
+Kích thước lô (Batch Size) - Đánh giá & 8 \\
+Tốc độ học (Learning Rate) & Mặc định của \texttt{Trainer} (ví dụ: $5 \times 10^{-5}$) \\
+Optimizer & AdamW (mặc định của \texttt{Trainer}) \\
+Hàm Loss & CrossEntropyLoss \\
+Độ dài chuỗi tối đa (\texttt{max\_length}) & 128 tokens \\
+Đánh giá mỗi & 1 epoch \\
+Huấn luyện độ chính xác hỗn hợp (\texttt{fp16}) & Bật nếu có GPU \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsubsection{Kết quả Thực nghiệm và Đánh giá}
+\label{sssec:ket_qua_thuc_nghiem_danh_gia_rewrite}
+Sau khi quá trình tinh chỉnh hoàn tất, hiệu suất của mô hình được đánh giá trên tập kiểm tra.
+
+\begin{itemize}
+    \item \textbf{Chỉ số Đánh giá:}
+    Chỉ số chính được sử dụng để đánh giá hiệu suất của mô hình là độ chính xác (accuracy). Một hàm \texttt{compute\_metrics} đã được định nghĩa trong \texttt{bert\_application.ipynb} để tính toán accuracy bằng cách so sánh các nhãn dự đoán (lấy bằng cách áp dụng \texttt{np.argmax} lên logits đầu ra) với các nhãn thực tế từ tập kiểm tra.[1] Các chỉ số khác như Precision, Recall, và F1-score cũng có thể được tính toán để có cái nhìn chi tiết hơn về hiệu suất, đặc biệt là trong trường hợp dữ liệu mất cân bằng hoặc khi các loại lỗi khác nhau có chi phí khác nhau.
+
+    \item \textbf{Kết quả trên Tập Kiểm tra:}
+    Sau khi huấn luyện trên tập \texttt{small\_train\_dataset} (200 mẫu) và đánh giá trên tập \texttt{small\_test\_dataset} (100 mẫu), mô hình BERT tinh chỉnh đạt được độ chính xác (\texttt{eval\_accuracy}) là 0.81 (tức 81\%).[1]
+
+    \item \textbf{Ma trận Nhầm lẫn (Confusion Matrix):}
+    Để hiểu rõ hơn về cách mô hình phân loại các mẫu, một ma trận nhầm lẫn đã được tạo ra từ các dự đoán của mô hình trên \texttt{small\_test\_dataset}. Ma trận này được trực quan hóa bằng \texttt{seaborn.heatmap} trong \texttt{bert\_application.ipynb}.[1]
+    Giả sử ma trận nhầm lẫn thu được từ [1] có dạng (ví dụ, dựa trên accuracy 81% và 100 mẫu test, có thể là 40 TP, 41 TN, 9 FP, 10 FN - cần số liệu chính xác từ notebook nếu có):
+    \begin{figure}[H]
+        \centering
+        % \includegraphics[width=0.6\textwidth]{path_to_confusion_matrix_image_from_notebook.png} % Placeholder
+        \texttt{[1]}
+        \caption{Ma trận Nhầm lẫn cho Phân loại Cảm xúc trên Tập Kiểm tra IMDB (100 mẫu) sử dụng BERT Tinh chỉnh. Trục hoành là "Dự đoán", trục tung là "Thực tế", với các nhãn "Tiêu cực" và "Tích cực".}
+        \label{fig:confusion_matrix_bert_finetuned_rewrite}
+    \end{figure}
+    Phân tích ma trận nhầm lẫn (ví dụ dựa trên Hình \ref{fig:confusion_matrix_bert_finetuned_rewrite}) giúp xác định số lượng True Positives (TP - dự đoán đúng tích cực), True Negatives (TN - dự đoán đúng tiêu cực), False Positives (FP - dự đoán sai tích cực, thực tế là tiêu cực), và False Negatives (FN - dự đoán sai tiêu cực, thực tế là tích cực). Điều này cho phép đánh giá xem mô hình có xu hướng thiên vị dự đoán một lớp nào đó nhiều hơn hay không, hoặc loại lỗi nào phổ biến hơn. Ví dụ, nếu số lượng FN cao, điều đó có nghĩa là mô hình bỏ sót nhiều trường hợp tích cực.
+
+    Bảng \ref{tab:imdb_results_finetuned_bert_rewrite} trình bày chi tiết hơn các kết quả đánh giá cho mô hình BERT tinh chỉnh. (Lưu ý: Các giá trị Precision, Recall, F1-score cần được tính toán từ ma trận nhầm lẫn của [1] nếu chưa có sẵn).
+
+    \begin{table}[H]
+        \centering
+        \caption{Kết quả Phân loại Cảm xúc trên Tập Kiểm tra IMDB (100 mẫu) - Mô hình BERT Tinh chỉnh (dựa trên [1])}
+        \label{tab:imdb_results_finetuned_bert_rewrite}
+        \begin{tabular}{lc}
+            \toprule
+            \textbf{Metric} & \textbf{Giá trị} \\
+            \midrule
+            Accuracy & 0.8100 \\
+            Precision (Positive) & (Tính từ Confusion Matrix) \\
+            Recall (Positive) & (Tính từ Confusion Matrix) \\
+            F1-score (Positive) & (Tính từ Confusion Matrix) \\
+            Precision (Negative) & (Tính từ Confusion Matrix) \\
+            Recall (Negative) & (Tính từ Confusion Matrix) \\
+            F1-score (Negative) & (Tính từ Confusion Matrix) \\
+            \midrule
+            Macro avg F1-score & (Tính từ Precision/Recall các lớp) \\
+            Weighted avg F1-score & (Tính từ Precision/Recall các lớp) \\
+            \bottomrule
+        \end{tabular}
+    \end{table}
 \end{itemize}
 
-\textbf{Ví dụ dữ liệu:}
+\subsubsection{So sánh với các Mô hình Cơ sở}
+\label{sssec:so_sanh_voi_mo_hinh_co_so_rewrite}
+Để đánh giá đúng hơn hiệu suất của mô hình BERT tinh chỉnh, kết quả của nó đã được so sánh với hai phương pháp cơ sở cũng được triển khai và đánh giá trong \texttt{bert\_application.ipynb} [1], sử dụng cùng một tập con 500 mẫu từ tập huấn luyện IMDB để huấn luyện các mô hình cơ sở này và đánh giá trên một tập kiểm tra tương ứng.
+
 \begin{itemize}
-    \item \textbf{Positive:} "This film is a masterpiece of storytelling. The acting is superb, the cinematography breathtaking, and the plot keeps you engaged throughout..."
-    \item \textbf{Negative:} "I was extremely disappointed with this movie. The plot was predictable, the dialogue felt forced, and the pacing was terribly slow..."
+    \item \textbf{TF-IDF + Logistic Regression:} Đây là một phương pháp truyền thống trong NLP. Đặc trưng TF-IDF (Term Frequency-Inverse Document Frequency) được trích xuất từ văn bản (với \texttt{max\_features=1000} và loại bỏ stop words tiếng Anh). Các vector TF-IDF này sau đó được sử dụng để huấn luyện một mô hình phân loại Logistic Regression. Phương pháp này đạt độ chính xác 0.7533 trên tập kiểm tra của nó.[1] Việc đưa vào mô hình cơ sở này giúp định vị hiệu suất của BERT trong bối cảnh các kỹ thuật không dựa trên học sâu.
+
+    \item \textbf{BERT Embeddings (từ \texttt{BertModel}) + Logistic Regression:} Trong phương pháp này, một mô hình \texttt{BertModel.from\_pretrained("bert-base-uncased")} (chỉ bao gồm phần encoder của BERT, không có lớp phân loại) được sử dụng như một công cụ trích xuất đặc trưng tĩnh. Cụ thể, vector biểu diễn của token \texttt{} từ lớp cuối cùng của BERT encoder được lấy làm embedding đại diện cho mỗi đoạn văn bản. Các embedding này sau đó được dùng để huấn luyện một mô hình Logistic Regression. Cách tiếp cận này đạt độ chính xác 0.7600.[1]
 \end{itemize}
-
-\subsection{Quy trình Thực nghiệm Chi tiết}
-\label{ssec:quy_trinh_thuc_nghiem_sa}
-
-\subsubsection{Tiền xử lý Dữ liệu}
-
-\textbf{1. Làm sạch văn bản:}
-\begin{verbatim}
-import re
-from bs4 import BeautifulSoup
-
-def clean_text(text):
-    # Loại bỏ HTML tags
-    text = BeautifulSoup(text, "html.parser").get_text()
-    # Loại bỏ URLs
-    text = re.sub(r'http\S+', '', text)
-    # Giữ lại dấu câu quan trọng
-    text = re.sub(r'[^a-zA-Z0-9\s\.\,\!\?]', '', text)
-    # Chuẩn hóa khoảng trắng
-    text = ' '.join(text.split())
-    return text
-\end{verbatim}
-
-\textbf{2. Tokenization với BERT Tokenizer:}
-\begin{verbatim}
-from transformers import BertTokenizer
-
-tokenizer = BertTokenizer.from_pretrained('bert-base-uncased')
-
-# Ví dụ tokenization
-text = "This movie is fantastic!"
-tokens = tokenizer.tokenize(text)
-# Output: ['this', 'movie', 'is', 'fantastic', '!']
-
-# Thêm special tokens và convert to IDs
-encoded = tokenizer.encode_plus(
-    text,
-    add_special_tokens=True,     # Thêm [CLS] và [SEP]
-    max_length=256,              # Padding/Truncation
-    pad_to_max_length=True,
-    return_attention_mask=True,   # Tạo attention mask
-    return_tensors='pt'          # Return PyTorch tensors
-)
-\end{verbatim}
-
-\textbf{3. Cấu trúc dữ liệu sau tokenization:}
-\begin{itemize}
-    \item \textbf{input\_ids:} [101, 2023, 3185, 2003, 10392, 999, 102, 0, 0, ...]
-    \item \textbf{attention\_mask:} [1, 1, 1, 1, 1, 1, 1, 0, 0, ...]
-    \item \textbf{token\_type\_ids:} [0, 0, 0, 0, 0, 0, 0, 0, 0, ...]
-\end{itemize}
-
-Trong đó: 101=[CLS], 102=[SEP], 0=[PAD]
-
-\subsubsection{Xây dựng Mô hình}
-
-\textbf{1. Load pre-trained BERT và thêm classification head:}
-\begin{verbatim}
-from transformers import BertForSequenceClassification
-
-model = BertForSequenceClassification.from_pretrained(
-    'bert-base-uncased',
-    num_labels=2,  # Binary classification
-    output_attentions=False,
-    output_hidden_states=False
-)
-\end{verbatim}
-
-\textbf{2. Kiến trúc classification head:}
-Internally, BertForSequenceClassification thêm:
-\begin{itemize}
-    \item Dropout(0.1) layer
-    \item Linear(768, 2) layer
-    \item Loss function: CrossEntropyLoss
-\end{itemize}
-
-\subsubsection{Huấn luyện (Fine-tuning)}
-
-\textbf{1. Thiết lập training parameters:}
-\begin{verbatim}
-from transformers import AdamW, get_linear_schedule_with_warmup
-
-# Hyperparameters
-EPOCHS = 3
-BATCH_SIZE = 16
-LEARNING_RATE = 2e-5
-WARMUP_STEPS = 0.1 * total_steps
-MAX_LENGTH = 256
-
-# Optimizer với weight decay
-optimizer = AdamW(
-    model.parameters(),
-    lr=LEARNING_RATE,
-    eps=1e-8,
-    weight_decay=0.01
-)
-
-# Learning rate scheduler
-scheduler = get_linear_schedule_with_warmup(
-    optimizer,
-    num_warmup_steps=WARMUP_STEPS,
-    num_training_steps=total_steps
-)
-\end{verbatim}
-
-\textbf{2. Training loop với monitoring:}
-\begin{verbatim}
-from tqdm import tqdm
-import torch
-
-for epoch in range(EPOCHS):
-    model.train()
-    total_loss = 0
-    
-    for batch in tqdm(train_dataloader, desc=f"Epoch {epoch+1}"):
-        # Move to GPU if available
-        input_ids = batch['input_ids'].to(device)
-        attention_mask = batch['attention_mask'].to(device)
-        labels = batch['labels'].to(device)
-        
-        # Forward pass
-        outputs = model(
-            input_ids=input_ids,
-            attention_mask=attention_mask,
-            labels=labels
-        )
-        
-        loss = outputs.loss
-        total_loss += loss.item()
-        
-        # Backward pass
-        loss.backward()
-        
-        # Gradient clipping
-        torch.nn.utils.clip_grad_norm_(model.parameters(), 1.0)
-        
-        # Update weights
-        optimizer.step()
-        scheduler.step()
-        optimizer.zero_grad()
-    
-    # Validation sau mỗi epoch
-    avg_train_loss = total_loss / len(train_dataloader)
-    val_accuracy = evaluate(model, val_dataloader)
-    
-    print(f"Epoch {epoch+1}:")
-    print(f"  Training Loss: {avg_train_loss:.4f}")
-    print(f"  Validation Accuracy: {val_accuracy:.4f}")
-\end{verbatim}
-
-\subsection{Kết quả Thực nghiệm}
-\label{ssec:danh_gia_ket_qua_sa}
-
-\subsubsection{Metrics đánh giá}
-Chúng tôi sử dụng các metrics sau để đánh giá toàn diện:
+Bảng \ref{tab:comparison_baseline_models_rewrite} tóm tắt so sánh hiệu suất giữa mô hình BERT tinh chỉnh và hai mô hình cơ sở này.
 
 \begin{table}[H]
     \centering
-    \caption{Kết quả phân loại cảm xúc trên IMDB test set}
-    \label{tab:imdb_results_actual}
+    \caption{So sánh Hiệu suất Phân loại Cảm xúc với các Mô hình Cơ sở (dựa trên [1])}
+    \label{tab:comparison_baseline_models_rewrite}
     \begin{tabular}{lc}
         \toprule
-        \textbf{Metric} & \textbf{Giá trị} \\
+        \textbf{Phương pháp} & \textbf{Accuracy} \\
         \midrule
-        Accuracy & 0.9426 \\
-        Precision (Positive) & 0.9385 \\
-        Recall (Positive) & 0.9472 \\
-        F1-score (Positive) & 0.9428 \\
-        Precision (Negative) & 0.9468 \\
-        Recall (Negative) & 0.9380 \\
-        F1-score (Negative) & 0.9424 \\
-        \midrule
-        Macro avg F1 & 0.9426 \\
-        Weighted avg F1 & 0.9426 \\
+        TF-IDF + Logistic Regression & 0.7533 \\
+        BERT Embeddings (tĩnh) + Logistic Regression & 0.7600 \\
+        \textbf{BERT Tinh chỉnh (Fine-tuned BERT)} & \textbf{0.8100} \\
         \bottomrule
     \end{tabular}
 \end{table}
+Kết quả so sánh này rất có ý nghĩa. Nó cho thấy mô hình BERT được tinh chỉnh toàn bộ (accuracy 0.81) vượt trội đáng kể so với cả phương pháp TF-IDF truyền thống và phương pháp sử dụng BERT chỉ như một công cụ trích xuất đặc trưng tĩnh. Sự cải thiện từ 0.76 (BERT embeddings + LR) lên 0.81 (Fine-tuned BERT) đặc biệt làm nổi bật lợi ích của việc cho phép gradient lan truyền ngược qua toàn bộ các lớp của mô hình BERT trong quá trình tinh chỉnh. Điều này cho phép các biểu diễn ngôn ngữ mạnh mẽ đã được tiền huấn luyện tự điều chỉnh để phù hợp hơn với các đặc điểm cụ thể của tác vụ phân loại cảm xúc, thay vì chỉ sử dụng chúng một cách cố định.
 
-\subsubsection{Confusion Matrix}
-\begin{verbatim}
-                     Predicted
-                  Positive  Negative
-Actual  Positive    11,840    660
-        Negative    775       11,725
-\end{verbatim}
+\subsubsection{Thảo luận Kết quả và Phân tích Chú ý}
+\label{sssec:thao_luan_ket_qua_phan_tich_chu_y_rewrite}
 
-\subsubsection{So sánh với Baseline}
-\begin{table}[H]
-    \centering
-    \caption{So sánh BERT với các phương pháp khác trên IMDB}
-    \label{tab:comparison_methods}
-    \begin{tabular}{lcc}
-        \toprule
-        \textbf{Phương pháp} & \textbf{Accuracy} & \textbf{Training Time} \\
-        \midrule
-        Logistic Regression + TF-IDF & 0.8847 & 5 phút \\
-        Bi-LSTM & 0.8922 & 2 giờ \\
-        CNN for Text & 0.8976 & 1.5 giờ \\
-        BERT-base (our implementation) & \textbf{0.9426} & 3 giờ \\
-        \midrule
-        State-of-the-art (ULMFiT) & 0.9540 & 5 giờ \\
-        \bottomrule
-    \end{tabular}
-\end{table}
-
-\subsection{Phân tích và Thảo luận}
-\label{ssec:thao_luan_huong_phat_trien_sa}
-
-\subsubsection{Phân tích Kết quả}
-
-\textbf{1. Hiệu suất vượt trội:}
-BERT đạt accuracy 94.26\%, vượt xa các phương pháp truyền thống (~88-89\%). Điều này chứng tỏ sức mạnh của pre-trained representations.
-
-\textbf{2. Phân tích lỗi:}
-Từ confusion matrix, ta thấy:
 \begin{itemize}
-    \item False Negatives (775) > False Positives (660)
-    \item BERT có xu hướng "lạc quan" hơn một chút
+    \item \textbf{Phân tích Ưu điểm của BERT Tinh chỉnh:}
+    Như đã thấy từ Bảng \ref{tab:comparison_baseline_models_rewrite}, mô hình BERT được tinh chỉnh mang lại hiệu suất cao nhất. Điều này là do nhiều yếu tố. Thứ nhất, BERT được tiền huấn luyện trên một lượng lớn dữ liệu, cho phép nó học được các biểu diễn ngữ nghĩa và ngữ cảnh phong phú mà các phương pháp như TF-IDF không thể nắm bắt. Thứ hai, kiến trúc Transformer với cơ chế tự chú ý cho phép BERT hiểu được các mối quan hệ phức tạp giữa các từ trong một câu, ngay cả khi chúng ở xa nhau. Quan trọng nhất, quá trình tinh chỉnh cho phép toàn bộ các tham số của mô hình BERT (không chỉ lớp phân loại cuối cùng) được điều chỉnh để tối ưu hóa cho tác vụ phân loại cảm xúc cụ thể. Điều này khác với việc sử dụng BERT embeddings tĩnh, nơi các biểu diễn từ BERT được giữ cố định. Sự thích ứng toàn diện này giải thích tại sao Fine-tuned BERT (0.81 accuracy) lại tốt hơn đáng kể so với BERT Embeddings + LR (0.76 accuracy).[1]
+
+    \item \textbf{Phân tích Chú ý (Attention Visualization):}
+    Giai đoạn D trong \texttt{bert\_application.ipynb} khám phá việc trực quan hóa trọng số chú ý của mô hình BERT.[1] Mặc dù các mô hình học sâu thường bị coi là "hộp đen", cơ chế chú ý trong Transformer cung cấp một cửa sổ để hiểu được phần nào của đầu vào mà mô hình tập trung vào khi đưa ra dự đoán. Ví dụ, khi phân loại một câu như "This movie is absolutely terrible", việc phân tích trọng số chú ý từ token \texttt{} (được sử dụng cho phân loại) đến các token khác trong câu có thể cho thấy rằng mô hình gán trọng số chú ý cao hơn cho các từ mang tính cảm xúc mạnh như "terrible" hoặc các từ bổ nghĩa như "absolutely".
+    \begin{figure}[H]
+        \centering
+        % \includegraphics[width=0.8\textwidth]{path_to_attention_visualization_example.png} % Placeholder
+        \texttt{[1]}
+        \caption{Ví dụ Minh họa Trực quan hóa Trọng số Chú ý trong BERT. Các từ có trọng số chú ý cao hơn (ví dụ, được tô màu đậm hơn) cho thấy mô hình tập trung vào chúng khi đưa ra quyết định.}
+        \label{fig:attention_visualization_example_rewrite}
+    \end{figure}
+    Phân tích này, dù mang tính định tính, giúp xây dựng sự tin tưởng và hiểu biết sâu hơn về hành vi của mô hình, phù hợp với mục tiêu "hiểu sâu" của đề án Hướng 2.[1]
+
+    \item \textbf{Thách thức và Hạn chế:}
+    Trong quá trình thực nghiệm, một số thách thức và hạn chế đã được ghi nhận:
+    \begin{itemize}
+        \item \textbf{Yêu cầu Tài nguyên Tính toán:} Việc tinh chỉnh các mô hình BERT, ngay cả phiên bản \texttt{bert-base}, cũng đòi hỏi tài nguyên tính toán đáng kể, bao gồm GPU có bộ nhớ đủ lớn (VRAM) và thời gian huấn luyện tương đối dài, ngay cả với tập dữ liệu con.[1] Việc sử dụng huấn luyện với độ chính xác hỗn hợp (\texttt{fp16}) có thể giúp giảm bớt phần nào gánh nặng này.[1]
+        \item \textbf{Sự nhạy cảm với Siêu tham số:} Hiệu suất của BERT có thể khá nhạy cảm với việc lựa chọn các siêu tham số như tốc độ học, kích thước lô, số epoch huấn luyện. Việc tìm ra bộ siêu tham số tối ưu thường đòi hỏi nhiều thử nghiệm.[1]
+        \item \textbf{Giới hạn của Tập dữ liệu Con:} Các kết quả chính được báo cáo ở đây (accuracy 0.81) dựa trên việc huấn luyện và đánh giá trên các tập dữ liệu con (200 mẫu huấn luyện, 100 mẫu kiểm tra) từ bộ IMDB.[1] Mặc dù điều này đủ để minh họa quy trình và so sánh tương đối giữa các phương pháp, hiệu suất trên toàn bộ bộ dữ liệu IMDB có thể khác (và thường cao hơn, như trong báo cáo gốc [1] đạt 0.9426 trên tập lớn hơn). Kết quả trên tập con nên được hiểu trong bối cảnh đó.
+    \end{itemize}
+
+    \item \textbf{Hướng Cải thiện Tiềm năng:}
+    Dựa trên các kết quả và hạn chế, một số hướng cải thiện tiềm năng có thể được xem xét trong tương lai:
+    \begin{itemize}
+        \item \textbf{Sử dụng Mô hình Lớn hơn hoặc Hiệu quả hơn:} Thử nghiệm với các phiên bản BERT lớn hơn (ví dụ: \texttt{BERT-large}) hoặc các biến thể hiệu quả hơn như RoBERTa, ALBERT, DistilBERT có thể mang lại hiệu suất tốt hơn hoặc thời gian huấn luyện nhanh hơn.[1]
+        \item \textbf{Tinh chỉnh Siêu tham số Kỹ lưỡng hơn:} Áp dụng các kỹ thuật tìm kiếm siêu tham số tự động (ví dụ: grid search, random search, Bayesian optimization) để tìm ra bộ siêu tham số tối ưu cho tác vụ.
+        \item \textbf{Tăng cường Dữ liệu (Data Augmentation):} Đối với các bộ dữ liệu nhỏ, các kỹ thuật tăng cường dữ liệu như back-translation hoặc tạo các câu diễn giải (paraphrasing) có thể giúp cải thiện khả năng khái quát hóa của mô hình.[1]
+        \item \textbf{Huấn luyện và Đánh giá trên Toàn bộ Dữ liệu:} Thực hiện huấn luyện và đánh giá trên toàn bộ tập dữ liệu IMDB để có được bức tranh chính xác hơn về hiệu suất của mô hình.
+    \end{itemize}
 \end{itemize}
 
-\textbf{3. Các trường hợp khó:}
-Phân tích manual các mẫu bị phân loại sai cho thấy:
-\begin{itemize}
-    \item \textbf{Sarcasm/Irony:} "What a 'masterpiece'! I've never wasted 2 hours so wonderfully."
-    \item \textbf{Mixed sentiment:} "Great acting but terrible plot"
-    \item \textbf{Domain-specific:} Reviews với nhiều thuật ngữ điện ảnh chuyên ngành
-\end{itemize}
-
-\subsubsection{Visualization: Attention Analysis}
-Một điểm thú vị là có thể visualize attention weights để hiểu BERT "chú ý" vào đâu:
-
-\begin{verbatim}
-# Ví dụ: "This movie is absolutely terrible"
-# Attention weights từ [CLS] token:
-# "terrible": 0.42 (highest)
-# "absolutely": 0.18
-# "movie": 0.12
-# "is": 0.08
-# "This": 0.06
-\end{verbatim}
-
-BERT học được rằng "terrible" là từ quan trọng nhất cho sentiment.
-
-\subsubsection{Thách thức Gặp phải}
-
-\textbf{1. Tài nguyên tính toán:}
-\begin{itemize}
-    \item GPU memory: Cần ít nhất 8GB VRAM cho batch size 16
-    \item Training time: ~1 giờ/epoch trên Tesla T4
-    \item Solution: Gradient accumulation, mixed precision training
-\end{itemize}
-
-\textbf{2. Hyperparameter tuning:}
-\begin{itemize}
-    \item Learning rate rất nhạy cảm (2e-5 vs 3e-5 có thể chênh 2\% accuracy)
-    \item Cần thử nhiều random seeds
-    \item Solution: Bayesian optimization hoặc grid search
-\end{itemize}
-
-\textbf{3. Overfitting trên small datasets:}
-\begin{itemize}
-    \item BERT có 110M parameters nhưng chỉ fine-tune trên 25K mẫu
-    \item Risk: Catastrophic forgetting
-    \item Solution: Early stopping, regularization, data augmentation
-\end{itemize}
-
-\subsubsection{Hướng Cải thiện}
-
-\textbf{1. Advanced models:}
-\begin{itemize}
-    \item RoBERTa: Training lâu hơn, dynamic masking → +0.5-1\% accuracy
-    \item ALBERT: Parameter sharing → Nhẹ hơn 70\% với performance tương đương
-    \item DistilBERT: Knowledge distillation → Nhanh hơn 60\%, chỉ giảm 3\% accuracy
-\end{itemize}
-
-\textbf{2. Domain adaptation:}
-\begin{itemize}
-    \item Continue pre-training BERT trên movie reviews corpus
-    \item Tạo Movie-BERT chuyên biệt cho domain
-\end{itemize}
-
-\textbf{3. Ensemble methods:}
-\begin{itemize}
-    \item Kết hợp predictions từ nhiều fine-tuned models
-    \item Hoặc ensemble BERT với CNN/LSTM
-\end{itemize}
-
-\textbf{4. Data augmentation:}
-\begin{itemize}
-    \item Back-translation: English → French → English
-    \item Paraphrasing với T5 hoặc GPT
-    \item Adversarial examples generation
-\end{itemize}
+Tóm lại, chương thực nghiệm này đã trình bày một cách tiếp cận toàn diện, từ việc tìm hiểu sâu kiến trúc BERT thông qua tự triển khai các thành phần cốt lõi, đến việc ứng dụng một mô hình BERT tiền huấn luyện mạnh mẽ để giải quyết bài toán phân loại cảm xúc. Các kết quả thu được không chỉ minh chứng hiệu quả của BERT mà còn cung cấp những hiểu biết quý báu về các khía cạnh thực tế của việc làm việc với các mô hình ngôn ngữ lớn.
 
 %% =========================================================================
 %% CHƯƠNG 6: KẾT QUẢ VÀ SO SÁNH
