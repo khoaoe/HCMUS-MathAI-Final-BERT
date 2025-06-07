@@ -83,11 +83,20 @@ class ScaledDotProductAttention(nn.Module):
 
         # Áp dụng mask nếu có
         if mask is not None:
-            # Mở rộng mask cho tất cả các head
-            if mask.dim() == 2:  # [batch, seq_len]
-                mask = mask.unsqueeze(1).unsqueeze(1)  # [batch, 1, 1, seq_len]
+            # Xử lý mask đúng cách cho attention matrix
+            if mask.dim() == 2:  # [batch, seq_len] - padding mask
+                # Chuyển thành causal mask [batch, seq_len, seq_len]
+                batch_size, seq_len = mask.size()
+                # Tạo attention mask: có thể attend nếu cả query và key đều không phải padding
+                mask = mask.unsqueeze(1).expand(-1, seq_len, -1) * mask.unsqueeze(2).expand(-1, -1, seq_len)
+                mask = mask.unsqueeze(1)  # [batch, 1, seq_len, seq_len]
             elif mask.dim() == 3:  # [batch, seq_len, seq_len]
                 mask = mask.unsqueeze(1)  # [batch, 1, seq_len, seq_len]
+            
+            # Validation mask shape
+            expected_shape = (scores.size(0), 1, scores.size(2), scores.size(3))
+            if mask.shape != expected_shape:
+                raise ValueError(f"Mask shape {mask.shape} không khớp với expected {expected_shape}")
 
             # Điền các vị trí bị mask bằng giá trị rất nhỏ (-inf) để sau softmax sẽ thành 0
             fill_value = torch.finfo(scores.dtype).min
