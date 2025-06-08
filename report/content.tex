@@ -581,24 +581,30 @@ Lưu ý: Datasets nhỏ nhạy cảm hơn với hyperparameters.
 Nên thử nhiều random seeds.
 
 %% =========================================================================
-%% CHƯƠNG 5: THỰC NGHIỆM SENTIMENT ANALYSIS
-%% =========================================================================
-%% =========================================================================
 %% CHƯƠNG 5: THỰC NGHIỆM VỚI BERT - PHÂN LOẠI CẢM XÚC VĂN BẢN
 %% =========================================================================
-\section{Thực nghiệm với \hyperref[acro:bert]{\textbf{BERT}}: Phân loại Cảm xúc Văn bản}
+\section{Thực nghiệm \hyperref[acro:bert]{\textbf{BERT}}}
 \label{sec:thuc_nghiem_bert}
 
-\subsection{Giới thiệu và Động lực Nghiên cứu}
+\subsection{Giới thiệu}
 \label{ssec:gioi_thieu_dong_luc}
 
-\subsubsection{Mục tiêu Thực nghiệm}
-Chương này trình bày một nghiên cứu thực nghiệm toàn diện về mô hình \hyperref[acro:bert]{\textbf{BERT}} thông qua hai phương pháp tiếp cận bổ sung cho nhau:
+\subsubsection{Mục tiêu thực nghiệm}
+Chương này trình bày một thực nghiệm về mô hình \hyperref[acro:bert]{\textbf{BERT}} thông qua hai phương pháp tiếp cận bổ sung cho nhau:
 
 \begin{enumerate}
-    \item \textbf{Xây dựng từ nền tảng (From-scratch Implementation):} Triển khai các thành phần cốt lõi của \hyperref[acro:bert]{\textbf{BERT}} để hiểu sâu về kiến trúc và cơ
-    chế hoạt động nội tại của mô hình. Cách tiếp cận này giúp làm sáng tỏ các khái niệm lý thuyết đã được trình bày trong các chương trước thông qua việc thực hành trực tiếp.
-    \item \textbf{Ứng dụng thực tiễn (Practical Application):} Sử dụng mô hình \hyperref[acro:bert]{\textbf{BERT}} đã được tiền huấn luyện từ Hugging Face để giải quyết bài toán phân loại cảm xúc trên bộ dữ liệu IMDB Movie Reviews \cite{maas2011learning}, đồng thời so sánh với các phương pháp baseline truyền thống.
+    \item \textbf{Xây dựng từ nền tảng (From-scratch Implementation):} 
+    \begin{itemize}
+        \item Triển khai các thành phần cốt lõi của \hyperref[acro:bert]{\textbf{BERT}} để hiểu sâu về kiến trúc và cơ chế hoạt động nội tại của mô hình. Cách tiếp cận này giúp làm sáng tỏ các khái niệm lý thuyết đã được trình bày trong các chương trước thông qua việc thực hành trực tiếp. 
+        \item Minh họa các bước huấn luyện và thử nghiệm của mô hình nền tảng này cho bài toán \texttt{Dự đoán [MASK]}
+        \item \textbf{File thực hiện}: \texttt{bert.py}
+    \end{itemize}
+    \item \textbf{Ứng dụng (sử dụng pre-trained models):} 
+    \begin{itemize}
+        \item Sử dụng mô hình \hyperref[acro:bert]{\textbf{BERT}} pre-trained từ Hugging Face để giải quyết bài toán phân loại cảm xúc trên bộ dữ liệu IMDB Movie Reviews \cite{maas2011learning} 
+        \item So sánh với các phương pháp baseline truyền thống.
+        \item \textbf{File thực hiện}:  \href{https://colab.research.google.com/drive/1VOJh1axPEoq-bhXwFVajEl-s4PFzH5tL?usp=sharing#scrollTo=f5J1Gw_pVRy7}{\texttt{bert\_application.ipynb}}
+    \end{itemize}
 \end{enumerate}
 
 \subsubsection{Thiết kế Thực nghiệm}
@@ -611,7 +617,7 @@ Thực nghiệm được thiết kế theo nguyên tắc \textit{progressive com
     line/.style={draw, -latex}]  
     
     \node [block] (impl) {Triển khai\\Components};
-    \node [block, right of=impl, node distance=4cm] (verify) {Kiểm tra\\Chức năng};
+    \node [block, right of=impl, node distance=4cm] (verify) {Kiểm tra\\và Quick demo};
     \node [block, right of=verify, node distance=4cm] (pretrained) {Sử dụng\\Pre-trained};
     \node [block, below of=pretrained, node distance=2cm] (finetune) {Fine-tuning\\IMDB};
     \node [block, left of=finetune, node distance=4cm] (evaluate) {Đánh giá\\So sánh};
