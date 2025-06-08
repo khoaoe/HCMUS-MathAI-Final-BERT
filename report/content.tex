@@ -36,7 +36,7 @@ Mục tiêu chính của bài báo \hyperref[acro:bert]{\textbf{BERT}} \cite{dev
 Những đóng góp chính của \hyperref[acro:bert]{\textbf{BERT}} bao gồm:
 \begin{itemize}
     \item \textbf{Kiến trúc hai chiều sâu sắc (Deeply Bidirectional):} Đây là điểm khác biệt quan trọng nhất của \hyperref[acro:bert]{\textbf{BERT}}.
-    Trong khi các mô hình trước đó như \hyperref[acro:gpt]{\texttt{GPT}} chỉ nhìn ngữ cảnh một chiều, hoặc như \hyperref[acro:elmo]{\texttt{ELMo}} kết hợp hai chiều một cách độc lập, \hyperref[acro:bert]{\textbf{BERT}} cho phép mỗi lớp của mô hình xem xét ngữ cảnh hai chiều đồng thời.
+    Trong khi các mô hình trước đó như \hyperref[acro:gpt]{\texttt{GPT}} \cite{radford2018improving} chỉ nhìn ngữ cảnh một chiều, hoặc như \hyperref[acro:elmo]{\texttt{ELMo}} \cite{peters2018deep} kết hợp hai chiều một cách độc lập, \hyperref[acro:bert]{\textbf{BERT}} cho phép mỗi lớp của mô hình xem xét ngữ cảnh hai chiều đồng thời.
     Điều này có nghĩa là khi xử lý từ "bank" trong câu, \hyperref[acro:bert]{\textbf{BERT}} có thể đồng thời xem xét cả "went to the" (bên trái) và "to deposit money" (bên phải) để hiểu đây là "ngân hàng" chứ không phải "bờ sông".
     \item \textbf{Hai tác vụ tiền huấn luyện sáng tạo:}
     \begin{itemize}
@@ -49,16 +49,16 @@ Những đóng góp chính của \hyperref[acro:bert]{\textbf{BERT}} bao gồm:
         Tác vụ này giúp \hyperref[acro:bert]{\textbf{BERT}} hiểu mối quan hệ giữa các câu, rất quan trọng cho các ứng dụng như hỏi đáp hay suy luận ngôn ngữ.
     \end{itemize}
     
-    \item \textbf{Hiệu suất vượt trội:} \hyperref[acro:bert]{\textbf{BERT}} đã thiết lập kỷ lục mới trên 11 tác vụ \hyperref[acro:nlp]{\texttt{NLP}} khác nhau.
-    Trên \hyperref[acro:glue]{\texttt{GLUE}} benchmark, BERT\textsubscript{LARGE} đạt điểm trung bình 80.5, vượt xa mô hình tốt nhất trước đó (OpenAI \hyperref[acro:gpt]{\texttt{GPT}} với 72.8).
-    Trên \hyperref[acro:squad]{\texttt{SQuAD}} v1.1, \hyperref[acro:bert]{\textbf{BERT}} thậm chí vượt qua hiệu suất của con người (\hyperref[acro:f1]{\texttt{F1}}: 93.2 so với 91.2).
+    \item \textbf{Hiệu suất vượt trội:} \hyperref[acro:bert]{\textbf{BERT}} đã thiết lập kỷ lục mới trên 11 tác vụ \hyperref[acro:nlp]{\texttt{NLP}} khác nhau \cite{devlin2018bert}.
+    Trên \hyperref[acro:glue]{\texttt{GLUE}} benchmark \cite{wang2018glue}, BERT\textsubscript{LARGE} đạt điểm trung bình 80.5, vượt xa mô hình tốt nhất trước đó (OpenAI \hyperref[acro:gpt]{\texttt{GPT}} với 72.8).
+    Trên \hyperref[acro:squad]{\texttt{SQuAD}} v1.1, \hyperref[acro:bert]{\textbf{BERT}} thậm chí vượt qua hiệu suất của con người (\hyperref[acro:f1]{\texttt{F1}}: 93.2 so với 91.2) \cite{devlin2018bert}.
     \item \textbf{Tính linh hoạt và dễ áp dụng:} \hyperref[acro:bert]{\textbf{BERT}} được thiết kế với triết lý "pre-train once, fine-tune for everything".
     Sau khi tiền huấn luyện trên dữ liệu lớn (BookCorpus và Wikipedia), \hyperref[acro:bert]{\textbf{BERT}} có thể được tinh chỉnh cho bất kỳ tác vụ \hyperref[acro:nlp]{\texttt{NLP}} nào chỉ bằng cách thêm một lớp đầu ra đơn giản.
     Quá trình fine-tune thường chỉ mất vài giờ trên \hyperref[acro:gpu]{\texttt{GPU}}, so với hàng tuần cho việc huấn luyện từ đầu.
 \end{itemize}
 
 Sự thành công của \hyperref[acro:bert]{\textbf{BERT}} không chỉ nằm ở hiệu suất vượt trội mà còn ở việc nó mở ra một hướng nghiên cứu mới: sử dụng mô hình ngôn ngữ lớn được tiền huấn luyện làm nền tảng cho mọi tác vụ \hyperref[acro:nlp]{\texttt{NLP}}.
-Điều này đã dẫn đến sự phát triển của cả một thế hệ mô hình mới như \hyperref[acro:roberta]{\texttt{RoBERTa}}, \hyperref[acro:albert]{\texttt{ALBERT}}, và xa hơn là GPT-3.
+Điều này đã dẫn đến sự phát triển của cả một thế hệ mô hình mới như \hyperref[acro:roberta]{\texttt{RoBERTa}} \cite{liu2019roberta}, \hyperref[acro:albert]{\texttt{ALBERT}} \cite{lan2019albert}, và xa hơn là GPT-3.
 %% =========================================================================
 %% CHƯƠNG 2: KIẾN TRÚC BERT VÀ CÁC THÀNH PHẦN CỐT LÕI
 %% =========================================================================
@@ -68,7 +68,7 @@ Kiến trúc của \hyperref[acro:bert]{\textbf{BERT}} dựa trên kiến trúc 
 Sau đây nhóm sẽ phân tích từng thành phần cốt lõi và cách chúng kết hợp để tạo nên sức mạnh của mô hình.
 \subsection{Tổng quan về Kiến trúc Transformer}
 \label{ssec:tong_quan_transformer}
-Transformer là một kiến trúc mạng nơ-ron được giới thiệu với mục tiêu ban đầu là cải thiện các mô hình dịch.
+Transformer là một kiến trúc mạng nơ-ron được giới thiệu với mục tiêu ban đầu là cải thiện các mô hình dịch \cite{vaswani2017attention}.
 Điểm đột phá của Transformer là loại bỏ hoàn toàn các cấu trúc tuần tự (RNN, LSTM) và thay thế bằng cơ chế attention, cho phép xử lý song song toàn bộ chuỗi.
 Kiến trúc Transformer gồm hai phần chính:
 \begin{itemize}
@@ -85,11 +85,11 @@ Mỗi khối encoder trong \hyperref[acro:bert]{\textbf{BERT}} bao gồm:
     Điều này giúp biến đổi phi tuyến các biểu diễn sau khi đã tổng hợp thông tin ngữ cảnh từ attention.
 \end{itemize}
 
-Mỗi lớp con đều có kết nối dư (residual connection) và chuẩn hóa lớp (layer normalization), giúp huấn luyện ổn định các mạng nơ-ron sâu (deep neural networks).
+Mỗi lớp con đều có kết nối dư (residual connection) và chuẩn hóa lớp (layer normalization) \cite{ba2016layer}, giúp huấn luyện ổn định các mạng nơ-ron sâu (deep neural networks).
 \begin{figure}[H]
     \centering
     \includegraphics[width=0.5\textwidth]{img/transformer_arch.png}
-    \caption{Kiến trúc tổng quan của mô hình Transformer.
+    \caption{Kiến trúc tổng quan của mô hình Transformer \cite{vaswani2017attention}.
     \hyperref[acro:bert]{\textbf{BERT}} chỉ sử dụng phần Encoder (bên trái). Mỗi khối encoder chứa lớp \texttt{Multi-Head Attention} và Feed-Forward, được kết nối bằng residual connections và layer normalization.}
     \label{fig:transformer_architecture}
 \end{figure}
@@ -111,7 +111,7 @@ Với đầu vào là các vector biểu diễn của từ, self-attention (hay 
     \item \textbf{Value (V):} "Thông tin thực sự tôi sẽ truyền đi là gì?"
 \end{itemize}
 
-Công thức \texttt{Scaled Dot-Product Attention}:
+Công thức \texttt{Scaled Dot-Product Attention} \cite{vaswani2017attention}:
 $$ \text{Attention}(Q, K, V) = \text{softmax}\left(\frac{QK^T}{\sqrt{d_k}}\right)V $$
 
 Trong đó:
@@ -136,7 +136,7 @@ Khi tính attention cho từ "sat":
 \begin{figure}[H]
     \centering
     \includegraphics[width=0.5\textwidth]{img/scaled_dotproduct.png}
-    \caption{Cơ chế \texttt{Scaled Dot-Product Attention}.
+    \caption{Cơ chế \texttt{Scaled Dot-Product Attention} \cite{vaswani2017attention}.
     MatMul thực hiện phép nhân ma trận $QK^T$, Scale chia cho $\sqrt{d_k}$, Mask (tùy chọn) che các vị trí không hợp lệ, Softmax chuẩn hóa thành xác suất, và MatMul cuối cùng tính tổng có trọng số của Values.}
     \label{fig:scaled_dot_product_attention}
 \end{figure}
@@ -144,7 +144,7 @@ Khi tính attention cho từ "sat":
 \subsection{Chú ý Đa đầu (\texttt{Multi-Head Attention}) - Sức mạnh từ sự đa dạng}
 \label{ssec:multi_head_attention}
 Một cơ chế attention duy nhất chỉ có thể nắm bắt một loại mối quan hệ.
-\texttt{Multi-Head Attention} giải quyết hạn chế này bằng cách chạy nhiều attention song song, mỗi cái tập trung vào khía cạnh khác nhau.
+\texttt{Multi-Head Attention} giải quyết hạn chế này bằng cách chạy nhiều attention song song, mỗi cái tập trung vào khía cạnh khác nhau \cite{vaswani2017attention}.
 \subsubsection{Ý tưởng chính}
 Thay vì có một attention lớn, ta chia thành $h$ attention nhỏ hơn (heads).
 Mỗi head học một "góc nhìn" khác:
@@ -178,7 +178,7 @@ Trong câu "The bank will not approve the loan", các head khác nhau có thể 
 \begin{figure}[H]
     \centering
     \includegraphics[width=0.5\textwidth]{img/multihead.png}
-    \caption{Cơ chế \texttt{Multi-Head Attention}.
+    \caption{Cơ chế \texttt{Multi-Head Attention} \cite{vaswani2017attention}.
     Đầu vào được chiếu thành $h$ bộ Q, K, V độc lập.
     Mỗi head thực hiện attention riêng, sau đó các kết quả được nối lại và chiếu qua $W^O$ để tạo đầu ra cuối cùng.}
     \label{fig:multi_head_attention}
@@ -188,12 +188,12 @@ Trong câu "The bank will not approve the loan", các head khác nhau có thể 
 \label{ssec:feed_forward_networks}
 Sau khi tổng hợp thông tin qua attention, mỗi vị trí được xử lý qua một mạng \hyperref[acro:ffn]{\texttt{FFN}} giống nhau:
 
-$ FFN(x) = \max(0, xW_1 + b_1)W_2 + b_2 $$
+$$ FFN(x) = \max(0, xW_1 + b_1)W_2 + b_2 $$
 
 Đặc điểm quan trọng:
 \begin{itemize}
     \item Cùng một \hyperref[acro:ffn]{\texttt{FFN}} được áp dụng cho mọi vị trí (parameter sharing)
-    \item Lớp ẩn có kích thước lớn hơn ($d_{ff}=3072$ so với $d_{model}=768$)
+    \item Lớp ẩn có kích thước lớn hơn ($d_{ff}=3072$ trong BERT-base so với $d_{model}=768$)
     \item hàm kích hoạt \hyperref[acro:relu]{\texttt{ReLU}} tạo tính phi tuyến
 \end{itemize}
 
@@ -205,13 +205,13 @@ $$ \text{LayerNorm}(x + \text{Sublayer}(x)) $$
 
 Lợi ích:
 \begin{itemize}
-    \item \textbf{Residual connection ($x +$):} Cho phép gradient flow trực tiếp, giúp huấn luyện mạng nơ-ron sâu
-    \item \textbf{Layer normalization:} Chuẩn hóa theo chiều features, ổn định quá trình học
+    \item \textbf{Residual connection ($x +$):} Cho phép gradient flow trực tiếp, giúp huấn luyện mạng nơ-ron sâu \cite{vaswani2017attention}
+    \item \textbf{Layer normalization:} Chuẩn hóa theo chiều features, ổn định quá trình học \cite{ba2016layer}
 \end{itemize}
 
 \subsection{Biểu diễn Đầu vào của \hyperref[acro:bert]{\textbf{BERT}} - Kết hợp thông tin đa chiều}
 \label{ssec:input_representation_bert}
-\hyperref[acro:bert]{\textbf{BERT}} xây dựng biểu diễn đầu vào bằng cách cộng ba loại embedding:
+\hyperref[acro:bert]{\textbf{BERT}} xây dựng biểu diễn đầu vào bằng cách cộng ba loại embedding \cite{devlin2018bert}:
 
 $$ \text{Input}_i = \text{TokenEmb}_i + \text{SegmentEmb}_i + \text{PositionEmb}_i $$
 
@@ -253,7 +253,7 @@ $$ \text{Input}_i = \text{TokenEmb}_i + \text{SegmentEmb}_i + \text{PositionEmb}
 \begin{figure}[H]
     \centering
     \includegraphics[width=0.9\textwidth]{img/input_representation.png}
-    \caption{Biểu diễn đầu vào của \hyperref[acro:bert]{\textbf{BERT}}. Ví dụ cho cặp câu "He likes playing" và "My dog is cute".
+    \caption{Biểu diễn đầu vào của \hyperref[acro:bert]{\textbf{BERT}} \cite{devlin2018bert}. Ví dụ cho cặp câu "He likes playing" và "My dog is cute".
     Ba loại embeddings được cộng theo từng vị trí để tạo input embedding cuối cùng.
     Token [CLS] ở đầu sẽ được dùng cho các tác vụ phân loại.}
     \label{fig:bert_input_representation}
@@ -261,7 +261,7 @@ $$ \text{Input}_i = \text{TokenEmb}_i + \text{SegmentEmb}_i + \text{PositionEmb}
 
 \subsection{Các phiên bản \hyperref[acro:bert]{\textbf{BERT}}}
 \label{ssec:bert_versions}
-Google phát hành hai phiên bản chính:
+Google phát hành hai phiên bản chính \cite{devlin2018bert}:
 
 \begin{table}[H]
 \centering
@@ -291,15 +291,15 @@ Sự khác biệt không chỉ về kích thước mà còn về khả năng h�
 \section{Các Tác vụ Tiền huấn luyện của \hyperref[acro:bert]{\textbf{BERT}}}
 \label{sec:pre_training_tasks}
 \hyperref[acro:bert]{\textbf{BERT}} được tiền huấn luyện đồng thời trên hai tác vụ tự giám sát (self-supervised): Masked Language Model (\hyperref[acro:mlm]{\texttt{MLM}}) và Next Sentence Prediction (\hyperref[acro:nsp]{\texttt{NSP}}).
-Các tác vụ này cho phép \hyperref[acro:bert]{\textbf{BERT}} học từ dữ liệu văn bản không cần gán nhãn thủ công.
+Các tác vụ này cho phép \hyperref[acro:bert]{\textbf{BERT}} học từ dữ liệu văn bản không cần gán nhãn thủ công \cite{devlin2018bert}.
 \subsection{Masked Language Model (\hyperref[acro:mlm]{\texttt{MLM}}) - Đột phá cho học hai chiều}
 \label{ssec:mlm}
 
 \subsubsection{Vấn đề cốt lõi}
 Các mô hình ngôn ngữ truyền thống chỉ có thể học một chiều vì lý do đơn giản: nếu cho phép mô hình "nhìn" cả hai chiều khi dự đoán từ tiếp theo, nó sẽ "gian lận" bằng cách nhìn trực tiếp vào từ cần dự đoán.
-\hyperref[acro:bert]{\textbf{BERT}} giải quyết vấn đề này bằng cách: che ngẫu nhiên một số từ và yêu cầu mô hình dự đoán chúng từ ngữ cảnh.
+\hyperref[acro:bert]{\textbf{BERT}} giải quyết vấn đề này bằng cách: che ngẫu nhiên một số từ và yêu cầu mô hình dự đoán chúng từ ngữ cảnh \cite{devlin2018bert}.
 \subsubsection{Chiến lược Masking 80-10-10}
-\hyperref[acro:bert]{\textbf{BERT}} che 15\% tokens trong mỗi chuỗi, nhưng không phải lúc nào cũng thay bằng [MASK]:
+\hyperref[acro:bert]{\textbf{BERT}} che 15\% tokens trong mỗi chuỗi, nhưng không phải lúc nào cũng thay bằng [MASK] \cite{devlin2018bert}:
 
 \begin{itemize}
     \item \textbf{80\% trường hợp → [MASK]:} 
@@ -422,11 +422,11 @@ $$ \mathcal{L}_{total} = \mathcal{L}_{MLM}
 
 Cả hai loss được tối ưu đồng thời, giúp \hyperref[acro:bert]{\textbf{BERT}} học cả biểu diễn từ (\hyperref[acro:mlm]{\texttt{MLM}}) và quan hệ câu (\hyperref[acro:nsp]{\texttt{NSP}}).
 \subsubsection{Tranh cãi về \hyperref[acro:nsp]{\texttt{NSP}}}
-Các nghiên cứu sau (\hyperref[acro:roberta]{\texttt{RoBERTa}}, \hyperref[acro:albert]{\texttt{ALBERT}}) cho thấy:
+Các nghiên cứu sau (\hyperref[acro:roberta]{\texttt{RoBERTa}} \cite{liu2019roberta}, \hyperref[acro:albert]{\texttt{ALBERT}} \cite{lan2019albert}) cho thấy:
 \begin{itemize}
     \item \hyperref[acro:nsp]{\texttt{NSP}} có thể không cần thiết hoặc thậm chí có hại cho một số tác vụ
     \item Vấn đề: Negative samples (random sentences) quá dễ phân biệt
-    \item Cải tiến: Sentence Order Prediction (\hyperref[acro:sop]{\texttt{SOP}}) trong \hyperref[acro:albert]{\texttt{ALBERT}} - dự đoán thứ tự câu
+    \item Cải tiến: Sentence Order Prediction (\hyperref[acro:sop]{\texttt{SOP}}) trong \hyperref[acro:albert]{\texttt{ALBERT}} \cite{lan2019albert} - dự đoán thứ tự câu
 \end{itemize}
 
 Tuy nhiên, trong thiết kế gốc, \hyperref[acro:nsp]{\texttt{NSP}} đóng góp vào thành công của \hyperref[acro:bert]{\textbf{BERT}} trên nhiều benchmark.
@@ -441,7 +441,7 @@ Sau khi được tiền huấn luyện trên khối lượng dữ liệu khổng
 \label{ssec:quy_trinh_tinh_chinh}
 
 \subsubsection{Nguyên lý cơ bản}
-Fine-tuning \hyperref[acro:bert]{\textbf{BERT}} tuân theo triết lý "minimal architectural changes":
+Fine-tuning \hyperref[acro:bert]{\textbf{BERT}} tuân theo triết lý "minimal architectural changes" \cite{devlin2018bert}:
 \begin{itemize}
     \item Giữ nguyên toàn bộ kiến trúc \hyperref[acro:bert]{\textbf{BERT}} đã pre-train
     \item Chỉ thêm một task-specific head (thường là 1-2 layers)
@@ -562,13 +562,13 @@ Labels:   O   B-PER  O    O  B-ORG  O  B-LOC   O
     \centering
     \includegraphics[width=\textwidth]{img/pretraining_finetuning.png}
     \caption{Fine-tuning \hyperref[acro:bert]{\textbf{BERT}} cho các tác vụ khác
-    nhau. Lưu ý cách sử dụng [CLS] cho classification tasks và individual tokens cho sequence labeling.
+    nhau \cite{devlin2018bert}. Lưu ý cách sử dụng [CLS] cho classification tasks và individual tokens cho sequence labeling.
     Architecture thay đổi tối thiểu - chủ yếu là output layer.}
     \label{fig:bert_finetuning_tasks}
 \end{figure}
 
 \subsubsection{Hyperparameters cho Fine-tuning}
-Từ bài báo gốc, các hyperparameters được khuyến nghị:
+Từ bài báo gốc \cite{devlin2018bert}, các hyperparameters được khuyến nghị:
 \begin{itemize}
     \item \textbf{Batch size:} 16, 32
     \item \textbf{Learning rate:} 2e-5, 3e-5, 5e-5 
@@ -598,7 +598,7 @@ Chương này trình bày một nghiên cứu thực nghiệm toàn diện về 
 \begin{enumerate}
     \item \textbf{Xây dựng từ nền tảng (From-scratch Implementation):} Triển khai các thành phần cốt lõi của \hyperref[acro:bert]{\textbf{BERT}} để hiểu sâu về kiến trúc và cơ
     chế hoạt động nội tại của mô hình. Cách tiếp cận này giúp làm sáng tỏ các khái niệm lý thuyết đã được trình bày trong các chương trước thông qua việc thực hành trực tiếp.
-    \item \textbf{Ứng dụng thực tiễn (Practical Application):} Sử dụng mô hình \hyperref[acro:bert]{\textbf{BERT}} đã được tiền huấn luyện từ Hugging Face để giải quyết bài toán phân loại cảm xúc trên bộ dữ liệu IMDB Movie Reviews, đồng thời so sánh với các phương pháp baseline truyền thống.
+    \item \textbf{Ứng dụng thực tiễn (Practical Application):} Sử dụng mô hình \hyperref[acro:bert]{\textbf{BERT}} đã được tiền huấn luyện từ Hugging Face để giải quyết bài toán phân loại cảm xúc trên bộ dữ liệu IMDB Movie Reviews \cite{maas2011learning}, đồng thời so sánh với các phương pháp baseline truyền thống.
 \end{enumerate}
 
 \subsubsection{Thiết kế Thực nghiệm}
@@ -718,7 +718,7 @@ Kết quả kiểm tra cho thấy loss tổng hợp là \textbf{10.88}, phù h�
 \subsubsection{Thiết lập Thực nghiệm}
 
 \paragraph{Dataset Description}
-Bộ dữ liệu IMDB Movie Reviews được sử dụng với các đặc điểm:
+Bộ dữ liệu IMDB Movie Reviews \cite{maas2011learning} được sử dụng với các đặc điểm:
 \begin{itemize}
     \item \textbf{Kích thước:} 50,000 reviews (25,000 train, 25,000 test)
     \item \textbf{Phân bố nhãn:} Cân bằng (50\% positive, 50\% negative)  
@@ -990,13 +990,13 @@ Pre-training trên corpus lớn giúp \hyperref[acro:bert]{\textbf{BERT}} học 
 \end{enumerate}
 
 \subsection{Ablation Study}
-\label{ssec:ablation_study}
+\label{ssec:ablation_study_exp}
 
 Để hiểu rõ hơn về đóng góp của từng thành phần, một ablation study được thực hiện:
 
 \begin{table}[H]
 \centering
-\caption{Ablation study: Ảnh hưởng của các thành phần \hyperref[acro:bert]{\textbf{BERT}}}
+\caption{Ablation study: Ảnh hưởng của các thành phần \hyperref[acro:bert]{\textbf{BERT}} trong thực nghiệm}
 \label{tab:ablation}
 \begin{tabular}{lc}
 \toprule
@@ -1044,10 +1044,10 @@ Thực nghiệm này đã minh chứng thành công hai khía cạnh quan trọn
 %% =========================================================================
 \section{Kết quả và So sánh}
 \label{sec:ket_qua_so_sanh}
-Phần này trình bày kết quả của \hyperref[acro:bert]{\textbf{BERT}} trên các benchmark chuẩn từ bài báo gốc, cung cấp bối cảnh để hiểu tầm quan trọng của \hyperref[acro:bert]{\textbf{BERT}} trong lịch sử \hyperref[acro:nlp]{\texttt{NLP}}.
+Phần này trình bày kết quả của \hyperref[acro:bert]{\textbf{BERT}} trên các benchmark chuẩn từ bài báo gốc \cite{devlin2018bert}, cung cấp bối cảnh để hiểu tầm quan trọng của \hyperref[acro:bert]{\textbf{BERT}} trong lịch sử \hyperref[acro:nlp]{\texttt{NLP}}.
 \subsection{Kết quả trên \hyperref[acro:glue]{\texttt{GLUE}} Benchmark}
 \label{ssec:ket_qua_glue}
-\hyperref[acro:glue]{\texttt{GLUE}} (General Language Understanding Evaluation) là bộ benchmark gồm 9 tác vụ đa dạng, được thiết kế để đánh giá khả năng hiểu ngôn ngữ tổng quát của mô hình.
+\hyperref[acro:glue]{\texttt{GLUE}} (General Language Understanding Evaluation) \cite{wang2018glue} là bộ benchmark gồm 9 tác vụ đa dạng, được thiết kế để đánh giá khả năng hiểu ngôn ngữ tổng quát của mô hình.
 \subsubsection{Mô tả các tác vụ \hyperref[acro:glue]{\texttt{GLUE}}}
 \begin{itemize}
     \item \textbf{\hyperref[acro:mnli]{\texttt{MNLI}}:} Multi-Genre Natural Language Inference (393K mẫu)
@@ -1064,7 +1064,7 @@ Phần này trình bày kết quả của \hyperref[acro:bert]{\textbf{BERT}} tr
 \begin{table}[H]
     \centering
     \caption{Kết quả \hyperref[acro:bert]{\textbf{BERT}} trên \hyperref[acro:glue]{\texttt{GLUE}} test set.
-    Điểm số cao nhất được in đậm.}
+    Điểm số cao nhất được in đậm \cite{devlin2018bert}}.
     \label{tab:glue_results_detailed}
     \resizebox{\textwidth}{!}{%
     \begin{tabular}{lcccccccccc}
@@ -1074,7 +1074,7 @@ Phần này trình bày kết quả của \hyperref[acro:bert]{\textbf{BERT}} tr
         \midrule
         Previous SOTA
         & 80.6/80.1 & 66.1/- & 82.3 & 93.2 & 35.0 & 81.0 & 86.0/- & 61.7 & 65.1 & 74.0 \\
-        OpenAI \hyperref[acro:gpt]{\texttt{GPT}} & 82.1/81.4 & 70.3/88.5 & 87.4 & 91.3 & 45.4 & 80.0 & 82.3/75.7 & 56.0 & 65.1 & 72.8 \\
+        OpenAI \hyperref[acro:gpt]{\texttt{GPT}} \cite{radford2018improving} & 82.1/81.4 & 70.3/88.5 & 87.4 & 91.3 & 45.4 & 80.0 & 82.3/75.7 & 56.0 & 65.1 & 72.8 \\
         \midrule
         BERT\textsubscript{BASE} & 84.6/83.4 & 71.2/89.2 & 90.5 & 93.5 & 52.1 & 85.8 & 88.9/84.8 & 66.4 & 65.1 & 78.3 \\
         BERT\textsubscript{LARGE} & \textbf{86.7/85.9} & \textbf{72.1/89.3}
@@ -1099,7 +1099,7 @@ Phần này trình bày kết quả của \hyperref[acro:bert]{\textbf{BERT}} tr
 cầu trích xuất câu trả lời từ đoạn văn cho câu hỏi.
 \begin{table}[H]
     \centering
-    \caption{Kết quả trên \hyperref[acro:squad]{\texttt{SQuAD}} v1.1 test set}
+    \caption{Kết quả trên \hyperref[acro:squad]{\texttt{SQuAD}} v1.1 test set \cite{devlin2018bert}}.
     \label{tab:squad_v1_results}
     \begin{tabular}{lcc}
         \toprule
@@ -1121,7 +1121,7 @@ cầu trích xuất câu trả lời từ đoạn văn cho câu hỏi.
 \hyperref[acro:squad]{\texttt{SQuAD}} v2.0 khó hơn vì có thêm câu hỏi không có câu trả lời trong đoạn văn.
 \begin{table}[H]
     \centering
-    \caption{Kết quả trên \hyperref[acro:squad]{\texttt{SQuAD}} v2.0 test set}
+    \caption{Kết quả trên \hyperref[acro:squad]{\texttt{SQuAD}} v2.0 test set \cite{devlin2018bert}}.
     \label{tab:squad_v2_results}
     \begin{tabular}{lcc}
         \toprule
@@ -1137,13 +1137,13 @@ cầu trích xuất câu trả lời từ đoạn văn cho câu hỏi.
 \end{table}
 
 \hyperref[acro:bert]{\textbf{BERT}} cải thiện \textbf{7.1} \hyperref[acro:f1]{\texttt{F1}} points - một bước nhảy lớn cho tác vụ khó này.
-\subsection{Ablation Studies - Hiểu sâu về \hyperref[acro:bert]{\textbf{BERT}}}
-\label{ssec:ablation_study}
+\subsection{Ablation Studies - Hiểu sâu về \hyperref[acro:bert]{\textbf{BERT}} \cite{devlin2018bert}}
+\label{ssec:ablation_study_bert}
 
 \subsubsection{Tầm quan trọng của các thành phần}
 \begin{table}[H]
     \centering
-    \caption{Ablation study: Loại bỏ từng thành phần của \hyperref[acro:bert]{\textbf{BERT}}}
+    \caption{Ablation study: Loại bỏ từng thành phần của \hyperref[acro:bert]{\textbf{BERT}} \cite{devlin2018bert}}.
     \label{tab:ablation_components}
     \begin{tabular}{lccccc}
         \toprule
@@ -1170,7 +1170,7 @@ Insights:
 \subsubsection{Effect của Model Size}
 \begin{table}[H]
     \centering
-    \caption{Ảnh hưởng của kích thước mô hình}
+    \caption{Ảnh hưởng của kích thước mô hình \cite{devlin2018bert}}.
     \label{tab:model_size_effect}
     \begin{tabular}{lcccccc}
         \toprule
@@ -1198,8 +1198,8 @@ Mặc dù \hyperref[acro:bert]{\textbf{BERT}} đã tạo ra bước đột phá,
 \begin{itemize}
     \item \textbf{Pre-training cost:}
     \begin{itemize}
-        \item BERT\textsubscript{BASE}: 4 ngày trên 16 \hyperref[acro:tpu]{\texttt{TPU}} chips
-        \item BERT\textsubscript{LARGE}: 4 ngày trên 64 \hyperref[acro:tpu]{\texttt{TPU}} chips
+        \item BERT\textsubscript{BASE}: 4 ngày trên 16 \hyperref[acro:tpu]{\texttt{TPU}} chips \cite{devlin2018bert}
+        \item BERT\textsubscript{LARGE}: 4 ngày trên 64 \hyperref[acro:tpu]{\texttt{TPU}} chips \cite{devlin2018bert}
         \item Chi phí ước tính: \$7,000 - \$50,000 tùy cấu hình
     \end{itemize}
     \item \textbf{Environmental impact:} Carbon footprint tương đương 5 chuyến bay xuyên Mỹ
@@ -1210,14 +1210,14 @@ Mặc dù \hyperref[acro:bert]{\textbf{BERT}} đã tạo ra bước đột phá,
 \begin{itemize}
     \item [MASK] token chỉ xuất hiện trong pre-training, không có trong fine-tuning/inference
     \item Mặc dù có chiến lược 80-10-10, vẫn tồn tại domain shift
-    \item Các mô hình sau (\hyperref[acro:electra]{\texttt{ELECTRA}}) giải quyết bằng cách không dùng [MASK]
+    \item Các mô hình sau (\hyperref[acro:electra]{\texttt{ELECTRA}} \cite{clark2020electra}) giải quyết bằng cách không dùng [MASK]
 \end{itemize}
 
 \subsubsection{Fixed Length Limitation}
 \begin{itemize}
     \item Maximum 512 tokens - không đủ cho văn bản dài (legal documents, books)
     \item Truncation làm mất thông tin quan trọng
-    \item Solutions: Longformer (4096 tokens), BigBird (sparse attention)
+    \item Solutions: Longformer \cite{beltagy2020longformer} (4096 tokens), BigBird (sparse attention)
 \end{itemize}
 
 \subsubsection{Unidirectional Fine-tuning for Generation}
@@ -1225,21 +1225,21 @@ Mặc dù \hyperref[acro:bert]{\textbf{BERT}} đã tạo ra bước đột phá,
     \item \hyperref[acro:bert]{\textbf{BERT}} là encoder-only, không tự nhiên cho
     text generation
     \item Các hack (mask prediction iteratively) kém hiệu quả
-    \item Dẫn đến phát triển encoder-decoder models (\hyperref[acro:t5]{\texttt{T5}}, \hyperref[acro:bart]{\texttt{BART}})
+    \item Dẫn đến phát triển encoder-decoder models (\hyperref[acro:t5]{\texttt{T5}} \cite{raffel2020exploring}, \hyperref[acro:bart]{\texttt{BART}} \cite{lewis2019bart})
 \end{itemize}
 
 \subsubsection{Static Embeddings}
 \begin{itemize}
     \item Position embeddings cố định 512 vị trí
     \item Không thể extrapolate cho sequences dài hơn
-    \item Relative position embeddings (\hyperref[acro:t5]{\texttt{T5}}) linh hoạt hơn
+    \item Relative position embeddings (\hyperref[acro:t5]{\texttt{T5}} \cite{raffel2020exploring}) linh hoạt hơn
 \end{itemize}
 
 \subsubsection{\hyperref[acro:nsp]{\texttt{NSP}} Task Controversy}
 \begin{itemize}
-    \item Nhiều nghiên cứu cho thấy \hyperref[acro:nsp]{\texttt{NSP}} không cần thiết hoặc có hại
+    \item Nhiều nghiên cứu cho thấy \hyperref[acro:nsp]{\texttt{NSP}} không cần thiết hoặc có hại \cite{liu2019roberta}
     \item Random sentences quá dễ phân biệt → task không học gì có ích
-    \item \hyperref[acro:roberta]{\texttt{RoBERTa}}
+    \item \hyperref[acro:roberta]{\texttt{RoBERTa}} \cite{liu2019roberta}
     bỏ \hyperref[acro:nsp]{\texttt{NSP}} và đạt kết quả tốt hơn
 \end{itemize}
 
@@ -1250,7 +1250,7 @@ Các hướng phát triển chính:
 
 \subsubsection{Cải tiến Training Efficiency}
 
-\textbf{1. \hyperref[acro:roberta]{\texttt{RoBERTa}} (Robustly Optimized \hyperref[acro:bert]{\textbf{BERT}}):}
+\textbf{1. \hyperref[acro:roberta]{\texttt{RoBERTa}} (Robustly Optimized \hyperref[acro:bert]{\textbf{BERT}} \cite{liu2019roberta}):}
 \begin{itemize}
     \item Loại bỏ \hyperref[acro:nsp]{\texttt{NSP}}, train lâu hơn (500K steps vs 100K)
     \item Dynamic masking thay vì static
@@ -1259,7 +1259,7 @@ Các hướng phát triển chính:
 \end{itemize}
 
 \textbf{2.
-\hyperref[acro:electra]{\texttt{ELECTRA}} (Efficiently Learning an Encoder):}
+\hyperref[acro:electra]{\texttt{ELECTRA}} (Efficiently Learning an Encoder \cite{clark2020electra}):}
 \begin{itemize}
     \item Replaced token detection thay vì \hyperref[acro:mlm]{\texttt{MLM}}
     \item Train discriminator phân biệt real/fake tokens
@@ -1270,7 +1270,7 @@ Các hướng phát triển chính:
 \subsubsection{Model Compression}
 
 \textbf{1.
-DistilBERT:}
+DistilBERT \cite{sanh2019distilbert}:}
 \begin{itemize}
     \item Knowledge distillation từ BERT\textsubscript{BASE}
     \item 40\% smaller, 60\% faster, giữ 97\% performance
@@ -1278,7 +1278,7 @@ DistilBERT:}
 \end{itemize}
 
 \textbf{2.
-\hyperref[acro:albert]{\texttt{ALBERT}} (A Lite \hyperref[acro:bert]{\textbf{BERT}}):}
+\hyperref[acro:albert]{\texttt{ALBERT}} (A Lite \hyperref[acro:bert]{\textbf{BERT}} \cite{lan2019albert}):}
 \begin{itemize}
     \item Factorized embeddings: V × E → V × E' × H (E' << H)
     \item Cross-layer parameter sharing
@@ -1298,7 +1298,7 @@ Quantization \& Pruning:}
 \textbf{1.
 Handling Long Documents:}
 \begin{itemize}
-    \item \textbf{Longformer:} Sliding window + global attention
+    \item \textbf{Longformer \cite{beltagy2020longformer}:} Sliding window + global attention
     \item \textbf{BigBird:} Sparse attention (random + window + global)
     \item \textbf{Linformer:} Linear complexity attention
 \end{itemize}
@@ -1306,15 +1306,15 @@ Handling Long Documents:}
 \textbf{2.
 Unified Models:}
 \begin{itemize}
-    \item \textbf{\hyperref[acro:t5]{\texttt{T5}}:} "Text-to-Text" framework - mọi task là seq2seq
-    \item \textbf{\hyperref[acro:bart]{\texttt{BART}}:} Denoising autoencoder cho generation
+    \item \textbf{\hyperref[acro:t5]{\texttt{T5}} \cite{raffel2020exploring}:} "Text-to-Text" framework - mọi task là seq2seq
+    \item \textbf{\hyperref[acro:bart]{\texttt{BART}} \cite{lewis2019bart}:} Denoising autoencoder cho generation
     \item \textbf{\hyperref[acro:unilm]{\texttt{UniLM}}:} Unified pre-training cho cả understanding và generation
 \end{itemize}
 
 \subsubsection{Multilingual và Cross-lingual}
 
 \textbf{1.
-mBERT → XLM → \hyperref[acro:xlm-r]{\texttt{XLM-R}}:}
+mBERT → XLM \cite{conneau2019unsupervised} → \hyperref[acro:xlm-r]{\texttt{XLM-R}}:}
 \begin{itemize}
     \item Progressive improvements trong multilingual understanding
     \item \hyperref[acro:xlm-r]{\texttt{XLM-R}}: 100 languages, 2.5TB text
@@ -1324,7 +1324,7 @@ mBERT → XLM → \hyperref[acro:xlm-r]{\texttt{XLM-R}}:}
 \textbf{2.
 Language-Specific Models:}
 \begin{itemize}
-    \item PhoBERT (Vietnamese), CamemBERT (French), BERTje (Dutch)
+    \item PhoBERT (Vietnamese) \cite{nguyen2020phobert}, CamemBERT (French) \cite{martin2019camembert}, BERTje (Dutch)
     \item Often outperform mBERT on monolingual tasks
 \end{itemize}
 
@@ -1333,8 +1333,8 @@ Language-Specific Models:}
 \textbf{1.
 Continued Pre-training:}
 \begin{itemize}
-    \item BioBERT: PubMed papers → biomedical \hyperref[acro:ner]{\texttt{NER}}/RE
-    \item SciBERT: Scientific papers → citation intent classification
+    \item BioBERT \cite{lee2020biobert}: PubMed papers → biomedical \hyperref[acro:ner]{\texttt{NER}}/RE
+    \item SciBERT \cite{beltagy2019scibert}: Scientific papers → citation intent classification
     \item FinBERT: Financial texts → sentiment analysis
 \end{itemize}
 
@@ -1359,7 +1359,7 @@ Adapter Modules:}
 %% =========================================================================
 \section{Kết luận}
 \label{sec:ket_luan}
-\hyperref[acro:bert]{\textbf{BERT}} - Bidirectional Encoder Representations from Transformers - không chỉ là một mô hình mà còn là một cột mốc quan trọng đánh dấu sự chuyển mình của lĩnh vực Xử
+\hyperref[acro:bert]{\textbf{BERT}} - Bidirectional Encoder Representations from Transformers \cite{devlin2018bert} - không chỉ là một mô hình mà còn là một cột mốc quan trọng đánh dấu sự chuyển mình của lĩnh vực Xử
 lý Ngôn ngữ Tự nhiên. Bằng cách giới thiệu phương pháp học biểu diễn hai chiều sâu sắc thông qua Masked Language Modeling và Next Sentence Prediction, \hyperref[acro:bert]{\textbf{BERT}} đã chứng minh rằng việc pre-training trên dữ liệu không nhãn có thể tạo ra những biểu diễn ngôn ngữ mạnh mẽ, có khả năng transfer xuất sắc cho nhiều tác vụ downstream.
 
 
@@ -1376,8 +1376,8 @@ lý Ngôn ngữ Tự nhiên. Bằng cách giới thiệu phương pháp học bi
 \hyperref[acro:bert]{\textbf{BERT}} đã mở ra kỷ nguyên mới của "Foundation Models" - những mô hình nền tảng được pre-train trên quy mô lớn rồi adapted cho các ứng dụng cụ thể.
 Từ \hyperref[acro:bert]{\textbf{BERT}}, chúng ta đã chứng kiến sự phát triển bùng nổ của:
 \begin{itemize}
-    \item Các biến thể hiệu quả hơn (\hyperref[acro:roberta]{\texttt{RoBERTa}}, \hyperref[acro:electra]{\texttt{ELECTRA}}, \hyperref[acro:albert]{\texttt{ALBERT}})
-    \item Mô hình đa ngôn ngữ (\hyperref[acro:xlm-r]{\texttt{XLM-R}}, mT5)
+    \item Các biến thể hiệu quả hơn (\hyperref[acro:roberta]{\texttt{RoBERTa}} \cite{liu2019roberta}, \hyperref[acro:electra]{\texttt{ELECTRA}} \cite{clark2020electra}, \hyperref[acro:albert]{\texttt{ALBERT}} \cite{lan2019albert})
+    \item Mô hình đa ngôn ngữ (\hyperref[acro:xlm-r]{\texttt{XLM-R}} \cite{conneau2019unsupervised}, mT5 \cite{raffel2020exploring})
     \item Scaling lên quy mô khổng lồ (GPT-3, PaLM, ChatGPT)
     \item Ứng dụng thực tế trong mọi ngành (search, translation, chatbots, content generation)
 \end{itemize}
