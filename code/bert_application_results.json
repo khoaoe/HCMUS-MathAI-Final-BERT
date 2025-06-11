@@ -1,8 +1,0 @@
-{
-  "custom_bert_test": "Passed",
-  "pretraining_loss": 10.879942779541016,
-  "bert_finetuned_accuracy": 0.81,
-  "bert_embedding_accuracy": 0.76,
-  "tfidf_accuracy": 0.7533333333333333,
-  "improvement_percentage": 0.8849557522123951
-}
