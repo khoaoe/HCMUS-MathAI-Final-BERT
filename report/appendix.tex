@@ -1,0 +1,78 @@
+\section{Phụ lục}
+\begin{itemize}
+    \item \textbf{Nội dung chính của báo cáo}  
+    \begin{verbatim}
+    % phần nội dung chính đã cải thiện
+    \input{content.tex}
+    \end{verbatim}
+    
+    \item \textbf{Danh mục thuật ngữ viết tắt}  
+    \begin{verbatim}
+    % danh mục các thuật ngữ và viết tắt
+    \input{abbre.tex}
+    \end{verbatim}
+    
+    \item \textbf{Tài liệu tham khảo}  
+    \begin{verbatim}
+    % danh sách tài liệu tham khảo đã định dạng
+    \input{cite.tex}
+    \bibliographystyle{plain}
+    \bibliography{ref}
+    \end{verbatim}
+    
+    \item \textbf{File BibTeX}  
+    Các ghi chú và đường dẫn tới file chứa toàn bộ các entry tham khảo:  
+    \verb|ref.bib|
+    
+    \item \textbf{Mã nguồn chính}  
+    Đính kèm mã Python quan trọng đã sử dụng trong thực nghiệm:  
+    \begin{minted}{python}
+    % lớp cấu hình và mô hình BERT
+    \lstinputlisting[firstline=1,lastline=200]{bert.py}
+    
+    % notebook fine‐tune và đánh giá
+    \lstinputlisting[firstline=1,lastline=200]{bert_application.ipynb}
+    \end{minted}
+    
+    \item \textbf{Danh sách siêu tham số}  
+    Bảng tổng hợp các giá trị siêu tham số chính đã thử nghiệm và lựa chọn cuối cùng:
+    \begin{table}[h]
+      \centering
+      \begin{tabular}{lcc}
+        \hline
+        Siêu tham số         & Giá trị thử & Giá trị chọn \\
+        \hline
+        Learning rate         & \{1e-5,2e-5,3e-5\} & 2e-5 \\
+        Batch size            & \{8,16,32\}       & 16   \\
+        Epochs                & \{2,3,4\}         & 3    \\
+        Max sequence length   & \{128,256,512\}   & 256  \\
+        Warmup steps          & 500               & 500  \\
+        Weight decay          & \{0.0,0.01\}      & 0.01 \\
+        \hline
+      \end{tabular}
+      \caption{Danh sách siêu tham số thực nghiệm}
+    \end{table}
+    
+    \item \textbf{Chi tiết môi trường thực nghiệm}  
+    \begin{itemize}
+      \item Python 3.8, PyTorch 1.13.1, Transformers 4.x  
+      \item GPU: NVIDIA T4 (Google Colab), RAM:12GB  
+      \item Thời gian trung bình: 30 phút/epoch (from-scratch), 10 phút/epoch (fine-tune)
+    \end{itemize}
+    
+    \item \textbf{Đồ thị và hình minh hoạ bổ sung}  
+    \begin{itemize}
+      \item Biểu đồ loss \& accuracy qua các epoch  
+      \item Ma trận nhầm lẫn full-size và t-SNE embedding  
+      \item Heatmap attention (nếu có) xuất từ thư viện \texttt{bertviz}
+    \end{itemize}
+    
+    \item \textbf{Phân tích lỗi chi tiết}  
+    Danh sách 5–10 câu mẫu dự đoán sai, kèm nhãn thật, nhãn dự đoán và nguyên nhân lỗi.
+    
+    \item \textbf{Link GitHub / Colab notebook}  
+    \begin{verbatim}
+    https://github.com/khoaoe/HCMUS-MathAI-Final-BERT
+    https://colab.research.google.com/drive/...
+    \end{verbatim}
+\end{itemize}
