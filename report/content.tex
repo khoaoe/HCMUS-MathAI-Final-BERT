@@ -2,7 +2,7 @@
 %% ABSTRACT
 %% =========================================================================
 \begin{abstract}
-\hyperref[acro:bert]{\textbf{BERT}} (Bidirectional Encoder Representations from Transformers) đã tạo ra một cuộc cách mạng trong lĩnh vực Xử lý Ngôn ngữ Tự nhiên bằng cách giới thiệu phương pháp học biểu diễn ngôn ngữ hai chiều sâu sắc. Báo cáo này phân tích chi tiết kiến trúc, cơ chế hoạt động và các đóng góp then chốt của \hyperref[acro:bert]{\textbf{BERT}}. Nhóm trình bày cơ sở toán học của các thành phần cốt lõi như cơ chế attention, kiến trúc Transformer, và hai tác vụ tiền huấn luyện đặc trưng: Masked Language Model (\hyperref[acro:mlm]{\texttt{MLM}}) và Next Sentence Prediction (\hyperref[acro:nsp]{\texttt{NSP}}). Thông qua phân tích lý thuyết và thực nghiệm trên bài toán phân loại cảm xúc, báo cáo làm rõ lý do \hyperref[acro:bert]{\textbf{BERT}} đạt được hiệu suất vượt trội, thiết lập kỷ lục mới trên 11 tác vụ \hyperref[acro:nlp]{\texttt{NLP}} và mở ra kỷ nguyên mới cho các mô hình ngôn ngữ lớn.
+    \hyperref[acro:bert]{\textbf{BERT}} (Bidirectional Encoder Representations from Transformers) đã tạo ra một cuộc cách mạng trong lĩnh vực Xử lý Ngôn ngữ Tự nhiên bằng cách giới thiệu phương pháp học biểu diễn ngôn ngữ hai chiều sâu sắc. Báo cáo này phân tích chi tiết kiến trúc, cơ chế hoạt động và các đóng góp then chốt của \hyperref[acro:bert]{\textbf{BERT}}. Nhóm trình bày cơ sở toán học của các thành phần cốt lõi như cơ chế attention, kiến trúc Transformer, và hai tác vụ tiền huấn luyện đặc trưng: Masked Language Model (\hyperref[acro:mlm]{\texttt{MLM}}) và Next Sentence Prediction (\hyperref[acro:nsp]{\texttt{NSP}}). Thông qua phân tích lý thuyết và thực nghiệm trên bài toán phân loại cảm xúc, báo cáo làm rõ lý do \hyperref[acro:bert]{\textbf{BERT}} đạt được hiệu suất vượt trội, thiết lập kỷ lục mới trên 11 tác vụ \hyperref[acro:nlp]{\texttt{NLP}} và mở ra kỷ nguyên mới cho các mô hình ngôn ngữ lớn.
 \end{abstract}
 
 % =========================================================================
@@ -68,7 +68,7 @@ Sự thành công của \hyperref[acro:bert]{\textbf{BERT}} không chỉ nằm �
 \section{Kiến trúc \hyperref[acro:bert]{\textbf{BERT}} và các Thành phần Cốt lõi}
 \label{sec:kien_truc_bert}
 
-Kiến trúc của \hyperref[acro:bert]{\textbf{BERT}} dựa trên phần encoder của kiến trúc Transformer \cite{vaswani2017attention}. Trong phần này, sẽ phân tích chi tiết từng thành phần cốt lõi và cơ sở toán học của chúng.
+Kiến trúc của \hyperref[acro:bert]{\textbf{BERT}} dựa trên phần encoder của kiến trúc Transformer \cite{vaswani2017attention}. Trong phần này sẽ phân tích chi tiết từng thành phần cốt lõi và cơ sở toán học của chúng.
 
 \subsection{Tổng quan về Kiến trúc Transformer}
 \label{ssec:tong_quan_transformer}
@@ -300,6 +300,15 @@ Các mô hình ngôn ngữ truyền thống chỉ có thể học một chiều 
     \item \textbf{10\% trường hợp → Giữ nguyên:} Token không bị thay đổi
 \end{itemize}
 
+\textbf{Ví dụ minh họa:}
+\begin{verbatim}
+Câu gốc: "The cat sat on the mat"
+Giả sử token "sat" được chọn để mask:
+- 80% khả năng: "The cat [MASK] on the mat"
+- 10% khả năng: "The cat dog on the mat" (random)
+- 10% khả năng: "The cat sat on the mat" (không đổi)
+\end{verbatim}
+
 \subsubsection{Lý do của chiến lược 80-10-10}
 Chiến lược này được thiết kế cẩn thận để giải quyết vấn đề mismatch giữa pre-training và fine-tuning:
 
@@ -348,6 +357,19 @@ Nhiều tác vụ \hyperref[acro:nlp]{\texttt{NLP}} quan trọng yêu cầu hi�
     \label{eq:nsp_prediction}
     \end{equation}
 \end{enumerate}
+
+\textbf{Ví dụ minh họa:}
+\begin{verbatim}
+Ví dụ IsNext:
+A: "The sun is shining brightly today."
+B: "It's a perfect day for a picnic."
+→ Label: IsNext (hai câu có liên quan logic)
+
+Ví dụ NotNext:
+A: "The sun is shining brightly today."
+B: "Elephants are the largest land mammals."
+→ Label: NotNext (hai câu không liên quan)
+\end{verbatim}
 
 \subsubsection{Combined Loss}
 \hyperref[acro:bert]{\textbf{BERT}} được train với combined loss:
@@ -470,9 +492,7 @@ Từ bài báo gốc \cite{devlin2018bert}, các hyperparameters được khuy�
 
 Lưu ý: Datasets nhỏ nhạy cảm hơn với hyperparameters. Nên thử nhiều random seeds và chọn model tốt nhất trên validation set.
 
-%% =========================================================================
-%% CHƯƠNG 5: THỰC NGHIỆM VỚI BERT
-%% =========================================================================
+
 %% =========================================================================
 %% CHƯƠNG 5: THỰC NGHIỆM VỚI BERT
 %% =========================================================================
@@ -808,6 +828,7 @@ Kết quả thực nghiệm khẳng định BERT là lựa chọn mạnh mẽ ch
 \end{itemize}
 
 Việc kết hợp hiểu biết lý thuyết từ triển khai from-scratch với kinh nghiệm thực tế từ fine-tuning tạo nên nền tảng vững chắc cho việc áp dụng và phát triển các mô hình transformer trong tương lai.
+
 
 %% =========================================================================
 %% CHƯƠNG 6: KẾT QUẢ VÀ SO SÁNH
