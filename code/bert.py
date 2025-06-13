@@ -19,10 +19,10 @@ from torch.optim import AdamW
 # torch: Framework deep learning chính
 # nn: Module chứa các layers và loss functions  
 # F: Functional API cho các phép toán không có trạng thái
-# AdamW: Optimizer với weight decay tách biệt (Loshchilov & Hutter, 2017)
+# AdamW: Optimizer với weight decay tách biệt
 
 # --- Thư viện Toán học và Tiện ích Python ---
-import math  # Dùng cho sqrt trong scaled attention (công thức 1 trong paper)
+import math  # Dùng cho sqrt trong scaled attention 
 import random  # Tạo ngẫu nhiên cho MLM và NSP
 from typing import Dict, List, Tuple, Optional, Union  # Type hints
 import time  
@@ -30,7 +30,7 @@ from dataclasses import dataclass  # Decorator cho config class
 
 # --- Thư viện Hugging Face ---
 from transformers import BertTokenizer
-# BertTokenizer: Implement WordPiece tokenization (Wu et al., 2016)
+# BertTokenizer: Implement WordPiece tokenization
 # Vocab size ~30K tokens, xử lý OOV bằng subword units
 
 # --- PyTorch Data Utils ---
@@ -301,7 +301,7 @@ class BertIntermediate(nn.Module):
     Feed-Forward Network (FFN) đầu tiên trong Transformer block.
     
     Expand dimension từ H -> 4H (hoặc intermediate_size).
-    Sử dụng GELU activation thay vì ReLU (Hendrycks & Gimpel, 2016).
+    Sử dụng GELU activation thay vì ReLU.
     """
     def __init__(self, config: BertConfig):
         super().__init__()
@@ -483,7 +483,6 @@ class BertLMPredictionHead(nn.Module):
     2. Decoder (project về vocab size)
     
     Decoder weights được tied với input embeddings để giảm parameters
-    (Press & Wolf, 2017).
     """
     def __init__(self, config, bert_model_embedding_weights):
         super().__init__()
@@ -813,7 +812,7 @@ def train_loop(model, dataloader, optimizer, epochs, device):
     Args:
         model: BertForPreTraining model
         dataloader: DataLoader với PretrainingDataset
-        optimizer: AdamW optimizer (Loshchilov & Hutter, 2017)
+        optimizer: AdamW optimizer
         epochs: Số epochs
         device: 'cuda' hoặc 'cpu'
     """
@@ -994,6 +993,5 @@ if __name__ == '__main__':
     test_NSP(sent_a="The dog is cute.", sent_b="The sky is blue.")
 
     print("\n" + "="*50)
-    print("Demo hoàn tất! Đây chỉ là minh họa với model thu nhỏ.")
-    print("BERT thực tế cần tài nguyên lớn hơn nhiều để đạt SOTA.")
+    print("Demo hoàn tất!")
     print("="*50)
