@@ -315,9 +315,9 @@ Chiến lược này được thiết kế cẩn thận để giải quyết v�
 \begin{enumerate}
     \item \textbf{Vấn đề [MASK] token:} Trong fine-tuning và inference, không có token [MASK]. Nếu chỉ train với [MASK], mô hình sẽ overfit vào việc xử lý [MASK].
     
-    \item \textbf{Random replacement (10\%):} Buộc mô hình phải học biểu diễn tốt cho MỌI token, không chỉ [MASK]. Mô hình phải "nghi ngờ" mọi từ có thể bị thay thế.
+    \item \textbf{Random (10\%):} Buộc mô hình phải học biểu diễn tốt cho MỌI token, không chỉ [MASK]. Mô hình phải "nghi ngờ" mọi từ có thể bị thay thế.
     
-    \item \textbf{Keep unchanged (10\%):} Đảm bảo mô hình cũng học cách biểu diễn các từ không bị thay đổi, tạo cân bằng trong học tập.
+    \item \textbf{Giữ nguyên (10\%):} Đảm bảo mô hình cũng học cách biểu diễn các từ không bị thay đổi, tạo cân bằng trong học tập.
 \end{enumerate}
 
 \subsubsection{Hàm loss cho \hyperref[acro:mlm]{\texttt{MLM}}}
@@ -351,7 +351,7 @@ Nhiều tác vụ \hyperref[acro:nlp]{\texttt{NLP}} quan trọng yêu cầu hi�
         \item 50\% mẫu: Câu B là câu ngẫu nhiên từ corpus (label: NotNext)
     \end{itemize}
     
-    \item \textbf{Prediction:} Sử dụng biểu diễn cuối cùng của [CLS] token:
+    \item \textbf{Dự đoán:} Sử dụng biểu diễn cuối cùng của [CLS] token:
     \begin{equation}
     P(\text{IsNext}) = \text{softmax}(W_{NSP} \cdot h_{[CLS]} + b_{NSP})
     \label{eq:nsp_prediction}
@@ -433,12 +433,12 @@ Memory requirement & Cao & Thấp hơn \\
 \subsubsection{Sentence Pair Classification}
 \textbf{Ứng dụng:} Natural Language Inference, Paraphrase Detection, Semantic Similarity
 
-\textbf{Input format:}
+\textbf{Cấu trúc Input:}
 \begin{verbatim}
 [CLS] Sentence A [SEP] Sentence B [SEP]
 \end{verbatim}
 
-\textbf{Architecture:}
+\textbf{Kiến trúc:}
 \begin{itemize}
     \item Lấy final hidden state của [CLS]: $h_{[CLS]} \in \mathbb{R}^H$
     \item Classification layer: $W \in \mathbb{R}^{K \times H}$ (K = số classes)
@@ -448,12 +448,12 @@ Memory requirement & Cao & Thấp hơn \\
 \subsubsection{Single Sentence Classification}  
 \textbf{Ứng dụng:} Sentiment Analysis, Topic Classification, Spam Detection
 
-\textbf{Architecture:} Tương tự sentence pair nhưng chỉ có một câu đầu vào
+\textbf{Kiến trúc:} Tương tự sentence pair nhưng chỉ có một câu đầu vào
 
 \subsubsection{Question Answering}
 \textbf{Ứng dụng:} Extract answer span from context (SQuAD style)
 
-\textbf{Architecture đặc biệt:}
+\textbf{Kiến trúc đặc biệt:}
 \begin{itemize}
     \item Học 2 vectors: Start vector $S \in \mathbb{R}^H$ và End vector $E \in \mathbb{R}^H$
     \item Với mỗi token $i$ trong context:
@@ -467,7 +467,7 @@ Memory requirement & Cao & Thấp hơn \\
 \subsubsection{Token Classification (NER)}
 \textbf{Ứng dụng:} Named Entity Recognition, Part-of-Speech Tagging
 
-\textbf{Architecture:}
+\textbf{Kiến trúc:}
 \begin{itemize}
     \item Mỗi token output $T_i$ qua classification layer riêng
     \item $P(y_i|x) = \text{softmax}(T_i \cdot W^T)$
@@ -879,7 +879,7 @@ Phần này trình bày kết quả của \hyperref[acro:bert]{\textbf{BERT}} tr
 \begin{itemize}
     \item BERT\textsubscript{LARGE} đạt 80.5 điểm trung bình, tăng 7.7 điểm tuyệt đối so với \hyperref[acro:gpt]{\texttt{GPT}} (72.8)
     \item Cải thiện lớn nhất: \hyperref[acro:cola]{\texttt{CoLA}} (+15.1), \hyperref[acro:rte]{\texttt{RTE}} (+14.1) - các tác vụ có ít dữ liệu
-    \item Điều này cho thấy \hyperref[acro:bert]{\textbf{BERT}} học được representations tổng quát, transfer tốt cho small datasets
+    \item Điều này cho thấy \hyperref[acro:bert]{\textbf{BERT}} học được representations tổng quát, transfer tốt cho các dataset nhỏ.
 \end{itemize}
 
 \subsection{Kết quả trên \hyperref[acro:squad]{\texttt{SQuAD}}}
@@ -927,7 +927,7 @@ Phần này trình bày kết quả của \hyperref[acro:bert]{\textbf{BERT}} tr
     \end{tabular}
 \end{table}
 
-\hyperref[acro:bert]{\textbf{BERT}} cải thiện \textbf{7.1} \hyperref[acro:f1]{\texttt{F1}} points - một bước nhảy lớn cho tác vụ khó này.
+\hyperref[acro:bert]{\textbf{BERT}} cải thiện \textbf{7.1} điểm \hyperref[acro:f1]{\texttt{F1}} - một bước nhảy lớn cho tác vụ khó này.
 
 \subsection{Ablation Studies: Hiểu sâu về \hyperref[acro:bert]{\textbf{BERT}}}
 \label{ssec:ablation_study_bert}
@@ -974,7 +974,7 @@ Insights quan trọng:
     \end{tabular}
 \end{table}
 
-Larger models consistently better, even on small datasets (\hyperref[acro:mrpc]{\texttt{MRPC}}: 3.7K samples). Điều này cho thấy pre-training hiệu quả giúp tránh overfitting.
+Mô hình lớn hơn vẫn giữ được performance tốt, dù là trên dataset nhỏ hơn (\hyperref[acro:mrpc]{\texttt{MRPC}}: 3.7K samples). Điều này cho thấy pre-training hiệu quả giúp tránh overfitting.
 
 %% =========================================================================
 %% CHƯƠNG 7: HẠN CHẾ VÀ HƯỚNG PHÁT TRIỂN
@@ -989,14 +989,14 @@ Mặc dù \hyperref[acro:bert]{\textbf{BERT}} đã tạo ra bước đột phá,
 
 \subsubsection{Chi phí tính toán khổng lồ}
 \begin{itemize}
-    \item \textbf{Pre-training cost:}
+    \item \textbf{Chi phí Pre-training:}
     \begin{itemize}
         \item BERT\textsubscript{BASE}: 4 ngày trên 16 \hyperref[acro:tpu]{\texttt{TPU}} chips \cite{devlin2018bert}
         \item BERT\textsubscript{LARGE}: 4 ngày trên 64 \hyperref[acro:tpu]{\texttt{TPU}} chips \cite{devlin2018bert}
         \item Chi phí ước tính: \$7,000 - \$50,000 tùy cấu hình
     \end{itemize}
-    \item \textbf{Environmental impact:} Carbon footprint tương đương 5 chuyến bay xuyên Mỹ
-    \item \textbf{Inference cost:} BERT\textsubscript{LARGE} cần ~1GB memory, chậm cho real-time apps
+    \item \textbf{Ảnh hưởng đến môi trường:} Carbon footprint tương đương 5 chuyến bay xuyên Mỹ
+    \item \textbf{Chi phí tính toán:} BERT\textsubscript{LARGE} cần ~1GB memory, chậm cho các real-time app.
 \end{itemize}
 
 \subsubsection{Masked Token Discrepancy}
@@ -1010,7 +1010,7 @@ Mặc dù \hyperref[acro:bert]{\textbf{BERT}} đã tạo ra bước đột phá,
 \begin{itemize}
     \item Maximum 512 tokens - không đủ cho văn bản dài (legal documents, books)
     \item Truncation làm mất thông tin quan trọng
-    \item Solutions: Longformer \cite{beltagy2020longformer} (4096 tokens), BigBird (sparse attention)
+    \item Giải pháp: Longformer \cite{beltagy2020longformer} (4096 tokens), BigBird (sparse attention)
 \end{itemize}
 
 \subsubsection{Unidirectional Fine-tuning for Generation}
@@ -1023,7 +1023,7 @@ Mặc dù \hyperref[acro:bert]{\textbf{BERT}} đã tạo ra bước đột phá,
 \subsubsection{Static Embeddings}
 \begin{itemize}
     \item Position embeddings cố định 512 vị trí
-    \item Không thể extrapolate cho sequences dài hơn
+    \item Không thể ngoại suy cho sequences dài hơn
     \item Relative position embeddings (\hyperref[acro:t5]{\texttt{T5}} \cite{raffel2020exploring}) linh hoạt hơn
 \end{itemize}
 
@@ -1045,7 +1045,7 @@ Mặc dù \hyperref[acro:bert]{\textbf{BERT}} đã tạo ra bước đột phá,
 \begin{itemize}
     \item Loại bỏ \hyperref[acro:nsp]{\texttt{NSP}}, train lâu hơn (500K steps vs 100K)
     \item Dynamic masking thay vì static
-    \item Larger batches (8K vs 256)
+    \item Số lương batch lớn hơn (8K vs 256)
     \item Kết quả: +2-3\% trên hầu hết tasks
 \end{itemize}
 
@@ -1053,16 +1053,16 @@ Mặc dù \hyperref[acro:bert]{\textbf{BERT}} đã tạo ra bước đột phá,
 \begin{itemize}
     \item Replaced token detection thay vì \hyperref[acro:mlm]{\texttt{MLM}}
     \item Train discriminator phân biệt real/fake tokens
-    \item Hiệu quả hơn 4x về compute
-    \item Small \hyperref[acro:electra]{\texttt{ELECTRA}} $\approx$ BERT\textsubscript{BASE} với 1/4 compute
+    \item Hiệu quả hơn 4x về tính toán
+    \item Small \hyperref[acro:electra]{\texttt{ELECTRA}} $\approx$ BERT\textsubscript{BASE} với 1/4 computation
 \end{itemize}
 
 \subsubsection{Model Compression}
 
 \textbf{1. DistilBERT \cite{sanh2019distilbert}:}
 \begin{itemize}
-    \item Knowledge distillation từ BERT\textsubscript{BASE}
-    \item 40\% smaller, 60\% faster, giữ 97\% performance
+    \item Chưng cất tri thức (Knowledge distillation) từ BERT\textsubscript{BASE}
+    \item 40\% nhỏ hơn, 60\% nhanh hơn, giữ 97\% performance
     \item Key: Distill during pre-training, not just fine-tuning
 \end{itemize}
 
@@ -1070,68 +1070,68 @@ Mặc dù \hyperref[acro:bert]{\textbf{BERT}} đã tạo ra bước đột phá,
 \begin{itemize}
     \item Factorized embeddings: $V \times E \rightarrow V \times E' \times H$ (E' << H)
     \item Cross-layer parameter sharing
-    \item 18x fewer parameters với comparable performance
+    \item Số parameters ít hơn 18x lần với performance tương đương
 \end{itemize}
 
 \textbf{3. Quantization \& Pruning:}
 \begin{itemize}
-    \item 8-bit quantization: 4x compression, <1\% performance drop
-    \item Structured pruning: Remove attention heads/layers
+    \item 8-bit quantization: nén 4x lần , chỉ giảm <1\% performance 
+    \item Structured pruning: Loại bỏ các attention heads/layers
     \item TensorRT optimization cho deployment
 \end{itemize}
 
-\subsubsection{Architectural Innovations}
+\subsubsection{Các cải tiến về mặt Kiến trúc}
 
-\textbf{1. Handling Long Documents:}
+\textbf{1. Xử lý văn bản lớn:}
 \begin{itemize}
     \item \textbf{Longformer \cite{beltagy2020longformer}:} Sliding window + global attention
     \item \textbf{BigBird:} Sparse attention (random + window + global)
     \item \textbf{Linformer:} Linear complexity attention
 \end{itemize}
 
-\textbf{2. Unified Models:}
+\textbf{2. Các models thống nhất:}
 \begin{itemize}
     \item \textbf{\hyperref[acro:t5]{\texttt{T5}} \cite{raffel2020exploring}:} "Text-to-Text" framework - mọi task là seq2seq
     \item \textbf{\hyperref[acro:bart]{\texttt{BART}} \cite{lewis2019bart}:} Denoising autoencoder cho generation
-    \item \textbf{\hyperref[acro:unilm]{\texttt{UniLM}}:} Unified pre-training cho cả understanding và generation
+    \item \textbf{\hyperref[acro:unilm]{\texttt{UniLM}}:} Thống nhất pre-training cho cả understanding và generation
 \end{itemize}
 
 \subsubsection{Multilingual và Cross-lingual}
 
 \textbf{1. mBERT → XLM \cite{conneau2019unsupervised} → \hyperref[acro:xlm-r]{\texttt{XLM-R}}:}
 \begin{itemize}
-    \item Progressive improvements trong multilingual understanding
-    \item \hyperref[acro:xlm-r]{\texttt{XLM-R}}: 100 languages, 2.5TB text
-    \item Zero-shot cross-lingual transfer
+    \item Cải thiện dần trong hiểu đa ngôn ngữ
+    \item \hyperref[acro:xlm-r]{\texttt{XLM-R}}: 100 ngôn ngữ, 2.5TB văn bản
+    \item Zero-shot cross-lingual transfer (Khả năng train trên nhiều ngôn ngữ khác nhau nhưng vẫn có perfomance tốt khi xử lý một ngôn ngữ cụ thể) 
 \end{itemize}
 
 \textbf{2. Language-Specific Models:}
 \begin{itemize}
-    \item PhoBERT (Vietnamese) \cite{nguyen2020phobert}, CamemBERT (French) \cite{martin2019camembert}, BERTje (Dutch)
-    \item Often outperform mBERT on monolingual tasks
+    \item PhoBERT (tiếng Việt) \cite{nguyen2020phobert}, CamemBERT (tiếng Pháp) \cite{martin2019camembert}, BERTje (tiếng Hà Lan)
+    \item Thường outperform mBERT trên các tác vụ đơn ngôn ngữ (monolingual)
 \end{itemize}
 
 \subsubsection{Domain Adaptation}
 
 \textbf{1. Continued Pre-training:}
 \begin{itemize}
-    \item BioBERT \cite{lee2020biobert}: PubMed papers → biomedical \hyperref[acro:ner]{\texttt{NER}}/RE
-    \item SciBERT \cite{beltagy2019scibert}: Scientific papers → citation intent classification
-    \item FinBERT: Financial texts → sentiment analysis
+    \item BioBERT \cite{lee2020biobert}: bài báo PubMed → \hyperref[acro:ner]{\texttt{NER}}/RE trong y sinh (Biomedical)
+    \item SciBERT \cite{beltagy2019scibert}: Các bài báo khoa học → citation intent classification (tìm lí do các tác giả cite một source nào đó trong bài báo của họ)
+    \item FinBERT: Văn bản tài chính → sentiment analysis
 \end{itemize}
 
 \textbf{2. Adapter Modules:}
 \begin{itemize}
-    \item Thêm small trainable modules, freeze \hyperref[acro:bert]{\textbf{BERT}}
-    \item Efficient multi-domain adaptation
-    \item Parameter efficient: ~3\% additional parameters per task
+    \item Thêm các modules nhỏ có khả năng huấn luyện được, freeze \hyperref[acro:bert]{\textbf{BERT}}
+    \item Multi-domain adaptation hiệu quả
+    \item Parameter efficient: thêm xấp xỉ 3\% parameters cho mỗi tác vụ
 \end{itemize}
 
 \subsubsection{Toward Foundation Models}
-\hyperref[acro:bert]{\textbf{BERT}}'s success paved the way for:
+Thành công của \hyperref[acro:bert]{\textbf{BERT}} đã mở đường cho:
 \begin{itemize}
-    \item GPT-3: Scaling to 175B parameters
-    \item PaLM: 540B parameters với breakthrough capabilities
+    \item GPT-3: Scaling tới 175B parameters
+    \item PaLM: 540B parameters với khả năng thích ứng đột phá
     \item ChatGPT/GPT-4: Instruction following và alignment
 \end{itemize}
 
@@ -1151,12 +1151,12 @@ Mặc dù \hyperref[acro:bert]{\textbf{BERT}} đã tạo ra bước đột phá,
     
     \item \textbf{Transfer learning paradigm:} Thiết lập mô hình "pre-train once, fine-tune for everything" đã trở thành chuẩn mực cho ngành. Với chi phí fine-tuning thấp (vài giờ trên GPU), \hyperref[acro:bert]{\textbf{BERT}} democratize việc sử dụng các mô hình ngôn ngữ mạnh mẽ.
     
-    \item \textbf{Empirical breakthroughs:} Không chỉ cải thiện incremental mà tạo ra những bước nhảy lớn trên nhiều benchmarks. Trên \hyperref[acro:glue]{\texttt{GLUE}}, \hyperref[acro:bert]{\textbf{BERT}} tăng 7.7 điểm tuyệt đối. Trên \hyperref[acro:squad]{\texttt{SQuAD}} v1.1, thậm chí vượt qua human performance.
+    \item \textbf{Empirical breakthroughs:} Không chỉ cải thiện tiệm tiến (incremental) mà tạo ra những bước nhảy lớn trên nhiều benchmarks. Trên \hyperref[acro:glue]{\texttt{GLUE}}, \hyperref[acro:bert]{\textbf{BERT}} tăng 7.7 điểm tuyệt đối. Trên \hyperref[acro:squad]{\texttt{SQuAD}} v1.1, thậm chí vượt qua human performance.
 \end{itemize}
 
 \textbf{Tác động sâu rộng:}
 
-\hyperref[acro:bert]{\textbf{BERT}} đã mở ra kỷ nguyên mới của "Foundation Models" - những mô hình nền tảng được pre-train trên quy mô lớn rồi adapted cho các ứng dụng cụ thể. Từ \hyperref[acro:bert]{\textbf{BERT}}, chúng ta đã chứng kiến sự phát triển bùng nổ của:
+\hyperref[acro:bert]{\textbf{BERT}} đã mở ra kỷ nguyên mới của "Foundation Models" - những mô hình nền tảng được pre-train trên quy mô lớn rồi adapt cho các ứng dụng cụ thể. Từ \hyperref[acro:bert]{\textbf{BERT}}, chúng ta đã chứng kiến sự phát triển bùng nổ của:
 
 \begin{itemize}
     \item Các biến thể hiệu quả hơn (\hyperref[acro:roberta]{\texttt{RoBERTa}} \cite{liu2019roberta}, \hyperref[acro:electra]{\texttt{ELECTRA}} \cite{clark2020electra}, \hyperref[acro:albert]{\texttt{ALBERT}} \cite{lan2019albert})
