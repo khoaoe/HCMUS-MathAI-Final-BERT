@@ -1,0 +1,368 @@
+\documentclass{beamer}
+\usetheme{Madrid}
+\usecolortheme{seagull}
+
+% Packages
+\usepackage[utf8]{inputenc}
+\usepackage[vietnamese]{babel}
+\usepackage{graphicx}
+\usepackage{caption}
+\usepackage{tikz}
+\usepackage{amsmath}
+\usepackage{booktabs}
+
+% Font settings
+\usefonttheme{professionalfonts}
+\setbeamerfont{title}{size=\Large}
+\setbeamerfont{frametitle}{size=\large}
+
+% Footer với số slide
+\setbeamertemplate{footline}[frame number]
+
+% Thông tin chung
+\title{Nghiên cứu BERT: Bidirectional Encoder Representations from Transformers}
+\subtitle{Đồ án cuối kỳ - Hướng 2}
+\author{Nhóm 13:\\
+Lê Thái Ngọc - 23122012\\
+Nguyễn Ngọc Khoa - 23122036\\
+Nguyễn Lê Phúc Thắng - 22120332}
+\institute{
+Trường Đại học Khoa học Tự nhiên - ĐHQG HCM\\
+Khoa Công nghệ Thông tin\\
+Môn: Phương pháp toán cho Trí tuệ nhân tạo
+}
+
+\begin{document}
+
+% Title slide
+\begin{frame}
+\titlepage
+\end{frame}
+
+% Outline
+\begin{frame}{Nội dung trình bày}
+\tableofcontents
+\end{frame}
+
+% Section 1: Giới thiệu
+\section{Giới thiệu}
+\begin{frame}{Bối cảnh và Động lực}
+\begin{itemize}
+    \item \textbf{Hạn chế của word embeddings tĩnh:}
+    \begin{itemize}
+        \item Word2Vec, GloVe: một từ → một vector cố định
+        \item Không nắm bắt ngữ cảnh động (vd: "bank")
+    \end{itemize}
+    \item \textbf{Giải pháp trước BERT:}
+    \begin{itemize}
+        \item ELMo: Kết hợp 2 LSTM độc lập (shallow fusion)
+        \item GPT: Chỉ học một chiều (left-to-right)
+    \end{itemize}
+    \item \textbf{Đột phá của BERT:}
+    \begin{itemize}
+        \item Học hai chiều sâu sắc (deeply bidirectional)
+        \item Pre-train once, fine-tune for everything
+    \end{itemize}
+\end{itemize}
+\end{frame}
+
+\begin{frame}{Thành tích của BERT}
+\begin{itemize}
+    \item \textbf{GLUE Benchmark:}
+    \begin{itemize}
+        \item BERT\textsubscript{LARGE}: 80.5 điểm (+7.7 so với GPT)
+        \item SOTA trên 11/11 tác vụ NLP
+    \end{itemize}
+    \item \textbf{SQuAD v1.1:}
+    \begin{itemize}
+        \item F1: 93.2 (vượt human performance 91.2)
+        \item EM: 87.4
+    \end{itemize}
+    \item \textbf{Tác động:}
+    \begin{itemize}
+        \item Mở đầu kỷ nguyên Foundation Models
+        \item Truyền cảm hứng cho GPT-3, T5, BART...
+    \end{itemize}
+\end{itemize}
+\end{frame}
+
+% Section 2: Kiến trúc
+\section{Kiến trúc BERT}
+\begin{frame}{Tổng quan Kiến trúc Transformer}
+\begin{figure}
+    \centering
+    \includegraphics[width=0.7\textwidth]{figs/transformer_encoder.png}
+    \caption{Kiến trúc Encoder trong Transformer (Vaswani et al., 2017)}
+\end{figure}
+\begin{itemize}
+    \item BERT = Encoder-only Transformer
+    \item Multi-Head Self-Attention + FFN
+    \item Residual connections + Layer Norm
+\end{itemize}
+\end{frame}
+
+\begin{frame}{Multi-Head Self-Attention}
+\begin{columns}
+\column{0.5\textwidth}
+\begin{itemize}
+    \item \textbf{Scaled Dot-Product:}
+    $$\text{Attention}(Q,K,V) = \text{softmax}\left(\frac{QK^T}{\sqrt{d_k}}\right)V$$
+    \item \textbf{Multi-Head:}
+    \begin{itemize}
+        \item h = 12 heads (BASE)
+        \item Mỗi head học một góc nhìn
+    \end{itemize}
+\end{itemize}
+\column{0.5\textwidth}
+\begin{figure}
+    \centering
+    \includegraphics[width=\textwidth]{figs/multi_head_attention.png}
+    \caption{Multi-Head Attention}
+\end{figure}
+\end{columns}
+\end{frame}
+
+\begin{frame}{Input Embeddings của BERT}
+\begin{figure}
+    \centering
+    \includegraphics[width=0.8\textwidth]{figs/bert_input_embeddings.png}
+    \caption{Ba loại embeddings được cộng để tạo input (Devlin et al., 2019)}
+\end{figure}
+\begin{itemize}
+    \item \textbf{Token Embeddings:} WordPiece tokenization (30K vocab)
+    \item \textbf{Segment Embeddings:} Phân biệt câu A và B
+    \item \textbf{Position Embeddings:} Learned (không phải sinusoidal)
+\end{itemize}
+\end{frame}
+
+\begin{frame}{So sánh BERT Base vs Large}
+\begin{table}
+\centering
+\begin{tabular}{lcc}
+\toprule
+\textbf{Thông số} & \textbf{BERT\textsubscript{BASE}} & \textbf{BERT\textsubscript{LARGE}} \\
+\midrule
+Layers (L) & 12 & 24 \\
+Hidden size (H) & 768 & 1024 \\
+Attention heads (A) & 12 & 16 \\
+Parameters & 110M & 340M \\
+Training time & 4 days/16 TPUs & 4 days/64 TPUs \\
+\bottomrule
+\end{tabular}
+\end{table}
+\begin{itemize}
+    \item Trade-off giữa hiệu năng và chi phí tính toán
+    \item Cả hai đều vượt trội so với mô hình trước
+\end{itemize}
+\end{frame}
+
+% Section 3: Pre-training
+\section{Tác vụ Tiền huấn luyện}
+\begin{frame}{Masked Language Model (MLM)}
+\begin{figure}
+    \centering
+    \includegraphics[height=3.5cm]{figs/mlm_example.png}
+    \caption{Ví dụ minh họa chiến lược masking 80-10-10}
+\end{figure}
+\begin{itemize}
+    \item Che ngẫu nhiên 15\% tokens
+    \item \textbf{Chiến lược 80-10-10:}
+    \begin{itemize}
+        \item 80\%: Thay bằng [MASK]
+        \item 10\%: Thay bằng random token
+        \item 10\%: Giữ nguyên
+    \end{itemize}
+    \item Giảm mismatch pre-training/fine-tuning
+\end{itemize}
+\end{frame}
+
+\begin{frame}{Next Sentence Prediction (NSP)}
+\begin{columns}
+\column{0.6\textwidth}
+\begin{itemize}
+    \item \textbf{Mục tiêu:} Học quan hệ giữa câu
+    \item \textbf{Dữ liệu:}
+    \begin{itemize}
+        \item 50\% IsNext (câu liên tiếp)
+        \item 50\% NotNext (câu random)
+    \end{itemize}
+    \item \textbf{Dự đoán:} Từ [CLS] representation
+    \item \textbf{Tranh cãi:} RoBERTa bỏ NSP → tốt hơn
+\end{itemize}
+\column{0.4\textwidth}
+\begin{figure}
+    \centering
+    \includegraphics[width=\textwidth]{figs/nsp_example.png}
+    \caption{Ví dụ NSP}
+\end{figure}
+\end{columns}
+\end{frame}
+
+% Section 4: Fine-tuning
+\section{Fine-tuning và Thực nghiệm}
+\begin{frame}{Quy trình Fine-tuning}
+\begin{figure}
+    \centering
+    \includegraphics[width=0.8\textwidth]{figs/bert_finetuning.png}
+    \caption{Fine-tuning BERT cho các tác vụ khác nhau}
+\end{figure}
+\begin{itemize}
+    \item Giữ nguyên kiến trúc BERT
+    \item Thêm task-specific output layer
+    \item Train toàn bộ parameters end-to-end
+\end{itemize}
+\end{frame}
+
+\begin{frame}{Thực nghiệm: Phân loại Cảm xúc IMDb}
+\begin{itemize}
+    \item \textbf{Dataset:} IMDb Movie Reviews
+    \begin{itemize}
+        \item Train: 4,000 reviews
+        \item Validation: 1,000 reviews
+    \end{itemize}
+    \item \textbf{Baseline:} TF-IDF + Logistic Regression
+    \item \textbf{Fine-tuning settings:}
+    \begin{itemize}
+        \item Learning rate: 2e-5
+        \item Batch size: 16
+        \item Epochs: 3
+        \item Max length: 256 tokens
+    \end{itemize}
+\end{itemize}
+\end{frame}
+
+% Section 5: Kết quả
+\section{Kết quả và Phân tích}
+\begin{frame}{So sánh Hiệu năng}
+\begin{table}
+\centering
+\begin{tabular}{lcccc}
+\toprule
+\textbf{Mô hình} & \textbf{Accuracy} & \textbf{Precision} & \textbf{Recall} & \textbf{F1} \\
+\midrule
+TF-IDF + LR & 0.855 & 0.86 & 0.86 & 0.85 \\
+BERT (fine-tuned) & \textbf{0.894} & \textbf{0.89} & \textbf{0.90} & \textbf{0.89} \\
+\midrule
+\textbf{Cải thiện} & +3.9\% & +3.0\% & +4.0\% & +4.0\% \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\begin{figure}
+    \centering
+    \includegraphics[width=0.5\textwidth]{figs/accuracy_plot.png}
+    \caption{Độ chính xác qua các epoch}
+\end{figure}
+\end{frame}
+
+\begin{frame}{Ma trận Nhầm lẫn và Phân tích Lỗi}
+\begin{columns}
+\column{0.5\textwidth}
+\begin{figure}
+    \centering
+    \includegraphics[width=\textwidth]{figs/confusion_matrix.png}
+    \caption{Ma trận nhầm lẫn BERT}
+\end{figure}
+\column{0.5\textwidth}
+\begin{itemize}
+    \item \textbf{Balanced performance:}
+    \begin{itemize}
+        \item TP = TN = 447
+        \item FP = FN = 53
+    \end{itemize}
+    \item \textbf{Khó khăn với:}
+    \begin{itemize}
+        \item Sarcasm/irony
+        \item Negation phức tạp
+        \item Domain-specific terms
+    \end{itemize}
+\end{itemize}
+\end{columns}
+\end{frame}
+
+\begin{frame}{Trực quan hóa Không gian Embedding}
+\begin{figure}
+    \centering
+    \includegraphics[width=0.8\textwidth]{figs/tsne_comparison.png}
+    \caption{So sánh t-SNE: BERT (trái) vs TF-IDF (phải)}
+\end{figure}
+\begin{itemize}
+    \item BERT: Phân tách rõ ràng positive/negative
+    \item TF-IDF: Chồng chéo đáng kể
+    \item → BERT học được biểu diễn ngữ nghĩa sâu sắc hơn
+\end{itemize}
+\end{frame}
+
+\begin{frame}{Attention Visualization}
+\begin{figure}
+    \centering
+    \includegraphics[width=0.7\textwidth]{figs/attention_heatmap.png}
+    \caption{Heatmap attention cho câu "The movie was not bad"}
+\end{figure}
+\begin{itemize}
+    \item Các head khác nhau focus vào patterns khác nhau
+    \item Head 0: Quan hệ cú pháp
+    \item Head 5: Negation ("not" → "bad")
+\end{itemize}
+\end{frame}
+
+% Section 6: Kết luận
+\section{Kết luận}
+\begin{frame}{Tổng kết}
+\begin{itemize}
+    \item \textbf{Đóng góp chính của BERT:}
+    \begin{itemize}
+        \item Deeply bidirectional representations
+        \item Pre-training objectives hiệu quả (MLM + NSP)
+        \item Transfer learning paradigm cho NLP
+    \end{itemize}
+    \item \textbf{Ưu điểm:}
+    \begin{itemize}
+        \item SOTA trên nhiều benchmarks
+        \item Fine-tuning đơn giản và hiệu quả
+        \item Mở đường cho Foundation Models
+    \end{itemize}
+    \item \textbf{Hạn chế:}
+    \begin{itemize}
+        \item Chi phí tính toán cao
+        \item Giới hạn 512 tokens
+        \item Không tự nhiên cho text generation
+    \end{itemize}
+\end{itemize}
+\end{frame}
+
+\begin{frame}{Hướng Phát triển}
+\begin{itemize}
+    \item \textbf{Cải tiến hiệu quả:}
+    \begin{itemize}
+        \item RoBERTa: Training recipe tốt hơn
+        \item ELECTRA: Replaced token detection
+        \item DistilBERT: Knowledge distillation
+    \end{itemize}
+    \item \textbf{Xử lý văn bản dài:}
+    \begin{itemize}
+        \item Longformer: Sparse attention
+        \item BigBird: Random + Window + Global
+    \end{itemize}
+    \item \textbf{Unified models:}
+    \begin{itemize}
+        \item T5: Text-to-Text framework
+        \item GPT-3/4: Scaling to 175B+ params
+    \end{itemize}
+\end{itemize}
+\end{frame}
+
+% Thank you slide
+\begin{frame}
+\begin{center}
+\Huge\textbf{Cảm ơn!}\\[1cm]
+\Large Q\&A\\[1cm]
+\normalsize
+\textbf{Liên hệ:}\\
+23122012@student.hcmus.edu.vn\\
+23122036@student.hcmus.edu.vn\\
+22120332@student.hcmus.edu.vn
+\end{center}
+\end{frame}
+
+\end{document}
