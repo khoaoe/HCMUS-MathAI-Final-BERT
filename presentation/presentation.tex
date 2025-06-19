@@ -1,368 +1,831 @@
-\documentclass{beamer}
+\documentclass[aspectratio=169,10pt]{beamer}
 \usetheme{Madrid}
-\usecolortheme{seagull}
+% \usecolortheme{beaver}
 
 % Packages
-\usepackage[utf8]{inputenc}
-\usepackage[vietnamese]{babel}
-\usepackage{graphicx}
-\usepackage{caption}
+\usepackage[utf8]{vietnam}
 \usepackage{tikz}
-\usepackage{amsmath}
+\usepackage{pgfplots}
 \usepackage{booktabs}
+\usepackage{fontawesome}
+\usepackage{xcolor}
+\usepackage{listings}
+\usepackage{amsmath}
+\usepackage{graphicx}
 
-% Font settings
-\usefonttheme{professionalfonts}
-\setbeamerfont{title}{size=\Large}
-\setbeamerfont{frametitle}{size=\large}
+% TikZ libraries
+\usetikzlibrary{shapes,arrows,positioning,shadows,decorations.pathreplacing,calc,fit,backgrounds}
 
-% Footer với số slide
+% Custom colors
+\definecolor{bertblue}{RGB}{66,133,244}
+\definecolor{bertorange}{RGB}{244,160,0}
+\definecolor{bertgreen}{RGB}{52,168,83}
+\definecolor{bertred}{RGB}{234,67,53}
+\definecolor{bertgray}{RGB}{117,117,117}
+
+% Remove navigation symbols
+\setbeamertemplate{navigation symbols}{}
 \setbeamertemplate{footline}[frame number]
 
-% Thông tin chung
-\title{Nghiên cứu BERT: Bidirectional Encoder Representations from Transformers}
-\subtitle{Đồ án cuối kỳ - Hướng 2}
-\author{Nhóm 13:\\
-Lê Thái Ngọc - 23122012\\
-Nguyễn Ngọc Khoa - 23122036\\
-Nguyễn Lê Phúc Thắng - 22120332}
-\institute{
-Trường Đại học Khoa học Tự nhiên - ĐHQG HCM\\
-Khoa Công nghệ Thông tin\\
-Môn: Phương pháp toán cho Trí tuệ nhân tạo
+% Custom block colors
+\setbeamercolor{block title}{bg=bertblue,fg=white}
+\setbeamercolor{block body}{bg=bertblue!10}
+
+% Code listing style
+\lstset{
+    basicstyle=\ttfamily\footnotesize,
+    keywordstyle=\color{bertblue}\bfseries,
+    commentstyle=\color{bertgray},
+    stringstyle=\color{bertorange},
+    showstringspaces=false,
+    breaklines=true
 }
 
+% Title page info
+\title{\huge BERT: Bidirectional Encoder Representations from Transformers}
+\subtitle{Đồ án cuối kỳ - Phương pháp toán cho Trí tuệ nhân tạo}
+\author[Nhóm 13]{
+    \textbf{Nhóm 13}\\[0.3em]
+    Lê Thái Ngọc - 23122012\\
+    Nguyễn Ngọc Khoa - 23122036\\
+    Nguyễn Lê Phúc Thắng - 22120332
+}
+\institute{
+    Trường Đại học Khoa học Tự nhiên - ĐHQG HCM\\
+    Khoa Công nghệ Thông tin\\
+    23TNT1
+}
+\date{}
+
+\pgfplotsset{compat=1.18}
 \begin{document}
 
-% Title slide
+% Slide 1: Title
 \begin{frame}
 \titlepage
 \end{frame}
 
-% Outline
+% Slide 2: Outline
 \begin{frame}{Nội dung trình bày}
-\tableofcontents
+\begin{center}
+\begin{tikzpicture}[
+    node distance=4.5cm,
+    block/.style={rectangle, draw=bertblue, fill=bertblue!20, 
+                  text width=3.5cm, text centered, rounded corners, 
+                  minimum height=1.2cm, font=\small\bfseries}
+]
+    % Nodes
+    \node[block] (intro) {\faLightbulb~Giới thiệu};
+    \node[block, right of=intro] (arch) {\faCogs~Kiến trúc};
+    \node[block, right of=arch] (train) {\faGraduationCap~Training};
+    \node[block, below of=intro] (exp) {\faFlask~Thực nghiệm};
+    \node[block, right of=exp] (results) {\faChartBar~Kết quả};
+    \node[block, right of=results] (future) {\faRocket~Tương lai};
+    
+    % Arrows
+    \draw[->, thick, bertblue] (intro) -- (arch);
+    \draw[->, thick, bertblue] (arch) -- (train);
+    \draw[->, thick, bertblue] (train) -- (exp);
+    \draw[->, thick, bertblue] (exp) -- (results);
+    \draw[->, thick, bertblue] (results) -- (future);
+\end{tikzpicture}
+\end{center}
+\note{Giới thiệu flow của presentation - 2 phút}
 \end{frame}
 
-% Section 1: Giới thiệu
-\section{Giới thiệu}
-\begin{frame}{Bối cảnh và Động lực}
-\begin{itemize}
-    \item \textbf{Hạn chế của word embeddings tĩnh:}
-    \begin{itemize}
-        \item Word2Vec, GloVe: một từ → một vector cố định
-        \item Không nắm bắt ngữ cảnh động (vd: "bank")
-    \end{itemize}
-    \item \textbf{Giải pháp trước BERT:}
-    \begin{itemize}
-        \item ELMo: Kết hợp 2 LSTM độc lập (shallow fusion)
-        \item GPT: Chỉ học một chiều (left-to-right)
-    \end{itemize}
-    \item \textbf{Đột phá của BERT:}
-    \begin{itemize}
-        \item Học hai chiều sâu sắc (deeply bidirectional)
-        \item Pre-train once, fine-tune for everything
-    \end{itemize}
-\end{itemize}
-\end{frame}
-
-\begin{frame}{Thành tích của BERT}
-\begin{itemize}
-    \item \textbf{GLUE Benchmark:}
-    \begin{itemize}
-        \item BERT\textsubscript{LARGE}: 80.5 điểm (+7.7 so với GPT)
-        \item SOTA trên 11/11 tác vụ NLP
-    \end{itemize}
-    \item \textbf{SQuAD v1.1:}
-    \begin{itemize}
-        \item F1: 93.2 (vượt human performance 91.2)
-        \item EM: 87.4
-    \end{itemize}
-    \item \textbf{Tác động:}
-    \begin{itemize}
-        \item Mở đầu kỷ nguyên Foundation Models
-        \item Truyền cảm hứng cho GPT-3, T5, BART...
-    \end{itemize}
-\end{itemize}
-\end{frame}
-
-% Section 2: Kiến trúc
-\section{Kiến trúc BERT}
-\begin{frame}{Tổng quan Kiến trúc Transformer}
-\begin{figure}
-    \centering
-    \includegraphics[width=0.7\textwidth]{figs/transformer_encoder.png}
-    \caption{Kiến trúc Encoder trong Transformer (Vaswani et al., 2017)}
-\end{figure}
-\begin{itemize}
-    \item BERT = Encoder-only Transformer
-    \item Multi-Head Self-Attention + FFN
-    \item Residual connections + Layer Norm
-\end{itemize}
-\end{frame}
-
-\begin{frame}{Multi-Head Self-Attention}
+% Slide 3: Problem with Static Embeddings
+\begin{frame}{Vấn đề với Static Word Embeddings}
 \begin{columns}
 \column{0.5\textwidth}
-\begin{itemize}
-    \item \textbf{Scaled Dot-Product:}
-    $$\text{Attention}(Q,K,V) = \text{softmax}\left(\frac{QK^T}{\sqrt{d_k}}\right)V$$
-    \item \textbf{Multi-Head:}
-    \begin{itemize}
-        \item h = 12 heads (BASE)
-        \item Mỗi head học một góc nhìn
-    \end{itemize}
-\end{itemize}
+\begin{center}
+\textbf{Từ đa nghĩa: "bank"}\\[1em]
+\begin{tikzpicture}
+    % Example 1
+    \node[draw=bertblue, fill=bertblue!10, text width=4cm, align=center, rounded corners] (ex1) at (0,2) {
+        "I went to the \textcolor{bertred}{\textbf{bank}} to deposit money"\\
+        \small (ngân hàng)
+    };
+    
+    % Example 2
+    \node[draw=bertorange, fill=bertorange!10, text width=4cm, align=center, rounded corners] (ex2) at (0,0) {
+        "The river \textcolor{bertred}{\textbf{bank}} was flooded"\\
+        \small (bờ sông)
+    };
+    
+    % Same vector
+    \node[draw=bertred, fill=bertred!20, text width=2.5cm, align=center] (vec) at (4,1) {
+        Cùng một\\vector!
+    };
+    
+    % Arrows
+    \draw[->, thick, bertred] (ex1.east) -- (vec.west);
+    \draw[->, thick, bertred] (ex2.east) -- (vec.west);
+\end{tikzpicture}
+\end{center}
+
 \column{0.5\textwidth}
-\begin{figure}
-    \centering
-    \includegraphics[width=\textwidth]{figs/multi_head_attention.png}
-    \caption{Multi-Head Attention}
-\end{figure}
+\begin{block}{Hạn chế}
+\begin{itemize}
+    \item<2-> \faExclamationTriangle~Không nắm bắt ngữ cảnh
+    \item<3-> \faTimesCircle~Một từ = Một vector cố định
+    \item<4-> \faSadTear~Mất thông tin ngữ nghĩa
+\end{itemize}
+\end{block}
 \end{columns}
+\note{Giải thích vấn đề cơ bản - 1.5 phút}
 \end{frame}
 
-\begin{frame}{Input Embeddings của BERT}
-\begin{figure}
-    \centering
-    \includegraphics[width=0.8\textwidth]{figs/bert_input_embeddings.png}
-    \caption{Ba loại embeddings được cộng để tạo input (Devlin et al., 2019)}
-\end{figure}
+% Slide 4: Evolution Timeline
+\begin{frame}{Sự phát triển của Language Models}
+\begin{center}
+\begin{tikzpicture}[scale=0.9]
+    % Timeline
+    \draw[thick, ->, bertgray] (0,0) -- (12,0);
+    
+    % Models
+    \node[above] at (2,0.3) {\textbf{2013}};
+    \node[draw=bertgray, fill=bertgray!20, rounded corners] (w2v) at (2,1.25) {Word2Vec};
+    
+    \node[above] at (4,0.3) {\textbf{2014}};
+    \node[draw=bertgray, fill=bertgray!20, rounded corners] (glove) at (4,1.25) {GloVe};
+    
+    \node[above] at (6,0.3) {\textbf{2018}};
+    \node[draw=bertgreen, fill=bertgreen!20, rounded corners] (elmo) at (6,1.25) {ELMo};
+    
+    \node[above] at (8,0.3) {\textbf{2018}};
+    \node[draw=bertorange, fill=bertorange!20, rounded corners] (gpt) at (8,1.25) {GPT};
+    
+    \node[above] at (10,0.3) {\textbf{2018}};
+    \node[draw=bertblue, fill=bertblue!20, rounded corners, line width=2pt] (bert) at (10,1.5) {\Large\textbf{BERT}};
+    
+    % Features
+    \node[below, align=center, font=\tiny] at (2,-0.5) {Static\\embeddings};
+    \node[below, align=center, font=\tiny] at (4,-0.5) {Co-occurrence\\statistics};
+    \node[below, align=center, font=\tiny] at (6,-0.5) {Shallow\\bidirectional};
+    \node[below, align=center, font=\tiny] at (8,-0.5) {Left-to-right\\Transformer};
+    \node[below, align=center, font=\tiny] at (10,-0.5) {\textbf{Deep}\\bidirectional};
+    
+    % Highlight BERT
+    \draw[bertblue, thick, dashed] (9.2,2.3) rectangle (10.8,0.7);
+\end{tikzpicture}
+\end{center}
+\note{Timeline evolution - 1 phút}
+\end{frame}
+
+% Slide 5: BERT's Breakthrough
+\begin{frame}{Đột phá của BERT}
+\begin{columns}[t]
+\column{0.33\textwidth}
+\begin{center}
+\textcolor{bertorange}{\Large\textbf{GPT}}\\[0.5em]
+\begin{tikzpicture}[scale=0.7]
+    \foreach \i in {1,2,3,4} {
+        \node[circle, draw=bertorange, fill=bertorange!20] (n\i) at (\i,0) {\i};
+    }
+    \foreach \i in {1,2,3} {
+        \pgfmathtruncatemacro{\j}{\i+1}
+        \draw[->, thick, bertorange] (n\i) -- (n\j);
+    }
+    \node[below] at (2.5,-0.8) {\small Left-to-Right};
+\end{tikzpicture}
+\end{center}
+
+\column{0.33\textwidth}
+\begin{center}
+\textcolor{bertgreen}{\Large\textbf{ELMo}}\\[0.5em]
+\begin{tikzpicture}[scale=0.7]
+    % Forward
+    \foreach \i in {1,2,3,4} {
+        \node[circle, draw=bertgreen, fill=bertgreen!20] (f\i) at (\i,0.5) {\i};
+    }
+    % Backward
+    \foreach \i in {1,2,3,4} {
+        \node[circle, draw=bertgreen, fill=bertgreen!20] (b\i) at (\i,-0.5) {\i};
+    }
+    % Arrows
+    \foreach \i in {1,2,3} {
+        \pgfmathtruncatemacro{\j}{\i+1}
+        \draw[->, thick, bertgreen] (f\i) -- (f\j);
+        \draw[<-, thick, bertgreen] (b\i) -- (b\j);
+    }
+    \node[below] at (2.5,-1.3) {\small Shallow Bidirectional};
+\end{tikzpicture}
+\end{center}
+
+\column{0.33\textwidth}
+\begin{center}
+\textcolor{bertblue}{\Large\textbf{BERT}}\\[0.5em]
+\begin{tikzpicture}[scale=0.7]
+    \foreach \i in {1,2,3,4} {
+        \node[circle, draw=bertblue, fill=bertblue!20, line width=2pt] (n\i) at (\i,0) {\i};
+    }
+    \foreach \i in {1,2,3,4} {
+        \foreach \j in {1,2,3,4} {
+            \ifnum\i=\j\else
+                \draw[<->, white!50] (n\i) -- (n\j);
+            \fi
+        }
+    }
+    \node[below] at (2.5,-0.8) {\small\textbf{Deep Bidirectional}};
+\end{tikzpicture}
+\end{center}
+\end{columns}
+
+\vspace{1em}
+\begin{center}
+\begin{tikzpicture}
+    \node[draw=bertblue, fill=bertblue!10, rounded corners, text width=10cm, align=center] {
+        \large\textbf{BERT = Bidirectional Encoder Representations from Transformers}
+    };
+\end{tikzpicture}
+\end{center}
+\note{So sánh 3 approaches - 2 phút}
+\end{frame}
+
+% Slide 6: Transformer Architecture
+\begin{frame}{Kiến trúc Transformer}
+\begin{center}
+\begin{tikzpicture}[scale=0.8,
+    layer/.style={draw=bertblue, fill=bertblue!10, rounded corners, minimum width=3cm, minimum height=0.8cm},
+    attention/.style={draw=bertorange, fill=bertorange!10, rounded corners, minimum width=3cm, minimum height=0.8cm}
+]
+    % Encoder stack
+    \node[layer] (emb) at (0,0) {Input Embeddings};
+    \node[layer] (pos) at (0,0.8) {Positional Encoding};
+    
+    % Encoder layers
+    \foreach \i in {1,2,3} {
+        \pgfmathsetmacro{\y}{2 + (\i-1)*2.5}
+        \node[attention] (att\i) at (0,\y) {Multi-Head Attention};
+        \node[layer] (norm1\i) at (0,\y+0.8) {Add \& Norm};
+        \node[layer] (ff\i) at (0,\y+1.6) {Feed Forward};
+        \node[layer] (norm2\i) at (0,\y+2.4) {Add \& Norm};
+        
+        % Residual connections
+        \draw[thick, bertgray] (-2,\y-0.4) -- (-2,\y+0.8) -- (-1.5,\y+0.8);
+        \draw[thick, bertgray] (-2,\y+1.2) -- (-2,\y+2.4) -- (-1.5,\y+2.4);
+    }
+    
+    % Stack notation
+    \node[right] at (2,5) {\Large $\times$ L};
+    
+    % Labels
+    \node[above, font=\large\bfseries] at (0,8) {BERT chỉ dùng Encoder};
+    
+    % Highlight
+    \draw[bertblue, thick, dashed] (-2.5,-0.5) rectangle (2.5,7.5);
+\end{tikzpicture}
+\end{center}
+\note{Giải thích Transformer architecture - 1.5 phút}
+\end{frame}
+
+% Slide 7: Multi-Head Attention
+\begin{frame}{Multi-Head Attention}
+\begin{columns}
+\column{0.5\textwidth}
+\begin{center}
+\begin{tikzpicture}[scale=0.8]
+    % Input
+    \node[draw, fill=bertblue!20, minimum width=2cm] (input) at (0,0) {Input};
+    
+    % Q, K, V projections
+    \node[draw, fill=bertorange!20] (q) at (-2,1.5) {Q};
+    \node[draw, fill=bertorange!20] (k) at (0,1.5) {K};
+    \node[draw, fill=bertorange!20] (v) at (2,1.5) {V};
+    
+    % Attention heads
+    \foreach \i in {1,2,3} {
+        \node[draw, fill=bertgreen!20, minimum width=1.5cm] (head\i) at ({(\i-2)*2.0},3) {Head \i};
+    }
+    
+    % Concat
+    \node[draw, fill=bertblue!20, minimum width=3cm] (concat) at (0,4.5) {Concat};
+    
+    % Output projection
+    \node[draw, fill=bertblue!20, minimum width=2cm] (output) at (0,6) {Output};
+    
+    % Connections
+    \draw[->] (input) -- (q);
+    \draw[->] (input) -- (k);
+    \draw[->] (input) -- (v);
+    
+    \foreach \i in {1,2,3} {
+        \draw[->] (q) -- (head\i);
+        \draw[->] (k) -- (head\i);
+        \draw[->] (v) -- (head\i);
+        \draw[->] (head\i) -- (concat);
+    }
+    
+    \draw[->] (concat) -- (output);
+\end{tikzpicture}
+\end{center}
+
+\column{0.5\textwidth}
+\begin{block}{Ý nghĩa các Heads}
 \begin{itemize}
-    \item \textbf{Token Embeddings:} WordPiece tokenization (30K vocab)
-    \item \textbf{Segment Embeddings:} Phân biệt câu A và B
-    \item \textbf{Position Embeddings:} Learned (không phải sinusoidal)
+    \item<2-> \faEye~Head 1: Quan hệ cú pháp
+    \item<3-> \faLink~Head 2: Quan hệ ngữ nghĩa  
+    \item<4-> \faMapMarkerAlt~Head 3: Quan hệ vị trí
+    \item<5-> \textbf{...12 heads trong BERT\textsubscript{BASE}}
 \end{itemize}
+\end{block}
+
+\vspace{0.5em}
+\begin{equation*}
+\text{Attention}(Q,K,V) = \text{softmax}\left(\frac{QK^T}{\sqrt{d_k}}\right)V
+\end{equation*}
+\end{columns}
+\note{Multi-head attention mechanism - 2 phút}
 \end{frame}
 
-\begin{frame}{So sánh BERT Base vs Large}
-\begin{table}
-\centering
-\begin{tabular}{lcc}
-\toprule
-\textbf{Thông số} & \textbf{BERT\textsubscript{BASE}} & \textbf{BERT\textsubscript{LARGE}} \\
-\midrule
-Layers (L) & 12 & 24 \\
-Hidden size (H) & 768 & 1024 \\
-Attention heads (A) & 12 & 16 \\
-Parameters & 110M & 340M \\
-Training time & 4 days/16 TPUs & 4 days/64 TPUs \\
-\bottomrule
-\end{tabular}
-\end{table}
-\begin{itemize}
-    \item Trade-off giữa hiệu năng và chi phí tính toán
-    \item Cả hai đều vượt trội so với mô hình trước
-\end{itemize}
+% Slide 8: Input Representation
+\begin{frame}{Input Representation}
+\begin{center}
+\begin{tikzpicture}[scale=0.9]
+    % Tokens
+    \foreach \i/\tok in {0/[CLS],1/my,2/dog,3/is,4/cute,5/[SEP],6/he,7/likes,8/play,9/\#\#ing,10/[SEP]} {
+        \node[draw, minimum width=0.9cm, minimum height=0.7cm] (tok\i) at (\i*1.1,3) {\footnotesize\tok};
+    }
+    
+    % Token Embeddings
+    \foreach \i in {0,...,10} {
+        \node[draw=bertblue, fill=bertblue!20, minimum width=0.9cm, minimum height=0.7cm] (temb\i) at (\i*1.1,2) {\tiny E\textsubscript{tok}};
+    }
+    
+    % Segment Embeddings
+    \foreach \i in {0,...,5} {
+        \node[draw=bertorange, fill=bertorange!20, minimum width=0.9cm, minimum height=0.7cm] (semb\i) at (\i*1.1,1) {\tiny E\textsubscript{A}};
+    }
+    \foreach \i in {6,...,10} {
+        \node[draw=bertgreen, fill=bertgreen!20, minimum width=0.9cm, minimum height=0.7cm] (semb\i) at (\i*1.1,1) {\tiny E\textsubscript{B}};
+    }
+    
+    % Position Embeddings
+    \foreach \i in {0,...,10} {
+        \node[draw=bertred, fill=bertred!20, minimum width=0.9cm, minimum height=0.7cm] (pemb\i) at (\i*1.1,0) {\tiny E\textsubscript{\i}};
+    }
+    
+    % Plus signs
+    \foreach \i in {0,...,10} {
+        \node at (\i*1.1,1.5) {+};
+        \node at (\i*1.1,0.5) {+};
+    }
+    
+    % Labels
+    \node[left] at (-0.5,3) {\small Input};
+    \node[left] at (-0.5,2) {\small Token Emb};
+    \node[left] at (-0.5,1) {\small Segment Emb};
+    \node[left] at (-0.5,0) {\small Position Emb};
+    
+    % Final sum
+    \draw[thick, ->] (5.5,-0.7) -- (5.5,-1.5);
+    \node[draw=bertblue, fill=bertblue!10, rounded corners, minimum width=8cm] at (5.5,-2) {Final Input Embeddings};
+\end{tikzpicture}
+\end{center}
+
+\vspace{0.5em}
+\begin{equation*}
+\text{Input}_i = \text{TokenEmb}_i + \text{SegmentEmb}_i + \text{PositionEmb}_i
+\end{equation*}
+\note{Input representation - 1.5 phút}
 \end{frame}
 
-% Section 3: Pre-training
-\section{Tác vụ Tiền huấn luyện}
+% Slide 9: Masked Language Model
 \begin{frame}{Masked Language Model (MLM)}
-\begin{figure}
-    \centering
-    \includegraphics[height=3.5cm]{figs/mlm_example.png}
-    \caption{Ví dụ minh họa chiến lược masking 80-10-10}
-\end{figure}
-\begin{itemize}
-    \item Che ngẫu nhiên 15\% tokens
-    \item \textbf{Chiến lược 80-10-10:}
-    \begin{itemize}
-        \item 80\%: Thay bằng [MASK]
-        \item 10\%: Thay bằng random token
-        \item 10\%: Giữ nguyên
-    \end{itemize}
-    \item Giảm mismatch pre-training/fine-tuning
-\end{itemize}
-\end{frame}
-
-\begin{frame}{Next Sentence Prediction (NSP)}
 \begin{columns}
 \column{0.6\textwidth}
-\begin{itemize}
-    \item \textbf{Mục tiêu:} Học quan hệ giữa câu
-    \item \textbf{Dữ liệu:}
-    \begin{itemize}
-        \item 50\% IsNext (câu liên tiếp)
-        \item 50\% NotNext (câu random)
-    \end{itemize}
-    \item \textbf{Dự đoán:} Từ [CLS] representation
-    \item \textbf{Tranh cãi:} RoBERTa bỏ NSP → tốt hơn
-\end{itemize}
+\begin{center}
+\textbf{Ví dụ MLM}\\[0.5em]
+\begin{tikzpicture}
+    % Original sentence
+    \node[draw, fill=gray!10, text width=5cm, align=center] (orig) at (0,3) {
+        "The cat sat on the mat"
+    };
+    
+    % Arrow
+    \draw[->, thick] (0,2.3) -- (0,1.7);
+    
+    % Masked sentence
+    \node[draw, fill=bertblue!10, text width=5cm, align=center] (masked) at (0,1) {
+        "The cat \textcolor{bertred}{\text{[MASK]}} on the mat"
+    };
+    
+    % Masking strategy
+    \node[below, align=left, font=\footnotesize] at (0,-0.5) {
+        \textbf{Chiến lược Masking (15\% tokens):}\\
+        • 80\%: thay bằng \text{[MASK]}\\
+        • 10\%: thay bằng random token\\
+        • 10\%: giữ nguyên
+    };
+\end{tikzpicture}
+\end{center}
+
 \column{0.4\textwidth}
-\begin{figure}
-    \centering
-    \includegraphics[width=\textwidth]{figs/nsp_example.png}
-    \caption{Ví dụ NSP}
-\end{figure}
+\begin{block}{Lợi ích}
+\begin{itemize}
+    \item<2-> \faCheckCircle~Học hai chiều
+    \item<3-> \faRandom~Tránh overfitting
+    \item<4-> \faBalanceScale~Cân bằng train/test
+\end{itemize}
+\end{block}
+
+\vspace{0.5em}
+\begin{center}
+\begin{tikzpicture}
+    \draw[thick, bertred] (0,0) circle (1.5cm);
+    \node[align=center] at (0,0) {\textbf{80\%}\\\text{[MASK]}};
+    \draw[thick, bertorange] (-1.5,-2) circle (0.7cm);
+    \node at (-1.5,-2) {\tiny 10\%};
+    \draw[thick, bertgreen] (1.5,-2) circle (0.7cm);
+    \node at (1.5,-2) {\tiny 10\%};
+\end{tikzpicture}
+\end{center}
 \end{columns}
+\note{MLM strategy - 1.5 phút}
 \end{frame}
 
-% Section 4: Fine-tuning
-\section{Fine-tuning và Thực nghiệm}
-\begin{frame}{Quy trình Fine-tuning}
-\begin{figure}
-    \centering
-    \includegraphics[width=0.8\textwidth]{figs/bert_finetuning.png}
-    \caption{Fine-tuning BERT cho các tác vụ khác nhau}
-\end{figure}
-\begin{itemize}
-    \item Giữ nguyên kiến trúc BERT
-    \item Thêm task-specific output layer
-    \item Train toàn bộ parameters end-to-end
-\end{itemize}
+% Slide 10: Next Sentence Prediction
+\begin{frame}{Next Sentence Prediction (NSP)}
+\begin{center}
+\begin{tikzpicture}[
+    example/.style={draw, rounded corners, text width=10cm, align=left, font=\small}
+]
+    % IsNext example
+    \node[example, fill=bertgreen!20] (isnext) at (0,2) {
+        \textbf{IsNext Example:}\\
+        A: "The sun is shining brightly today."\\
+        B: "It's a perfect day for a picnic."\\
+        \hfill\textcolor{bertgreen}{\faCheckCircle~IsNext}
+    };
+    
+    % NotNext example
+    \node[example, fill=bertred!20] (notnext) at (0,-1) {
+        \textbf{NotNext Example:}\\
+        A: "The sun is shining brightly today."\\
+        B: "Elephants are the largest land mammals."\\
+        \hfill\textcolor{bertred}{\faTimesCircle~NotNext}
+    };
+    
+    % Training ratio
+    \node[draw=bertblue, fill=bertblue!10, rounded corners] at (0,-3.5) {
+        \large Training: 50\% IsNext + 50\% NotNext
+    };
+\end{tikzpicture}
+\end{center}
+\note{NSP task - 1 phút}
 \end{frame}
 
-\begin{frame}{Thực nghiệm: Phân loại Cảm xúc IMDb}
-\begin{itemize}
-    \item \textbf{Dataset:} IMDb Movie Reviews
-    \begin{itemize}
-        \item Train: 4,000 reviews
-        \item Validation: 1,000 reviews
-    \end{itemize}
-    \item \textbf{Baseline:} TF-IDF + Logistic Regression
-    \item \textbf{Fine-tuning settings:}
-    \begin{itemize}
-        \item Learning rate: 2e-5
-        \item Batch size: 16
-        \item Epochs: 3
-        \item Max length: 256 tokens
-    \end{itemize}
-\end{itemize}
+% Slide 11: Fine-tuning
+\begin{frame}{Fine-tuning cho các tác vụ khác nhau}
+\begin{center}
+\begin{tikzpicture}[scale=0.8,
+    task/.style={draw=bertblue, fill=bertblue!10, rounded corners, text width=3.5cm, align=center, minimum height=1.5cm}
+]
+    % BERT base
+    \node[draw=bertblue, fill=bertblue!20, rounded corners, minimum width=4cm, minimum height=2cm] (bert) at (0,0) {
+        \Large\textbf{Pre-trained BERT}
+    };
+    
+    % Tasks
+    \node[task] (cls) at (-5,3) {Sentence\\Classification\\{\footnotesize +1 layer}};
+    \node[task] (pair) at (0,3) {Sentence Pair\\Classification\\{\footnotesize +1 layer}};
+    \node[task] (qa) at (5,3) {Question\\Answering\\{\footnotesize +2 vectors}};
+    \node[task] (ner) at (-2,-3) {Token\\Classification\\{\footnotesize +1 layer/token}};
+    
+    % Arrows
+    \draw[->, thick, bertblue] (bert) -- (cls);
+    \draw[->, thick, bertblue] (bert) -- (pair);
+    \draw[->, thick, bertblue] (bert) -- (qa);
+    \draw[->, thick, bertblue] (bert) -- (ner);
+    
+    % Key point
+    \node[draw=bertorange, fill=bertorange!10, rounded corners, text width=4cm, align=center] at (6,0) {
+        \textbf{Minimal changes}\\
+        Chỉ thêm output layer
+    };
+\end{tikzpicture}
+\end{center}
+\note{Fine-tuning flexibility - 1.5 phút}
 \end{frame}
 
-% Section 5: Kết quả
-\section{Kết quả và Phân tích}
-\begin{frame}{So sánh Hiệu năng}
-\begin{table}
-\centering
-\begin{tabular}{lcccc}
-\toprule
-\textbf{Mô hình} & \textbf{Accuracy} & \textbf{Precision} & \textbf{Recall} & \textbf{F1} \\
-\midrule
-TF-IDF + LR & 0.855 & 0.86 & 0.86 & 0.85 \\
-BERT (fine-tuned) & \textbf{0.894} & \textbf{0.89} & \textbf{0.90} & \textbf{0.89} \\
-\midrule
-\textbf{Cải thiện} & +3.9\% & +3.0\% & +4.0\% & +4.0\% \\
-\bottomrule
-\end{tabular}
-\end{table}
-
-\begin{figure}
-    \centering
-    \includegraphics[width=0.5\textwidth]{figs/accuracy_plot.png}
-    \caption{Độ chính xác qua các epoch}
-\end{figure}
-\end{frame}
-
-\begin{frame}{Ma trận Nhầm lẫn và Phân tích Lỗi}
+% Slide 12: Experimental Setup
+\begin{frame}{Thực nghiệm: Setup}
 \begin{columns}
 \column{0.5\textwidth}
-\begin{figure}
-    \centering
-    \includegraphics[width=\textwidth]{figs/confusion_matrix.png}
-    \caption{Ma trận nhầm lẫn BERT}
-\end{figure}
+\begin{block}{Dataset: IMDb Reviews}
+\begin{itemize}
+    \item \faDatabase~4,000 training samples
+    \item \faCheckSquare~1,000 validation samples
+    \item \faBalanceScale~Balanced (50/50)
+    \item \faRuler~Max length: 256 tokens
+\end{itemize}
+\end{block}
+
+\vspace{0.5em}
+\begin{block}{Models}
+\begin{itemize}
+    \item \textcolor{bertgray}{\faChartLine~Baseline: TF-IDF + LR}
+    \item \textcolor{bertblue}{\faRocket~BERT-base-uncased}
+\end{itemize}
+\end{block}
+
 \column{0.5\textwidth}
-\begin{itemize}
-    \item \textbf{Balanced performance:}
-    \begin{itemize}
-        \item TP = TN = 447
-        \item FP = FN = 53
-    \end{itemize}
-    \item \textbf{Khó khăn với:}
-    \begin{itemize}
-        \item Sarcasm/irony
-        \item Negation phức tạp
-        \item Domain-specific terms
-    \end{itemize}
-\end{itemize}
+\begin{center}
+\begin{tikzpicture}
+    \begin{axis}[
+        ybar,
+        width=6cm,
+        height=5cm,
+        ylabel={Samples},
+        symbolic x coords={Positive,Negative},
+        xtick=data,
+        bar width=1cm,
+        ymin=0,
+        ymax=2500,
+        nodes near coords,
+        enlarge x limits=0.3
+    ]
+    \addplot[fill=bertgreen!60] coordinates {(Positive,2000) (Negative,2000)};
+    \end{axis}
+\end{tikzpicture}
+\end{center}
 \end{columns}
+\note{Experimental setup - 1 phút}
 \end{frame}
 
-\begin{frame}{Trực quan hóa Không gian Embedding}
-\begin{figure}
-    \centering
-    \includegraphics[width=0.8\textwidth]{figs/tsne_comparison.png}
-    \caption{So sánh t-SNE: BERT (trái) vs TF-IDF (phải)}
-\end{figure}
+% Slide 13: Results Comparison
+\begin{frame}{Kết quả so sánh}
+\begin{center}
+\begin{tikzpicture}
+    \begin{axis}[
+        ybar,
+        width=10cm,
+        height=6cm,
+        ylabel={Performance (\%)},
+        symbolic x coords={Accuracy,Precision,Recall,F1-Score},
+        xtick=data,
+        bar width=0.4cm,
+        ymin=80,
+        ymax=92,
+        legend pos=north west,
+        nodes near coords,
+        every node near coord/.append style={font=\footnotesize},
+        enlarge x limits=0.15
+    ]
+    \addplot[fill=bertgray!60] coordinates {
+        (Accuracy,85.5) (Precision,86.0) (Recall,86.0) (F1-Score,85.0)
+    };
+    \addplot[fill=bertblue!60] coordinates {
+        (Accuracy,89.4) (Precision,89.0) (Recall,90.0) (F1-Score,89.0)
+    };
+    \legend{TF-IDF + LR, BERT}
+    \end{axis}
+\end{tikzpicture}
+\end{center}
+
+\begin{center}
+\begin{tikzpicture}
+    \node[draw=bertgreen, fill=bertgreen!10, rounded corners, text width=8cm, align=center] {
+        \Large\textbf{+3.9\%} improvement với BERT\\
+        \small chỉ với 3 epochs fine-tuning!
+    };
+\end{tikzpicture}
+\end{center}
+\note{Results comparison - 1.5 phút}
+\end{frame}
+
+% Slide 14: t-SNE Visualization
+\begin{frame}{t-SNE Visualization}
+\begin{columns}
+\column{0.5\textwidth}
+\begin{center}
+\textbf{BERT Embeddings}\\[0.5em]
+\begin{tikzpicture}[scale=0.8]
+    % Positive cluster
+    \draw[fill=bertorange!30, draw=bertorange] (1,1) circle (1.5cm);
+    \node at (1,1) {\small Positive};
+    
+    % Negative cluster
+    \draw[fill=bertblue!30, draw=bertblue] (-1,-1) circle (1.5cm);
+    \node at (-1,-1) {\small Negative};
+    
+    % Clear separation
+    \draw[thick, dashed, bertred] (-0.3,-0.3) -- (0.3,0.3);
+    
+    \node[below, align=center] at (0,-3) {
+        \textbf{Phân tách rõ ràng}\\
+        \small Các cụm riêng biệt
+    };
+\end{tikzpicture}
+\end{center}
+
+\column{0.5\textwidth}
+\begin{center}
+\textbf{TF-IDF Vectors}\\[0.5em]
+\begin{tikzpicture}[scale=0.8]
+    % Mixed clusters
+    \draw[fill=bertorange!20, draw=bertorange] (0.5,0.5) circle (1.5cm);
+    \draw[fill=bertblue!20, draw=bertblue] (-0.5,-0.5) circle (1.5cm);
+    
+    % Overlap area
+    \begin{scope}
+        \clip (0.5,0.5) circle (1.5cm);
+        \fill[bertgray!40] (-0.5,-0.5) circle (1.5cm);
+    \end{scope}
+    
+    \node[below, align=center] at (0,-3) {
+        \textbf{Chồng chéo nhiều}\\
+        \small Khó phân biệt
+    };
+\end{tikzpicture}
+\end{center}
+\end{columns}
+\note{t-SNE visualization - 1 phút}
+\end{frame}
+
+% Slide 15: GLUE Benchmark Results
+\begin{frame}{Kết quả trên GLUE Benchmark}
+\begin{center}
+\small
+\begin{tabular}{l|cccccc|c}
+\toprule
+\textbf{Model} & MNLI & QQP & QNLI & SST-2 & CoLA & RTE & \textbf{Avg} \\
+\midrule
+Previous SOTA & 80.6 & 66.1 & 82.3 & 93.2 & 35.0 & 61.7 & 74.0 \\
+OpenAI GPT & 82.1 & 70.3 & 87.4 & 91.3 & 45.4 & 56.0 & 72.8 \\
+\midrule
+BERT\textsubscript{BASE} & 84.6 & 71.2 & 90.5 & 93.5 & 52.1 & 66.4 & 78.3 \\
+\rowcolor{bertblue!20}
+\textbf{BERT\textsubscript{LARGE}} & \textbf{86.7} & \textbf{72.1} & \textbf{92.7} & \textbf{94.9} & \textbf{60.5} & \textbf{70.1} & \textbf{80.5} \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+\vspace{0.5em}
+\begin{center}
+\begin{tikzpicture}
+    \node[draw=bertgreen, fill=bertgreen!10, rounded corners, text width=10cm, align=center] {
+        \Large\textbf{+7.7 points} improvement over GPT\\
+        \small Đặc biệt hiệu quả trên datasets nhỏ (CoLA: +15.1)
+    };
+\end{tikzpicture}
+\end{center}
+\note{GLUE results - 1.5 phút}
+\end{frame}
+
+% Slide 16: SQuAD Results
+\begin{frame}{Kết quả trên SQuAD}
+\begin{columns}
+\column{0.5\textwidth}
+\begin{center}
+\textbf{SQuAD v1.1}\\[0.5em]
+\begin{tikzpicture}
+    \begin{axis}[
+        ybar,
+        width=5cm,
+        height=5cm,
+        ylabel={F1 Score},
+        symbolic x coords={Human,Previous,BERT},
+        xtick=data,
+        bar width=0.6cm,
+        ymin=88,
+        ymax=94,
+        nodes near coords,
+        x tick label style={rotate=45, anchor=east}
+    ]
+    \addplot[fill=bertgray!60] coordinates {(Human,91.2)};
+    \addplot[fill=bertorange!60] coordinates {(Previous,90.9)};
+    \addplot[fill=bertblue!60] coordinates {(BERT,93.2)};
+    \end{axis}
+\end{tikzpicture}
+
+\textcolor{bertred}{\Large\faExclamation} \textbf{Vượt qua Human Performance!}
+\end{center}
+
+\column{0.5\textwidth}
+\begin{center}
+\textbf{SQuAD v2.0}\\[0.5em]
+\begin{tikzpicture}
+    \begin{axis}[
+        ybar,
+        width=5cm,
+        height=5cm,
+        ylabel={F1 Score},
+        symbolic x coords={Previous,BERT,Human},
+        xtick=data,
+        bar width=0.6cm,
+        ymin=70,
+        ymax=90,
+        nodes near coords,
+        x tick label style={rotate=45, anchor=east}
+    ]
+    \addplot[fill=bertorange!60] coordinates {(Previous,74.8)};
+    \addplot[fill=bertblue!60] coordinates {(BERT,81.9)};
+    \addplot[fill=bertgray!60] coordinates {(Human,89.5)};
+    \end{axis}
+\end{tikzpicture}
+
+\textcolor{bertgreen}{\Large\faArrowUp} \textbf{+7.1 F1 improvement}
+\end{center}
+\end{columns}
+\note{SQuAD results - 1 phút}
+\end{frame}
+
+% Slide 17: Limitations and Future
+\begin{frame}{Hạn chế và Hướng phát triển}
+\begin{columns}
+\column{0.5\textwidth}
+\begin{block}{Hạn chế \faExclamationTriangle}
 \begin{itemize}
-    \item BERT: Phân tách rõ ràng positive/negative
-    \item TF-IDF: Chồng chéo đáng kể
-    \item → BERT học được biểu diễn ngữ nghĩa sâu sắc hơn
+    \item \faDollarSign~Chi phí tính toán lớn
+    \item \faRuler~Giới hạn 512 tokens
+    \item \faMask~\text{[MASK]} token mismatch
+    \item \faFileAlt~Khó cho text generation
 \end{itemize}
-\end{frame}
+\end{block}
 
-\begin{frame}{Attention Visualization}
-\begin{figure}
-    \centering
-    \includegraphics[width=0.7\textwidth]{figs/attention_heatmap.png}
-    \caption{Heatmap attention cho câu "The movie was not bad"}
-\end{figure}
+\column{0.5\textwidth}
+\begin{block}{Phát triển \faRocket}
 \begin{itemize}
-    \item Các head khác nhau focus vào patterns khác nhau
-    \item Head 0: Quan hệ cú pháp
-    \item Head 5: Negation ("not" → "bad")
+    \item \faCompressArrowsAlt~Model compression\\
+    {\small (DistilBERT, ALBERT)}
+    \item \faExpand~Long document\\
+    {\small (Longformer, BigBird)}
+    \item \faGlobe~Multilingual\\
+    {\small (mBERT, XLM-R)}
+    \item \faBrain~Larger models\\
+    {\small (GPT-3, PaLM)}
 \end{itemize}
+\end{block}
+\end{columns}
+
+\vspace{0.5em}
+\begin{center}
+\begin{tikzpicture}[scale=0.8]
+    % Timeline arrow
+    \draw[->, thick, bertgray] (0,0) -- (10,0);
+    
+    % BERT
+    \node[draw=bertblue, fill=bertblue!20, rounded corners] at (2,0.5) {BERT};
+    
+    % Future models
+    \node[draw=bertorange, fill=bertorange!10, rounded corners] at (4,0.5) {RoBERTa};
+    \node[draw=bertgreen, fill=bertgreen!10, rounded corners] at (6.5,0.5) {ELECTRA};
+    \node[draw=bertred, fill=bertred!10, rounded corners] at (8.5,0.5) {GPT-4};
+    
+    \node[above] at (5,1.2) {\large\textbf{BERT mở đường cho LLM revolution}};
+\end{tikzpicture}
+\end{center}
+\note{Limitations and future - 1.5 phút}
 \end{frame}
 
-% Section 6: Kết luận
-\section{Kết luận}
-\begin{frame}{Tổng kết}
-\begin{itemize}
-    \item \textbf{Đóng góp chính của BERT:}
-    \begin{itemize}
-        \item Deeply bidirectional representations
-        \item Pre-training objectives hiệu quả (MLM + NSP)
-        \item Transfer learning paradigm cho NLP
-    \end{itemize}
-    \item \textbf{Ưu điểm:}
-    \begin{itemize}
-        \item SOTA trên nhiều benchmarks
-        \item Fine-tuning đơn giản và hiệu quả
-        \item Mở đường cho Foundation Models
-    \end{itemize}
-    \item \textbf{Hạn chế:}
-    \begin{itemize}
-        \item Chi phí tính toán cao
-        \item Giới hạn 512 tokens
-        \item Không tự nhiên cho text generation
-    \end{itemize}
-\end{itemize}
+% Slide 18: Conclusion
+\begin{frame}{Kết luận}
+\begin{center}
+\begin{tikzpicture}[
+    key/.style={draw=bertblue, fill=bertblue!10, rounded corners, text width=10cm, align=left, minimum height=1cm, font=\large}
+]
+    \node[key] (k1) at (0,2) {
+        \faLightbulb~\textbf{Deep bidirectional} - Hiểu ngữ cảnh toàn diện
+    };
+    
+    \node[key] (k2) at (0,0.5) {
+        \faExchangeAlt~\textbf{Transfer learning} - Pre-train once, fine-tune anywhere
+    };
+    
+    \node[key] (k3) at (0,-1) {
+        \faChartLine~\textbf{SOTA results} - Phá vỡ kỷ lục trên 11 NLP tasks
+    };
+    
+    \node[key] (k4) at (0,-2.5) {
+        \faHistory~\textbf{Foundation} - Nền tảng cho kỷ nguyên LLM
+    };
+\end{tikzpicture}
+\end{center}
+
+\vspace{0.5em}
+\begin{center}
+\Large\textbf{\textcolor{bertblue}{BERT} changed how we think about language understanding}
+\end{center}
+\note{Key takeaways - 1 phút}
 \end{frame}
 
-\begin{frame}{Hướng Phát triển}
-\begin{itemize}
-    \item \textbf{Cải tiến hiệu quả:}
-    \begin{itemize}
-        \item RoBERTa: Training recipe tốt hơn
-        \item ELECTRA: Replaced token detection
-        \item DistilBERT: Knowledge distillation
-    \end{itemize}
-    \item \textbf{Xử lý văn bản dài:}
-    \begin{itemize}
-        \item Longformer: Sparse attention
-        \item BigBird: Random + Window + Global
-    \end{itemize}
-    \item \textbf{Unified models:}
-    \begin{itemize}
-        \item T5: Text-to-Text framework
-        \item GPT-3/4: Scaling to 175B+ params
-    \end{itemize}
-\end{itemize}
-\end{frame}
-
-% Thank you slide
+% Slide 19: Q&A
 \begin{frame}
 \begin{center}
-\Huge\textbf{Cảm ơn!}\\[1cm]
-\Large Q\&A\\[1cm]
-\normalsize
-\textbf{Liên hệ:}\\
-23122012@student.hcmus.edu.vn\\
-23122036@student.hcmus.edu.vn\\
-22120332@student.hcmus.edu.vn
+% \Huge\textbf{Q\&A}\\[1em]
+% \Large\faQuestionCircle~Câu hỏi \& Thảo luận\\[2em]
+
+\Large
+\begin{tikzpicture}
+    \node[draw=bertblue, fill=bertblue!10, rounded corners, text width=8cm, align=center, minimum height=2cm] {
+        \large\textbf{Cảm ơn thầy và mọi người đã lắng nghe!}\\[0.5em]
+        Nhóm 13\\
+        % \small bert-demo@github.com/nhom13
+    };
+\end{tikzpicture}
 \end{center}
+\note{Q&A session - remaining time}
 \end{frame}
 
 \end{document}
