@@ -1147,8 +1147,8 @@ Mặc dù \hyperref[acro:bert]{\textbf{BERT}} đã tạo ra bước đột phá,
 \subsubsection{Mô hình nền tảng}
 Thành công của \hyperref[acro:bert]{\textbf{BERT}} đã mở đường cho:
 \begin{itemize}
-    \item \texttt{GPT-3}: mở rộng tới 175 tỷ parameters
-    \item \texttt{PaLM}: 540 tỷ parameters với khả năng thích ứng đột phá
+    \item \texttt{GPT-3}: mở rộng tới 175B parameters
+    \item \texttt{PaLM}: 540B parameters với khả năng thích ứng đột phá
     \item \texttt{ChatGPT/GPT-4}: làm theo hướng dẫn (instruction following) và dễ sử dụng cho người dùng (user alignment)
 \end{itemize}
 
@@ -1187,7 +1187,7 @@ Thành công của \hyperref[acro:bert]{\textbf{BERT}} cho thấy rằng:
 \begin{enumerate}
     \item \textbf{Các ý tưởng đơn giản khi được thực hiện đúng cách có thể tạo ra bước đột phá:} \hyperref[acro:mlm]{\texttt{MLM}} là ý tưởng đơn giản nhưng được thực hiện một cách hợp lý và hiệu quả với cơ chế \texttt{self-attention} và chiến lược \texttt{masking 80-10-10}
     
-    \item \textbf{Scale matters:} Cả về độ lớn dữ liệu (3.3B words) và kích thước model (340 triệu parameter cho BERT\textsubscript{LARGE}). Nhưng quan trọng hơn là sử dụng scale lớn đó một cách hiệu quả.
+    \item \textbf{Scale matters:} Cả về độ lớn dữ liệu (3.3B words) và kích thước model (340M parameter cho BERT\textsubscript{LARGE}). Nhưng quan trọng hơn là sử dụng scale lớn đó một cách hiệu quả.
     
     \item \textbf{Transfer learning:} sử dụng pre-trained model cho nhiều tác vụ khác nhau và giúp giảm thiếu rất nhiều chi phí, "bình dân hóa" sử dụng mô hình ngôn ngữ lớn \hyperref[acro:llm]{\texttt{LLM}}
     
@@ -1198,9 +1198,9 @@ Thành công của \hyperref[acro:bert]{\textbf{BERT}} cho thấy rằng:
 Vẫn còn những hạn chế ở \hyperref[acro:bert]{\textbf{BERT}}, tạo thách thức cho những người nghiên cứu về sau này cải thiện:
 \begin{itemize}
     \item \textbf{Chi phí tính toán:} cần giảm chi phí tính toán cho deployment rộng rãi
-    \item \textbf{Ngữ cảnh lớn hơn:} Xử lý văn bản dài hơn 512 tokens hiệu quả
+    \item \textbf{Ngữ cảnh lớn hơn:} xử lý văn bản dài hơn 512 tokens hiệu quả
     \item \textbf{Mở rộng đa phương thức:} mở rộng sang cho các tác vụ hình ảnh, âm thanh, video
-    \item \textbf{Better alignment:} "hiểu" hơn với ngôn ngữ đời thường
+    \item \textbf{Better alignment:} hỗ trợ tốt hơn cho các tác vụ đa ngôn ngữ, cross‑lingual transfer
     \item \textbf{Low-resource languages:} Hỗ trợ các ngôn ngữ ít tài nguyên
 \end{itemize}
 
