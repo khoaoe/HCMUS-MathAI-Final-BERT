@@ -75,11 +75,11 @@
                   minimum height=1.2cm, font=\small\bfseries}
 ]
     % Nodes
-    \node[block] (intro) {\faLightbulb~Giới thiệu};
+    \node[block] (intro) {\faCheckCircle~Giới thiệu};
     \node[block, right of=intro] (arch) {\faCogs~Kiến trúc};
-    \node[block, right of=arch] (train) {\faGraduationCap~Training};
+    \node[block, right of=arch] (train) {\faGraduationCap~Pre-training \& Fine-tuning};
     \node[block, below of=intro] (exp) {\faFlask~Thực nghiệm};
-    \node[block, right of=exp] (results) {\faChartBar~Kết quả};
+    \node[block, right of=exp] (results) {\faDatabase~Kết quả};
     \node[block, right of=results] (future) {\faRocket~Tương lai};
     
     % Arrows
@@ -243,7 +243,7 @@
 \end{frame}
 
 % Slide 6: Transformer Architecture
-\begin{frame}{Kiến trúc Transformer}
+\begin{frame}{Kiến trúc Transformer và BERT}
 \begin{center}
 \begin{tikzpicture}[scale=0.8,
     layer/.style={draw=bertblue, fill=bertblue!10, rounded corners, minimum width=3cm, minimum height=0.8cm},
@@ -325,7 +325,7 @@
 \begin{itemize}
     \item<2-> \faEye~Head 1: Quan hệ cú pháp
     \item<3-> \faLink~Head 2: Quan hệ ngữ nghĩa  
-    \item<4-> \faMapMarkerAlt~Head 3: Quan hệ vị trí
+    \item<4-> \faGlobe~Head 3: Quan hệ vị trí
     \item<5-> \textbf{...12 heads trong BERT\textsubscript{BASE}}
 \end{itemize}
 \end{block}
@@ -554,7 +554,7 @@
 \end{frame}
 
 % Slide 13: Results Comparison
-\begin{frame}{Kết quả so sánh}
+\begin{frame}{Thực nghiệm: Kết quả so sánh}
 \begin{center}
 \begin{tikzpicture}
     \begin{axis}[
@@ -564,9 +564,9 @@
         ylabel={Performance (\%)},
         symbolic x coords={Accuracy,Precision,Recall,F1-Score},
         xtick=data,
-        bar width=0.4cm,
+        bar width=0.5cm,
         ymin=80,
-        ymax=92,
+        ymax=95,
         legend pos=north west,
         nodes near coords,
         every node near coord/.append style={font=\footnotesize},
@@ -595,7 +595,7 @@
 \end{frame}
 
 % Slide 14: t-SNE Visualization
-\begin{frame}{t-SNE Visualization}
+\begin{frame}{Thực nghiệm: t-SNE visualization}
 \begin{columns}
 \column{0.5\textwidth}
 \begin{center}
@@ -675,30 +675,41 @@ BERT\textsubscript{BASE} & 84.6 & 71.2 & 90.5 & 93.5 & 52.1 & 66.4 & 78.3 \\
 
 % Slide 16: SQuAD Results
 \begin{frame}{Kết quả trên SQuAD}
-\begin{columns}
+\begin{columns}[T]
 \column{0.5\textwidth}
 \begin{center}
 \textbf{SQuAD v1.1}\\[0.5em]
 \begin{tikzpicture}
     \begin{axis}[
         ybar,
-        width=5cm,
+        width=\linewidth,
         height=5cm,
         ylabel={F1 Score},
-        symbolic x coords={Human,Previous,BERT},
-        xtick=data,
-        bar width=0.6cm,
+        bar width=18pt,
         ymin=88,
         ymax=94,
         nodes near coords,
-        x tick label style={rotate=45, anchor=east}
+        xtick={1,2,3},        
+        xticklabels={},        
+        enlarge x limits=1,
+        legend style={
+            at={(0.5,-0.2)}, 
+            anchor=north,    
+            legend columns=-1
+        },
     ]
-    \addplot[fill=bertgray!60] coordinates {(Human,91.2)};
-    \addplot[fill=bertorange!60] coordinates {(Previous,90.9)};
-    \addplot[fill=bertblue!60] coordinates {(BERT,93.2)};
+    \addplot[fill=bertgray!80] coordinates {(1,91.2)};
+    \addlegendentry{Human}
+
+    \addplot[fill=bertorange!80] coordinates {(2,90.9)};
+    \addlegendentry{Previous}
+
+    \addplot[fill=bertblue!80] coordinates {(3,93.2)};
+    \addlegendentry{BERT}
     \end{axis}
 \end{tikzpicture}
-
+\vspace{1.5em} 
+\par 
 \textcolor{bertred}{\Large\faExclamation} \textbf{Vượt qua Human Performance!}
 \end{center}
 
@@ -708,24 +719,34 @@ BERT\textsubscript{BASE} & 84.6 & 71.2 & 90.5 & 93.5 & 52.1 & 66.4 & 78.3 \\
 \begin{tikzpicture}
     \begin{axis}[
         ybar,
-        width=5cm,
+        width=\linewidth,
         height=5cm,
-        ylabel={F1 Score},
-        symbolic x coords={Previous,BERT,Human},
-        xtick=data,
-        bar width=0.6cm,
+        bar width=18pt,
         ymin=70,
-        ymax=90,
+        ymax=92,
         nodes near coords,
-        x tick label style={rotate=45, anchor=east}
+        xtick={1,2,3},
+        xticklabels={},
+        enlarge x limits=1,
+        legend style={
+            at={(0.5,-0.2)},
+            anchor=north,
+            legend columns=-1
+        },
     ]
-    \addplot[fill=bertorange!60] coordinates {(Previous,74.8)};
-    \addplot[fill=bertblue!60] coordinates {(BERT,81.9)};
-    \addplot[fill=bertgray!60] coordinates {(Human,89.5)};
+    \addplot[fill=bertorange!80] coordinates {(1,74.8)};
+    \addlegendentry{Previous}
+
+    \addplot[fill=bertblue!80] coordinates {(2,81.9)};
+    \addlegendentry{BERT}
+
+    \addplot[fill=bertgray!80] coordinates {(3,89.5)};
+    \addlegendentry{Human}
     \end{axis}
 \end{tikzpicture}
-
-\textcolor{bertgreen}{\Large\faArrowUp} \textbf{+7.1 F1 improvement}
+\vspace{1.5em} % Thêm khoảng trống
+\par
+\textcolor{bertgreen}{\Large\faArrowUp} \textbf{+7.1 F1 score}
 \end{center}
 \end{columns}
 \note{SQuAD results - 1 phút}
