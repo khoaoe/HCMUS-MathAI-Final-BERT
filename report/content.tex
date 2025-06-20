@@ -260,9 +260,10 @@ Lợi ích:
 \begin{figure}[H]
     \centering
     \includegraphics[width=0.9\textwidth]{img/input_representation.png}
-    \caption{Biểu diễn đầu vào của \hyperref[acro:bert]{\textbf{BERT}} \cite{devlin2018bert}. Ba loại embeddings được cộng theo từng vị trí để tạo input embedding cuối cùng. Token [CLS] ở đầu sẽ được dùng cho các tác vụ phân loại.}
+    \caption{Biểu diễn đầu vào của \hyperref[acro:bert]{\textbf{BERT}} \cite{devlin2018bert}.}
     \label{fig:bert_input_representation}
 \end{figure}
+Ba loại embeddings được cộng theo từng vị trí để tạo input embedding cuối cùng. Token \text{[CLS]} ở đầu sẽ được dùng cho các tác vụ phân loại.
 
 \subsection{Các phiên bản \hyperref[acro:bert]{\textbf{BERT}}}
 \label{ssec:bert_versions}
@@ -404,7 +405,7 @@ Các nghiên cứu về sau như \hyperref[acro:roberta]{\texttt{RoBERTa}} \cite
 
 Sau khi được tiền huấn luyện trên dữ liệu khổng lồ (BookCorpus + Wikipedia $\approx$ 3.3 tỷ từ), \hyperref[acro:bert]{\textbf{BERT}} có thể được fine-tune nhanh chóng cho các tác vụ cụ thể. Đây là minh chứng cho đóng góp của \hyperref[acro:bert]{\textbf{BERT}} qua sức mạnh của \texttt{transfer learning} trong \hyperref[acro:nlp]{\texttt{NLP}}.
 
-\subsection{Quy trình Fine-tuning Chung}
+\subsection{Quy trình Fine-tuning chung}
 \label{ssec:quy_trinh_tinh_chinh}
 
 \subsubsection{Nguyên lý cơ bản}
@@ -489,9 +490,10 @@ Memory requirement & Cao & Thấp hơn \\
 \begin{figure}[H]
     \centering
     \includegraphics[width=\textwidth]{img/pretraining_finetuning.png}
-    \caption{Fine-tuning \hyperref[acro:bert]{\textbf{BERT}} cho các tác vụ khác nhau \cite{devlin2018bert}. Architecture thay đổi tối thiểu - chủ yếu là output layer phù hợp với từng loại tác vụ.}
+    \caption{Fine-tuning \hyperref[acro:bert]{\textbf{BERT}} cho các tác vụ khác nhau \cite{devlin2018bert}.}
     \label{fig:bert_finetuning_tasks}
 \end{figure}
+thay đổi kiến trúc rất ít chỉ chủ yếu là output layer phù hợp với từng loại tác vụ.
 
 \subsubsection{Hyperparameters được khuyến nghị}
 Từ bài báo gốc \cite{devlin2018bert}, các hyperparameters được khuyến nghị:
@@ -557,7 +559,7 @@ Chương này trình bày chuỗi thực nghiệm toàn diện nhằm khảo sá
     \draw[arrow] (evaluate) -- (analysis);
     \draw[dashedarrow] (analysis) -- node[left] {\footnotesize Insights} (theory);
 \end{tikzpicture}
-\caption{Quy trình thực nghiệm toàn diện từ lý thuyết đến ứng dụng. Các mũi tên liền nét thể hiện luồng triển khai chính, mũi tên đứt nét thể hiện phản hồi và cải tiến.}
+\caption{Quy trình thực nghiệm.}
 \label{fig:experiment_workflow_detailed}
 \end{figure}
 
@@ -635,9 +637,10 @@ is & 0.6225 & 19.36\% \\
 \end{center}
 \end{minipage}
 }
-\caption{Kết quả dự đoán MLM cho câu thử nghiệm. Mô hình đã học được rằng "model" là một từ hợp lý để hoàn thành câu, thể hiện khả năng nắm bắt ngữ cảnh cơ bản.}
+\caption{Kết quả dự đoán MLM cho câu thử nghiệm.}
 \label{fig:mlm_test_results}
 \end{figure}
+Mô hình đã học được rằng "model" là một từ hợp lý để hoàn thành câu, thể hiện khả năng nắm bắt ngữ cảnh cơ bản.
 
 Mặc dù được huấn luyện trên corpus nhỏ với số epoch hạn chế, mô hình đã có thể đưa ra dự đoán hợp lý. Token "model" nhận điểm cao nhất (21.29\%), phù hợp với ngữ cảnh "BERT is a model".
 
@@ -666,18 +669,18 @@ The dog is cute. & The sky is blue. & NotNext & 52.74\% \\
 
 \subsubsection{Thiết lập Bài toán}
 
-Để đánh giá khả năng transfer learning của \hyperref[acro:bert]{\textbf{BERT}}, chọn bài toán phân loại cảm xúc trên bộ dữ liệu IMDb Movie Reviews \cite{maas2011learning}. Đây là bài toán nhị phân điển hình trong \hyperref[acro:nlp]{\texttt{NLP}}, phù hợp để so sánh với các phương pháp truyền thống.
+Để đánh giá khả năng \texttt{transfer learning} của \hyperref[acro:bert]{\textbf{BERT}}, chọn bài toán phân loại cảm xúc trên bộ dữ liệu \texttt{IMDb Movie Reviews} \cite{maas2011learning}. Đây là bài toán binary classification trong \hyperref[acro:nlp]{\texttt{NLP}}, phù hợp để so sánh với các phương pháp baseline truyền thống.
 
-\paragraph{Chuẩn bị Dữ liệu}
+\paragraph{Chuẩn bị dữ liệu}
 Để cân bằng giữa hiệu quả tính toán và độ tin cậy thống kê, sử dụng một tập con của dataset gốc:
 
 \begin{itemize}
-    \item \textbf{Tập huấn luyện:} 4,000 reviews (2,000 positive, 2,000 negative)
+    \item \textbf{Tập train:} 4,000 reviews (2,000 positive, 2,000 negative)
     \item \textbf{Tập validation:} 1,000 reviews (500 positive, 500 negative)
     \item \textbf{Độ dài tối đa:} 256 tokens (phù hợp với giới hạn bộ nhớ GPU)
 \end{itemize}
 
-\subsubsection{Mô hình Baseline: \hyperref[acro:tfidf]{\texttt{TF-IDF}} + Logistic Regression}
+\subsubsection{Mô hình baseline: \hyperref[acro:tfidf]{\texttt{TF-IDF}} + \texttt{Logistic Regression}}
 
 Để có cơ sở so sánh công bằng, xây dựng một baseline sử dụng phương pháp truyền thống:
 
@@ -708,15 +711,15 @@ Quá trình fine-tuning \hyperref[acro:bert]{\textbf{BERT}} được thực hi�
 \toprule
 \textbf{Hyperparameter} & \textbf{Giá trị} \\
 \midrule
-Pre-trained Model & \texttt{bert-base-uncased} \\
-Learning Rate & $2 \times 10^{-5}$ \\
-Batch Size (hiệu dụng) & 16 \\
-Gradient Accumulation Steps & 2 \\
-Number of Epochs & 3 \\
-Warmup Steps & 500 \\
-Weight Decay & 0.01 \\
+Pre-trained model & \texttt{bert-base-uncased} \\
+Learning rate & $2 \times 10^{-5}$ \\
+Batch size & 16 \\
+Gradient accumulation steps & 2 \\
+Number of epochs & 3 \\
+Warmup steps & 500 \\
+Weight decay & 0.01 \\
 Optimizer & AdamW \cite{loshchilov2017decoupled} \\
-Mixed Precision (FP16) & Enabled \\
+Mixed precision (FP16) & Enabled (with cuda)\\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -751,9 +754,10 @@ Confusion matrix cung cấp cái nhìn về các lỗi của mô hình:
 \begin{figure}[H]
     \centering
     \includegraphics[width=0.65\textwidth]{img/bert_confusion_matrix.png}
-    \caption{Confusion matrix của BERT fine-tuned. Mô hình đạt được sự cân bằng tốt giữa precision và recall cho cả hai lớp, với 447 true negatives, 447 true positives, 53 false positives và 53 false negatives.}
+    \caption{Confusion matrix của BERT fine-tuned}
     \label{fig:confusion_matrix_detailed}
 \end{figure}
+Mô hình đạt được sự cân bằng tốt giữa \texttt{precision} và \texttt{recall} cho cả hai lớp, với 447 true negatives, 447 true positives, 53 false positives và 53 false negatives.
 
 \subsubsection{Phân tích Lỗi Định tính}
 
@@ -799,11 +803,13 @@ Phân tích cho thấy mô hình gặp khó khăn với:
         \caption{\hyperref[acro:tfidf]{\texttt{TF-IDF}} Vectors}
         \label{fig:tsne_tfidf_sub}
     \end{subfigure}
-    \caption{So sánh trực quan hóa t-SNE của không gian biểu diễn. BERT (trái) tạo ra các cụm riêng biệt rõ ràng cho sentiment tích cực (màu cam) và tiêu cực (màu xanh), trong khi \hyperref[acro:tfidf]{\texttt{TF-IDF}} (phải) cho thấy sự chồng chéo đáng kể giữa hai lớp.}
+    \caption{So sánh trực quan hóa t-SNE của không gian biểu diễn.}
     \label{fig:tsne_comparison_detailed}
 \end{figure}
 
-Sự phân tách rõ ràng trong không gian BERT giải thích phần nào hiệu năng vượt trội của mô hình. Các embedding từ BERT nắm bắt được ngữ nghĩa sâu hơn so với các đặc trưng thống kê đơn thuần của \hyperref[acro:tfidf]{\texttt{TF-IDF}}.
+\hyperref[acro:bert]{\textbf{BERT}} (trái) tạo ra các cụm riêng biệt rõ ràng cho label Positive (màu cam) và Negative (màu xanh), trong khi \hyperref[acro:tfidf]{\texttt{TF-IDF}} (phải) cho thấy sự chồng chéo đáng kể giữa hai lớp.
+
+Sự phân tách rõ ràng trong không gian \hyperref[acro:bert]{\textbf{BERT}} giải thích phần nào hiệu năng tốt hơn của mô hình. Do các embedding từ \hyperref[acro:bert]{\textbf{BERT}} nắm bắt được ngữ nghĩa sâu hơn so với các đặc trưng thống kê đơn thuần của \hyperref[acro:tfidf]{\texttt{TF-IDF}}.
 
 \subsection{Thảo luận và Kết luận}
 \label{ssec:thao_luan_ket_luan}
