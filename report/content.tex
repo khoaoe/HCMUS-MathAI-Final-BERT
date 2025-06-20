@@ -680,6 +680,21 @@ The dog is cute. & The sky is blue. & NotNext & 52.74\% \\
     \item \textbf{Độ dài tối đa:} 256 tokens (phù hợp với giới hạn bộ nhớ GPU)
 \end{itemize}
 
+\subsubsection{Mô tả Bộ dữ liệu IMDb} \label{5.4.2}
+
+Bộ dữ liệu \texttt{IMDb Movie Reviews} \cite{maas2011learning} được thiết kế đặc biệt cho phân loại cảm xúc nhị phân với các đặc điểm:
+
+\begin{itemize}
+    \item \textbf{Kích thước:} 50,000 bài đánh giá có label positive hoặc negative  (25,000 train/test)
+    \item \textbf{Tính phân cực:} Chỉ sử dụng đánh giá cực tích cực ($\geq 7/10$) và cực tiêu cực ($\leq 4/10$), loại bỏ đánh giá trung tính (5-6 điểm)
+    \item \textbf{Phân phối cân bằng:} cân bằng hoàn hảo 50/50 giữa positive/negative
+    \item \textbf{Thách thức trong ngôn ngữ:} có sarcasm, phủ định phức tạp, HTML tags và biệt ngữ điện ảnh
+\end{itemize}
+
+Thiết kế phân cực của bộ dữ liệu tạo ra tỷ lệ (tín hiệu)/(nhiễu) cao nghĩa là các từ khóa cảm xúc trong một reviews trở nên đáng tin cậy hơn. 
+
+Việc sử dụng tập train con 4,000 mẫu nhằm giả lập tạo ra một môi trường ít tài nguyên, từ đó có thể làm nổi bật lợi thế \texttt{transfer learning} của \hyperref[acro:bert]{\textbf{BERT}} (có 3.3 tỷ từ tiền huấn luyện) so với baseline chỉ học từ 4,000 ví dụ.
+
 \subsubsection{Mô hình baseline: \hyperref[acro:tfidf]{\texttt{TF-IDF}} + \texttt{Logistic Regression}}
 
 Để có cơ sở so sánh công bằng, xây dựng một baseline sử dụng phương pháp truyền thống:
@@ -747,7 +762,7 @@ Mixed precision (FP16) & Enabled (with cuda)\\
 \end{tabular}
 \end{table}
 
-\subsubsection{Phân tích Chi tiết qua Confusion Matrix}
+\subsubsection{Phân tích chi tiết qua Confusion Matrix}
 
 Confusion matrix cung cấp cái nhìn về các lỗi của mô hình:
 
@@ -784,7 +799,7 @@ Phân tích cho thấy mô hình gặp khó khăn với:
     \item \textbf{Domain-specific language:} Thuật ngữ chuyên ngành điện ảnh
 \end{itemize}
 
-\subsubsection{Trực quan hóa Không gian Biểu diễn}
+\subsubsection{Trực quan hóa không gian biểu diễn}
 
 Để hiểu cách \hyperref[acro:bert]{\textbf{BERT}} tổ chức không gian ngữ nghĩa, sử dụng t-SNE \cite{vandermaaten2008visualizing} để giảm chiều các embedding:
 
@@ -803,50 +818,79 @@ Phân tích cho thấy mô hình gặp khó khăn với:
         \caption{\hyperref[acro:tfidf]{\texttt{TF-IDF}} Vectors}
         \label{fig:tsne_tfidf_sub}
     \end{subfigure}
-    \caption{So sánh trực quan hóa t-SNE của không gian biểu diễn.}
+    \caption{Trực quan hóa t-SNE của không gian biểu diễn.}
     \label{fig:tsne_comparison_detailed}
 \end{figure}
 
-\hyperref[acro:bert]{\textbf{BERT}} (trái) tạo ra các cụm riêng biệt rõ ràng cho label Positive (màu cam) và Negative (màu xanh), trong khi \hyperref[acro:tfidf]{\texttt{TF-IDF}} (phải) cho thấy sự chồng chéo đáng kể giữa hai lớp.
+\hyperref[acro:bert]{\textbf{BERT}} (trái) tạo ra các cụm riêng biệt rõ ràng cho label \texttt{Positive} (màu cam) và \texttt{Negative} (màu xanh), trong khi \hyperref[acro:tfidf]{\texttt{TF-IDF}} (phải) cho thấy sự chồng chéo đáng kể.
 
-Sự phân tách rõ ràng trong không gian \hyperref[acro:bert]{\textbf{BERT}} giải thích phần nào hiệu năng tốt hơn của mô hình. Do các embedding từ \hyperref[acro:bert]{\textbf{BERT}} nắm bắt được ngữ nghĩa sâu hơn so với các đặc trưng thống kê đơn thuần của \hyperref[acro:tfidf]{\texttt{TF-IDF}}.
+Sự phân tách rõ ràng trong không gian \hyperref[acro:bert]{\textbf{BERT}} giải thích hiệu năng tốt hơn của \hyperref[acro:bert]{\textbf{BERT}} fine-tuned. Điều này cũng có nghĩa là do các embedding từ \hyperref[acro:bert]{\textbf{BERT}} nắm bắt được ngữ nghĩa sâu sắc và chính xác hơn so với cách thống kê đơn giản của \hyperref[acro:tfidf]{\texttt{TF-IDF}}.
 
-\subsection{Thảo luận và Kết luận}
-\label{ssec:thao_luan_ket_luan}
+\subsection{Phân tích sâu hơn kết quả}
+\label{ssec:phan_tich_chuyen_sau}
 
-\subsubsection{Những Phát hiện Chính}
+\subsubsection{Đặc tính bộ dữ liệu}
 
-Thông qua chuỗi thực nghiệm từ triển khai đến ứng dụng, rút ra các kết luận sau:
-
-\begin{enumerate}
-    \item \textbf{Hiệu quả của học hai chiều:} Việc triển khai MLM từ đầu giúp làm rõ cách BERT vượt qua giới hạn của các mô hình một chiều truyền thống. Khả năng xem xét ngữ cảnh từ cả hai phía tạo ra biểu diễn giàu thông tin hơn.
-    
-    \item \textbf{Sức mạnh của Transfer Learning:} Với chỉ 3 epochs fine-tuning trên 4,000 mẫu, BERT đạt độ chính xác 89.4\%, vượt trội hơn baseline 3.9\%. Điều này chứng minh giá trị của việc pre-training trên corpus lớn.
-    
-    \item \textbf{Biểu diễn ngữ nghĩa chất lượng cao:} Phân tích t-SNE cho thấy BERT học được không gian biểu diễn có cấu trúc rõ ràng, phân tách tốt giữa các lớp sentiment.
-\end{enumerate}
-
-\subsubsection{Hạn chế và Hướng Phát triển}
-
-Mặc dù đạt kết quả ấn tượng, thực nghiệm vẫn có một số hạn chế:
-
+Như mô tả ở \ref{5.4.2} bộ dữ liệu IMDb:
 \begin{itemize}
-    \item \textbf{Quy mô dữ liệu:} Sử dụng subset nhỏ của IMDb có thể chưa phản ánh đầy đủ tiềm năng của BERT
-    \item \textbf{Độ phức tạp ngôn ngữ:} Mô hình vẫn gặp khó khăn với sarcasm và cấu trúc phức tạp
-    \item \textbf{Chi phí tính toán:} Fine-tuning BERT đòi hỏi tài nguyên GPU đáng kể so với baseline
+    \item được thiết kế với tính chất "highly polar". Điều này có thể giải thích tại sao \hyperref[acro:tfidf]{\texttt{TF-IDF}} + \hyperref[acro:lr]{\texttt{LR}} có thể đạt 85.5\%, tốt cho  một phương pháp đơn giản, gần bằng với \hyperref[acro:bert]{\textbf{BERT}} fine-tuned.
+
+    \item ngoài ra cũng tạo những thách thức về mặt ngôn ngữ:
+    \begin{itemize}
+        \item \textbf{Dễ:} từ khóa rõ ràng ("masterpiece") => cả hai mô hình đều có thể xử lý tốt
+        \item \textbf{Trung bình:} Phủ định đơn giản ("not good") => baseline nắm bắt được một số
+        \item \textbf{Khó:} sacarsm, irony, phụ thuộc xa => baseline thất bại trong việc nắm bắt, còn \hyperref[acro:bert]{\textbf{BERT}} thì nắm bắt tốt hơn
+    \end{itemize}
 \end{itemize}
 
-\subsubsection{Ý nghĩa Thực tiễn}
+\subsubsection{Sự bất đối xứng về kiến thức học}
+Giả lập 4,000 mẫu huấn luyện đã tạo ra sự bất đối xứng cơ bản:
+\begin{itemize}
+    \item \textbf{\hyperref[acro:tfidf]{\texttt{TF-IDF}}:} xây dựng kiến thức hoàn toàn từ 4,000 mẫu đó
+    \item \textbf{\hyperref[acro:bert]{\textbf{BERT}}:} có kiến thức từ 3.3 tỷ từ pre-training, rồi fine-tuning trên 4,000 mẫu
+\end{itemize}
 
-Kết quả thực nghiệm khẳng định BERT là lựa chọn mạnh mẽ cho các ứng dụng \hyperref[acro:nlp]{\texttt{NLP}} thực tế, đặc biệt khi:
+Cải thiện 3.9\% so với \texttt{TFIDF + Logistic Regression} cũng phần nào minh chứng cho hiệu quả khi sử dụng trên bộ dữ liệu nhỏ của \texttt{transfer learning} của \hyperref[acro:bert]{\textbf{BERT}}.
+
+\subsubsection{Phân tích không gian biểu diễn}
+
+Khi visualize t-SNE cho thấy sự khác biệt lớn giữa 2 mô hình:
+\begin{itemize}
+    \item \textbf{\hyperref[acro:bert]{\textbf{BERT}}:} Phân tách rõ ràng; Giải thích: do \hyperref[acro:bert]{\textbf{BERT}} embedding có khả năng ánh xạ ngữ nghĩa tương tự về cảm xúc
+    \item \textbf{\hyperref[acro:tfidf]{\texttt{TF-IDF}}:} Chồng chéo đáng kể; Giải thích: chỉ ánh xạ dựa trên thống kê đơn giản là tần suất của các từ
+\end{itemize}
+
+Vì cảm xúc là thuộc tính ngữ nghĩa, không gian \hyperref[acro:bert]{\textbf{BERT}} embedding dễ dàng hơn cho classification khi có cụm tách riêng biệt với nhau.
+
+
+\subsection{Kết luận phần thực nghiệm}
+\label{ssec:thao_luan_ket_luan}
+
+\subsubsection{Quan sát rút ra}
+Thông qua pipeline thực nghiệm, rút ra các kết luận sau:
+\begin{enumerate}
+    \item \textbf{Hiệu quả của học hai chiều:} Pre-traing áp dụng \texttt{deep bidirectional} bằng \hyperref[acro:mlm]{\texttt{MLM}} là cách \hyperref[acro:bert]{\textbf{BERT}} vượt qua hạn chế của các mô hình \texttt{unidirectional} (một chiều) truyền thống. Khả năng xem xét ngữ cảnh từ cả hai phía tạo ra biểu diễn chính xác hơn.
+    
+    \item \textbf{Sức mạnh của Transfer Learning:} Với chỉ 3 epochs fine-tuning trên 4,000 mẫu, \hyperref[acro:bert]{\textbf{BERT}} cũng đã đạt accuracy tốt là 89.4\%, hơn baseline \texttt{TFIDF + Logistic Regression} 3.9\%. Điều này chứng minh giá trị của pre-training trên corpus khổng lồ.
+    
+    \item \textbf{Hiểu được ngữ nghĩa phức tạp:} qua phân tích t-SNE, \hyperref[acro:bert]{\textbf{BERT}} đã học được không gian biểu diễn có cấu trúc rõ ràng, tách biệt tốt giữa 2 label; dù cho dữ liệu có chứa những độ khó về ngữ nghĩa (sacarsm, irony, ...) cho thấy \hyperref[acro:bert]{\textbf{BERT}} đã nắm bắt được mối quan hệ phức tạp này nhờ hiểu ngữ cảnh sâu sắc hơn.
+\end{enumerate}
+
+\subsubsection{Hạn chế và hướng phát triển}
+Mặc dù đạt kết quả khá tốt, thực nghiệm vẫn có một số hạn chế:
+\begin{itemize}
+    \item \textbf{Quy mô dữ liệu:} chỉ sử dụng subset nhỏ của IMDb có thể chưa phản ánh đầy đủ tiềm năng của \hyperref[acro:bert]{\textbf{BERT}}
+    \item \textbf{Độ phức tạp ngôn ngữ:} Mô hình vẫn gặp các khó khăn với ngữ nghĩa và cấu trúc phức tạp dù cho vẫn tốt hơn nhiều so với baseline
+    \item \textbf{Chi phí tính toán:} fine-tuning \hyperref[acro:bert]{\textbf{BERT}} có thời gian train lâu hơn hẳn so với baseline
+\end{itemize}
+
+\subsubsection{Ý nghĩa}
+Kết quả thực nghiệm cho thấy \hyperref[acro:bert]{\textbf{BERT}} là lựa chọn tốt cho các ứng dụng \hyperref[acro:nlp]{\texttt{NLP}} thực tế, đặc biệt khi:
 \begin{itemize}
     \item Độ chính xác là yếu tố quan trọng nhất
     \item Có sẵn tài nguyên GPU cho inference
-    \item Dữ liệu huấn luyện có giới hạn (transfer learning hiệu quả)
+    \item Dữ liệu huấn luyện giới hạn (do \texttt{transfer learning} hiệu quả)
 \end{itemize}
-
-Việc kết hợp hiểu biết lý thuyết từ triển khai from-scratch với kinh nghiệm thực tế từ fine-tuning tạo nên nền tảng vững chắc cho việc áp dụng và phát triển các mô hình transformer trong tương lai.
-
 
 %% =========================================================================
 %% CHƯƠNG 6: KẾT QUẢ VÀ SO SÁNH
