@@ -7,7 +7,7 @@
 \usepackage{tikz}
 \usepackage{pgfplots}
 \usepackage{booktabs}
-\usepackage{fontawesome}
+\usepackage{fontawesome5}
 \usepackage{xcolor}
 \usepackage{listings}
 \usepackage{amsmath}
@@ -75,7 +75,7 @@
                   minimum height=1.2cm, font=\small\bfseries}
 ]
     % Nodes
-    \node[block] (intro) {\faCheckCircle~Giới thiệu};
+    \node[block] (intro) {\faLightbulb~Giới thiệu};
     \node[block, right of=intro] (arch) {\faCogs~Kiến trúc};
     \node[block, right of=arch] (train) {\faGraduationCap~Pre-training \& Fine-tuning};
     \node[block, below of=intro] (exp) {\faFlask~Thực nghiệm};
@@ -127,8 +127,8 @@
 \begin{block}{Hạn chế}
 \begin{itemize}
     \item<2-> \faExclamationTriangle~Không nắm bắt ngữ cảnh
-    \item<3-> \faTimesCircle~Một từ = Một vector cố định
-    \item<4-> \faSadTear~Mất thông tin ngữ nghĩa
+    \item<3-> \faExclamationTriangle~Một từ = Một vector cố định
+    \item<4-> \faTimesCircle~Mất thông tin ngữ nghĩa
 \end{itemize}
 \end{block}
 \end{columns}
@@ -242,41 +242,95 @@
 \note{So sánh 3 approaches - 2 phút}
 \end{frame}
 
-% Slide 6: Transformer Architecture
-\begin{frame}{Kiến trúc Transformer và BERT}
+% Slide 6: BERT Architecture
+\begin{frame}{Kiến trúc BERT (Transformer Encoder)}
+\begin{columns}[T]
+\column{0.6\textwidth}
 \begin{center}
 \begin{tikzpicture}[scale=0.8,
-    layer/.style={draw=bertblue, fill=bertblue!10, rounded corners, minimum width=3cm, minimum height=0.8cm},
-    attention/.style={draw=bertorange, fill=bertorange!10, rounded corners, minimum width=3cm, minimum height=0.8cm}
+    % Define styles
+    wordbox/.style={draw=black, fill=red!40, rounded corners, minimum width=3cm, minimum height=0.7cm},
+    posbox/.style={draw=black, fill=purple!40, rounded corners, minimum width=3cm, minimum height=0.7cm},
+    attnbox/.style={draw=black, fill=orange!60, rounded corners, minimum width=3cm, minimum height=0.7cm},
+    normbox/.style={draw=black, fill=orange!20, rounded corners, minimum width=3cm, minimum height=0.7cm},
+    ffnbox/.style={draw=black, fill=blue!40, rounded corners, minimum width=3cm, minimum height=0.7cm},
+    outputbox/.style={draw=black, fill=purple!40, rounded corners, minimum width=3cm, minimum height=0.7cm},
+    transformer/.style={draw=bertgreen, thick, minimum width=4.2cm, minimum height=5.2cm}
 ]
-    % Encoder stack
-    \node[layer] (emb) at (0,0) {Input Embeddings};
-    \node[layer] (pos) at (0,0.8) {Positional Encoding};
-    
-    % Encoder layers
-    \foreach \i in {1,2,3} {
-        \pgfmathsetmacro{\y}{2 + (\i-1)*2.5}
-        \node[attention] (att\i) at (0,\y) {Multi-Head Attention};
-        \node[layer] (norm1\i) at (0,\y+0.8) {Add \& Norm};
-        \node[layer] (ff\i) at (0,\y+1.6) {Feed Forward};
-        \node[layer] (norm2\i) at (0,\y+2.4) {Add \& Norm};
-        
-        % Residual connections
-        \draw[thick, bertgray] (-2,\y-0.4) -- (-2,\y+0.8) -- (-1.5,\y+0.8);
-        \draw[thick, bertgray] (-2,\y+1.2) -- (-2,\y+2.4) -- (-1.5,\y+2.4);
-    }
-    
-    % Stack notation
-    \node[right] at (2,5) {\Large $\times$ L};
-    
-    % Labels
-    \node[above, font=\large\bfseries] at (0,8) {BERT chỉ dùng Encoder};
-    
-    % Highlight
-    \draw[bertblue, thick, dashed] (-2.5,-0.5) rectangle (2.5,7.5);
+
+% Word Embeddings
+\node[wordbox] (word) at (0,0.5) {Word Embeddings};
+
+% Positional Embeddings  
+\node[posbox] (pos) at (6,1.5) {Positional Embeddings};
+
+% Plus sign
+\node at (0,1.5) {\Large $\oplus$};
+
+% Main transformer block container
+\node[transformer] (transformer) at (0,5) {};
+
+% Multi-Head Attention
+\node[attnbox] (attention) at (0,2.5) {Multi-Head Attention};
+
+% First Add & Norm
+\node[normbox] (norm1) at (0,3.5) {Add \& Norm};
+
+% Feed Forward Network
+\node[ffnbox] (ffn) at (0,5) {Feed Forward Network};
+
+% Second Add & Norm  
+\node[normbox] (norm2) at (0,6) {Add \& Norm};
+
+% Linear & Softmax
+\node[outputbox] (linear) at (0,7.5) {Linear \& Softmax};
+
+% Output Probabilities
+\node[above] at (0,8.2) {\textbf{Output Probabilities}};
+
+% 12x label
+\node[left] at (-2.5,5) {\textcolor{bertgreen}{\Large $12 \times$}};
+
+% Arrows
+\draw[->, thick] (word.north) -- (0,1.3);
+\draw[->, thick] (pos.west) -- (0.2,1.5);
+\draw[->, thick] (attention.north) -- (norm1.south);
+\draw[->, thick] (norm1.north) -- (ffn.south);
+\draw[->, thick] (ffn.north) -- (norm2.south);
+\draw[->, thick] (norm2.north) -- (linear.south);
+\draw[->, thick] (linear.north) -- (0,8.4);
+
+% Residual connections
+\draw[->, thick, blue] (0,1.85) -- (-2.4,1.85) -- (-2.4,3.5) -- (-1.9,3.5);
+\draw[->, thick, blue] (-0,4.2) --(-2.4,4.2) -- (-2.4,6) -- (-1.9,6);
+
+% Input arrows to attention
+\draw[->, thick] (0,1.3) -- (attention.south);
+\draw[->, thick] (-0.5,1.9) -- (-0.5,2.05);
+\draw[->, thick] (0.5,1.9) -- (0.5,2.05);
+\draw[thick] (-0.5, 1.9) -- (0.5,1.9);
+
 \end{tikzpicture}
 \end{center}
-\note{Giải thích Transformer architecture - 1.5 phút}
+
+\column{0.4\textwidth}
+\begin{block}{\small Key Components}
+\begin{itemize}\small
+    \item \textbf{Self-Attention}: Chú ý đến mọi vị trí
+    \item \textbf{Feed Forward}: Xử lý phi tuyến  
+    \item \textbf{Residual}: Tránh vanishing gradient
+    \item \textbf{LayerNorm}: Ổn định training
+\end{itemize}
+\end{block}
+
+\vspace{0.5em}
+\begin{block}{\small BERT vs GPT}
+\small
+BERT: \textbf{Encoder} only\\
+GPT: \textbf{Decoder} only
+\end{block}
+\end{columns}
+\note{Transformer encoder architecture - 1.5 phút}
 \end{frame}
 
 % Slide 7: Multi-Head Attention
@@ -517,14 +571,14 @@
     \item \faDatabase~4,000 training samples
     \item \faCheckSquare~1,000 validation samples
     \item \faBalanceScale~Balanced (50/50)
-    \item \faRuler~Max length: 256 tokens
+    \item \faExpand~Max length: 256 tokens
 \end{itemize}
 \end{block}
 
 \vspace{0.5em}
 \begin{block}{Models}
 \begin{itemize}
-    \item \textcolor{bertgray}{\faChartLine~Baseline: TF-IDF + LR}
+    \item \textcolor{bertgray}{\faCogs~Baseline: TF-IDF + LR}
     \item \textcolor{bertblue}{\faRocket~BERT-base-uncased}
 \end{itemize}
 \end{block}
@@ -586,8 +640,8 @@
 \begin{center}
 \begin{tikzpicture}
     \node[draw=bertgreen, fill=bertgreen!10, rounded corners, text width=8cm, align=center] {
-        \Large\textbf{+3.9\%} improvement với BERT\\
-        \small chỉ với 3 epochs fine-tuning!
+        \Large\textbf{+3.9\%} F1 Score với BERT\\
+        \small chỉ với 3 epochs
     };
 \end{tikzpicture}
 \end{center}
@@ -600,44 +654,23 @@
 \column{0.5\textwidth}
 \begin{center}
 \textbf{BERT Embeddings}\\[0.5em]
-\begin{tikzpicture}[scale=0.8]
-    % Positive cluster
-    \draw[fill=bertorange!30, draw=bertorange] (1,1) circle (1.5cm);
-    \node at (1,1) {\small Positive};
-    
-    % Negative cluster
-    \draw[fill=bertblue!30, draw=bertblue] (-1,-1) circle (1.5cm);
-    \node at (-1,-1) {\small Negative};
-    
-    % Clear separation
-    \draw[thick, dashed, bertred] (-0.3,-0.3) -- (0.3,0.3);
-    
-    \node[below, align=center] at (0,-3) {
-        \textbf{Phân tách rõ ràng}\\
-        \small Các cụm riêng biệt
-    };
-\end{tikzpicture}
+    \begin{figure}[h]
+    \centering
+    \includegraphics[width=0.8\textwidth]{imgs/bert_tsne.png}
+    \\[0.5em]
+    \text{\textbf{Phân tách rõ ràng} $\rightarrow$ các cụm riêng biệt}
+    \end{figure}
 \end{center}
 
 \column{0.5\textwidth}
 \begin{center}
 \textbf{TF-IDF Vectors}\\[0.5em]
-\begin{tikzpicture}[scale=0.8]
-    % Mixed clusters
-    \draw[fill=bertorange!20, draw=bertorange] (0.5,0.5) circle (1.5cm);
-    \draw[fill=bertblue!20, draw=bertblue] (-0.5,-0.5) circle (1.5cm);
-    
-    % Overlap area
-    \begin{scope}
-        \clip (0.5,0.5) circle (1.5cm);
-        \fill[bertgray!40] (-0.5,-0.5) circle (1.5cm);
-    \end{scope}
-    
-    \node[below, align=center] at (0,-3) {
-        \textbf{Chồng chéo nhiều}\\
-        \small Khó phân biệt
-    };
-\end{tikzpicture}
+    \begin{figure}[h]
+    \centering
+    \includegraphics[width=0.8\textwidth]{imgs/bert_tsne.png}
+    \\[0.5em]
+    \text{\textbf{Chồng chéo nhiều} $\rightarrow$ khó phân biệt}
+    \end{figure}
 \end{center}
 \end{columns}
 \note{t-SNE visualization - 1 phút}
@@ -655,7 +688,6 @@ Previous SOTA & 80.6 & 66.1 & 82.3 & 93.2 & 35.0 & 61.7 & 74.0 \\
 OpenAI GPT & 82.1 & 70.3 & 87.4 & 91.3 & 45.4 & 56.0 & 72.8 \\
 \midrule
 BERT\textsubscript{BASE} & 84.6 & 71.2 & 90.5 & 93.5 & 52.1 & 66.4 & 78.3 \\
-\rowcolor{bertblue!20}
 \textbf{BERT\textsubscript{LARGE}} & \textbf{86.7} & \textbf{72.1} & \textbf{92.7} & \textbf{94.9} & \textbf{60.5} & \textbf{70.1} & \textbf{80.5} \\
 \bottomrule
 \end{tabular}
@@ -666,7 +698,7 @@ BERT\textsubscript{BASE} & 84.6 & 71.2 & 90.5 & 93.5 & 52.1 & 66.4 & 78.3 \\
 \begin{tikzpicture}
     \node[draw=bertgreen, fill=bertgreen!10, rounded corners, text width=10cm, align=center] {
         \Large\textbf{+7.7 points} improvement over GPT\\
-        \small Đặc biệt hiệu quả trên datasets nhỏ (CoLA: +15.1)
+        \small Vẫn hiệu quả trên datasets nhỏ (CoLA: +15.1)
     };
 \end{tikzpicture}
 \end{center}
@@ -759,16 +791,16 @@ BERT\textsubscript{BASE} & 84.6 & 71.2 & 90.5 & 93.5 & 52.1 & 66.4 & 78.3 \\
 \begin{block}{Hạn chế \faExclamationTriangle}
 \begin{itemize}
     \item \faDollarSign~Chi phí tính toán lớn
-    \item \faRuler~Giới hạn 512 tokens
-    \item \faMask~\text{[MASK]} token mismatch
-    \item \faFileAlt~Khó cho text generation
+    \item \faRulerHorizontal~Giới hạn 512 tokens
+    \item \faTheaterMasks~\text{[MASK]} token mismatch
+    \item \faFileExport~Khó cho text generation
 \end{itemize}
 \end{block}
 
 \column{0.5\textwidth}
 \begin{block}{Phát triển \faRocket}
 \begin{itemize}
-    \item \faCompressArrowsAlt~Model compression\\
+    \item \faCogs~Model compression\\
     {\small (DistilBERT, ALBERT)}
     \item \faExpand~Long document\\
     {\small (Longformer, BigBird)}
@@ -811,7 +843,7 @@ BERT\textsubscript{BASE} & 84.6 & 71.2 & 90.5 & 93.5 & 52.1 & 66.4 & 78.3 \\
     };
     
     \node[key] (k2) at (0,0.5) {
-        \faExchangeAlt~\textbf{Transfer learning} - Pre-train once, fine-tune anywhere
+        \faTruckMoving~\textbf{Transfer learning} - pre-train once, fine-tune anywhere
     };
     
     \node[key] (k3) at (0,-1) {
@@ -826,7 +858,7 @@ BERT\textsubscript{BASE} & 84.6 & 71.2 & 90.5 & 93.5 & 52.1 & 66.4 & 78.3 \\
 
 \vspace{0.5em}
 \begin{center}
-\Large\textbf{\textcolor{bertblue}{BERT} changed how we think about language understanding}
+\Large\textbf{\textcolor{bertblue}{BERT} thay đổi cách nghĩ về language understanding}
 \end{center}
 \note{Key takeaways - 1 phút}
 \end{frame}
