@@ -332,7 +332,7 @@ GPT: \textbf{Decoder} only
 \end{frame}
 
 % Slide 7: Multi-Head Attention
-\begin{frame}{Multi-Head Attention}
+\begin{frame}{Multi-Head Self-Attention}
 \begin{columns}
 \column{0.5\textwidth}
 \begin{center}
@@ -384,7 +384,7 @@ GPT: \textbf{Decoder} only
 
 \vspace{0.5em}
 \begin{equation*}
-\text{Attention}(Q,K,V) = \text{softmax}\left(\frac{QK^T}{\sqrt{d_k}}\right)V
+\text{Self-Attention}(Q,K,V) = \text{softmax}\left(\frac{QK^T}{\sqrt{d_k}}\right)V
 \end{equation*}
 \end{columns}
 \note{Multi-head attention mechanism - 2 phút}
@@ -849,7 +849,7 @@ BERT\textsubscript{BASE} & 84.6 & 71.2 & 90.5 & 93.5 & 52.1 & 66.4 & 78.3 \\
     };
     
     \node[key] (k4) at (0,-2.5) {
-        \faHistory~\textbf{Foundation} - Nền tảng cho kỷ nguyên LLM
+        \faExpand~\textbf{Influence} - Ảnh hướng sâu rộng tới kỷ nguyên LLM
     };
 \end{tikzpicture}
 \end{center}

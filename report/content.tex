@@ -90,7 +90,7 @@ Mỗi lớp con đều có kết nối dư (\texttt{residual connection}) và ch
     \caption{Kiến trúc tổng quan \texttt{Transformer} \cite{vaswani2017attention}. }
     \label{fig:transformer_architecture}
 \end{figure}
-\hyperref[acro:bert]{\textbf{BERT}} chỉ sử dụng phần \texttt{Encoder} (bên trái). Mỗi khối encoder chứa lớp \texttt{Multi-Head Attention} và \texttt{Feed-Forward}, được kết nối bằng \texttt{residual connections} và \texttt{layer normalization}.
+\hyperref[acro:bert]{\textbf{BERT}} chỉ sử dụng phần \texttt{Encoder} (bên trái). Mỗi khối encoder chứa lớp \texttt{Multi-Head Self-Attention} và \texttt{Feed-Forward}, được kết nối bằng \texttt{residual connections} và \texttt{layer normalization}.
 
 \subsection{Cơ chế \texttt{Self-Attention}}
 \label{ssec:self_attention}
@@ -107,7 +107,7 @@ Với đầu vào là các vector biểu diễn, \texttt{self-attention} (hay l�
 
 Công thức \texttt{Scaled Dot-Product Attention} \cite{vaswani2017attention}:
 \begin{equation}
-\text{Attention}(Q, K, V) = \text{softmax}\left(\frac{QK^T}{\sqrt{d_k}}\right)V
+\text{Self-Attention}(Q, K, V) = \text{softmax}\left(\frac{QK^T}{\sqrt{d_k}}\right)V
 \label{eq:scaled_attention}
 \end{equation}
 
@@ -123,11 +123,14 @@ Trong đó:
 \subsubsection{Ý nghĩa và lợi ích}
 Cơ chế \texttt{self-attention} có độ phức tạp $O(n^2 \cdot d)$ so với \hyperref[acro:rnn]{\texttt{RNN}} có độ phức tạp $O(n \cdot d^2)$. Khi $d > n$ (thường xảy ra trong \hyperref[acro:nlp]{\texttt{NLP}}) thì \texttt{self-attention} sẽ hiệu quả hơn về mặt tính toán. Đáng chú ý, \texttt{self-attention} cho phép mô hình hóa quan hệ giữa mọi cặp token mà không phụ thuộc vào khoảng cách của chúng trong chuỗi.
 
-\subsection{\texttt{Multi-Head Attention}}
+\subsection{\texttt{Multi-Head Self-Attention}}
 \label{ssec:multi_head_attention}
 
 Sử dụng một cơ chế \texttt{Self-Attention} duy nhất chỉ có thể nắm bắt một loại mối quan hệ. 
-\texttt{Multi-Head Attention} giải quyết hạn chế này bằng cách chạy nhiều attention song song, mỗi cái tập trung vào khía cạnh khác nhau.
+
+\texttt{Multi-Head Self-Attention} giải quyết hạn chế này bằng cách chạy nhiều attention song song, mỗi cái tập trung vào khía cạnh khác nhau.
+
+\textbf{Và đây cũng chính là thứ được} \hyperref[acro:bert]{\textbf{BERT}} \textbf{sử dụng}, đóng góp quan trọng cho thành công của mô hình
 
 \subsubsection{Công thức toán học}
 \begin{equation}
@@ -137,7 +140,7 @@ Sử dụng một cơ chế \texttt{Self-Attention} duy nhất chỉ có thể n
 
 Trong đó:
 \begin{equation}
-\text{head}_i = \text{Attention}(QW_i^Q, KW_i^K, VW_i^V)
+\text{head}_i = \text{Self-Attention}(QW_i^Q, KW_i^K, VW_i^V)
 \label{eq:head_i}
 \end{equation}
 
@@ -162,7 +165,7 @@ Mỗi head có thể học một "góc nhìn" khác nhau về dữ liệu, ví d
 \begin{figure}[H]
     \centering
     \includegraphics[width=0.4\textwidth]{img/multihead.png}
-    \caption{Cơ chế \texttt{Multi-Head Attention} \cite{vaswani2017attention}.}
+    \caption{Cơ chế \texttt{Multi-Head Self-Attention} \cite{vaswani2017attention}.}
     \label{fig:multi_head_attention}
 \end{figure}
 Đầu vào được chiếu thành $h$ bộ Q, K, V độc lập. Mỗi head thực hiện attention riêng, sau đó các kết quả được concat và chiếu qua $W^O$ để tạo đầu ra cuối cùng.
@@ -523,7 +526,7 @@ Chương này trình bày chuỗi thực nghiệm toàn diện nhằm khảo sá
     \item \textbf{Triển khai từ nền tảng (From-scratch Implementation):} 
     \begin{itemize}
         \item Xây dựng các thành phần cốt lõi của \hyperref[acro:bert]{\textbf{BERT}} để hiểu sâu về kiến trúc và cơ chế hoạt động nội tại. 
-        \item Việc triển khai được thực hiện trong module \texttt{bert.py}, bao gồm các khối xây dựng cơ bản như \texttt{Multi-Head Attention}, \texttt{Transformer} Encoder, và các tác vụ tiền huấn luyện.
+        \item Việc triển khai được thực hiện trong module \texttt{bert.py}, bao gồm các khối xây dựng cơ bản như \texttt{Multi-Head Self-Attention}, \texttt{Transformer} Encoder, và các tác vụ tiền huấn luyện.
     \end{itemize}
     
     \item \textbf{Ứng dụng thực tế (Practical Application):} 
@@ -1188,8 +1191,8 @@ Mặc dù \hyperref[acro:bert]{\textbf{BERT}} đã tạo ra bước đột phá,
     \item Tiết kiệm parameters: chỉ thêm xấp xỉ 3\% parameters cho mỗi tác vụ thay vì fine-tune trên 100\% parameter gốc
 \end{itemize}
 
-\subsubsection{Mô hình nền tảng}
-Thành công của \hyperref[acro:bert]{\textbf{BERT}} đã mở đường cho:
+\subsubsection{Ảnh hưởng đến các \hyperref[acro:llm]{\texttt{LLM}}}
+BERT đã khẳng định hiệu quả của phương pháp \texttt{pre-training} trên kiến trúc \texttt{Transformer} và \texttt{fine-tuning} cho các tác vụ downstream. Thành công này đã mở đường cho thế hệ các mô hình ngôn ngữ lớn (\hyperref[acro:llm]{\texttt{LLM}}):
 \begin{itemize}
     \item \texttt{GPT-3}: mở rộng tới 175B parameters
     \item \texttt{PaLM}: 540B parameters với khả năng thích ứng đột phá
@@ -1222,7 +1225,7 @@ Thành công của \hyperref[acro:bert]{\textbf{BERT}} đã mở đường cho:
 \begin{itemize}
     \item Các biến thể hiệu quả hơn: \hyperref[acro:roberta]{\texttt{RoBERTa}} \cite{liu2019roberta}, \hyperref[acro:electra]{\texttt{ELECTRA}} \cite{clark2020electra}, \hyperref[acro:albert]{\texttt{ALBERT}} \cite{lan2019albert}, ...
     \item Mô hình đa ngôn ngữ: \hyperref[acro:xlm-r]{\texttt{XLM-R}} \cite{conneau2019unsupervised}, mT5, ...
-    \item Scaling lên quy mô khổng lồ (\texttt{GPT-3}, \texttt{PaLM}, \texttt{ChatGPT})
+    \item \hyperref[acro:bert]{\textbf{BERT}} Có ảnh hưởng đến các mô hình ngôn ngữ lớn sau này (\texttt{GPT-3}, \texttt{PaLM})
     \item Ứng dụng thực tế trong nhiều ngành, ứng dụng: search, translation, chatbots, content generation, ...
 \end{itemize}
 
@@ -1248,4 +1251,4 @@ Vẫn còn những hạn chế ở \hyperref[acro:bert]{\textbf{BERT}}, tạo th
     \item \textbf{Low-resource languages:} Hỗ trợ các ngôn ngữ ít tài nguyên
 \end{itemize}
 
-\hyperref[acro:bert]{\textbf{BERT}} không chỉ được nhớ đến vì những con số cao trên benchmarks, mà vì đã thay đổi cách chúng ta nghĩ về \texttt{language understanding} và \texttt{machine learning}. Từ một bài báo học thuật, \hyperref[acro:bert]{\textbf{BERT}} đã trở thành nền tảng cho vô số ứng dụng AI đang thay đổi thế giới ngày nay. Đó chính là di sản, đóng góp thực sự và lớn nhất của một nghiên cứu đột phá như \hyperref[acro:bert]{\textbf{BERT}}, không chỉ giải quyết các vấn đề kỹ thuật còn tồn đọng ở các nghiên cứu trước mà còn mở ra những khả năng, bài học mới cho lĩnh vực \texttt{xử lý ngôn ngữ tự nhiên} (\hyperref[acro:llm]{\texttt{LLM}}).
+\hyperref[acro:bert]{\textbf{BERT}} không chỉ được nhớ đến vì những con số cao trên benchmarks, mà vì đã thay đổi cách chúng ta nghĩ về \texttt{language understanding} và \texttt{machine learning}. Từ một bài báo học thuật, \hyperref[acro:bert]{\textbf{BERT}} đã trở thành nền tảng cho vô số ứng dụng AI đang thay đổi thế giới ngày nay. Đó chính là di sản, đóng góp thực sự và lớn nhất của một nghiên cứu đột phá như \hyperref[acro:bert]{\textbf{BERT}}, không chỉ giải quyết các vấn đề kỹ thuật còn tồn đọng ở các nghiên cứu trước mà còn mở ra những khả năng, bài học mới cho lĩnh vực \texttt{xử lý ngôn ngữ tự nhiên} (\hyperref[acro:nlp]{\texttt{NLP}}).
