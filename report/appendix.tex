@@ -1,78 +1,796 @@
-\section{Phụ lục}
+\section*{Phụ lục}
+\label{sec:appendix}
+
+% =======================================================================
+% A.1 CẤU HÌNH THỰC NGHIỆM CHI TIẾT
+% =======================================================================
+\subsection*{A.1 Cấu hình Thực nghiệm Chi tiết}
+\label{subsec:experiment_config}
+
+\subsubsection*{A.1.1 Thông số Kiến trúc Mô hình}
+\label{subsubsec:model_architecture}
+
+Bảng \ref{tab:model_configs} tổng hợp các thông số kiến trúc cho cả hai mô hình được sử dụng trong thực nghiệm:
+
+\begin{table}[H]
+\centering
+\caption{So sánh chi tiết cấu hình kiến trúc mô hình}
+\label{tab:model_configs}
+\begin{tabular}{lcc}
+\toprule
+\textbf{Thông số} & \textbf{Mini-BERT (From-scratch)} & \textbf{BERT-Base (Fine-tuned)} \\
+\midrule
+Số lớp Transformer (L) & 2 & 12 \\
+Kích thước ẩn (H) & 128 & 768 \\
+Số attention heads (A) & 2 & 12 \\
+Kích thước FFN & 512 & 3072 \\
+Kích thước từ vựng & 30,522 & 30,522 \\
+Độ dài chuỗi tối đa & 512 & 512 \\
+Số loại segment & 2 & 2 \\
+Dropout rate & 0.1 & 0.1 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsubsection*{A.1.2 Hyperparameters}
+\label{subsubsec:training_hyperparams}
+
+\paragraph{BERT configuration (bảng trên)}
+\begin{table}[H]
+\centering
+\caption{Hyperparameters cho BERT}
+\label{tab:hyperparameters}
+\begin{tabular}{lcc}
+\toprule
+\textbf{Hyperparameter} & \textbf{BERT "from-scratch"} & \textbf{BERT-Base Fine-tuning} \\
+\midrule
+Learning rate & 5e-5 & 2e-5 \\
+Batch size & 4 & 16 \\
+Gradient accumulation steps & 1 & 2 \\
+Number of epochs & 10 & 3 \\
+Warmup steps & 500 & 500 \\
+Weight decay & 0.01 & 0.01 \\
+Optimizer & AdamW & AdamW \\
+Adam $\beta_1$ & 0.9 & 0.9 \\
+Adam $\beta_2$ & 0.999 & 0.999 \\
+Adam $\epsilon$ & 1e-8 & 1e-8 \\
+Max gradient norm & 1.0 & 1.0 \\
+Learning rate schedule & Linear decay & Linear decay \\
+Mixed precision (FP16) & Yes & Yes \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\paragraph{Baseline configuration:}
+Mô hình baseline (TF-IDF + Logistic Regression) sử dụng các tham số:
 \begin{itemize}
-    \item \textbf{Nội dung chính của báo cáo}  
-    \begin{verbatim}
-    % phần nội dung chính đã cải thiện
-    \input{content.tex}
-    \end{verbatim}
-    
-    \item \textbf{Danh mục thuật ngữ viết tắt}  
-    \begin{verbatim}
-    % danh mục các thuật ngữ và viết tắt
-    \input{abbre.tex}
-    \end{verbatim}
-    
-    \item \textbf{Tài liệu tham khảo}  
-    \begin{verbatim}
-    % danh sách tài liệu tham khảo đã định dạng
-    \input{cite.tex}
-    \bibliographystyle{plain}
-    \bibliography{ref}
-    \end{verbatim}
-    
-    \item \textbf{File BibTeX}  
-    Các ghi chú và đường dẫn tới file chứa toàn bộ các entry tham khảo:  
-    \verb|ref.bib|
-    
-    \item \textbf{Mã nguồn chính}  
-    Đính kèm mã Python quan trọng đã sử dụng trong thực nghiệm:  
-    \begin{minted}{python}
-    % lớp cấu hình và mô hình BERT
-    \lstinputlisting[firstline=1,lastline=200]{bert.py}
-    
-    % notebook fine-tune và đánh giá
-    \lstinputlisting[firstline=1,lastline=200]{bert_application.ipynb}
-    \end{minted}
-    
-    \item \textbf{Danh sách siêu tham số}  
-    Bảng tổng hợp các giá trị siêu tham số chính đã thử nghiệm và lựa chọn cuối cùng:
-    \begin{table}[h]
-      \centering
-      \begin{tabular}{lcc}
-        \hline
-        Siêu tham số         & Giá trị thử & Giá trị chọn \\
-        \hline
-        Learning rate         & \{1e-5,2e-5,3e-5\} & 2e-5 \\
-        Batch size            & \{8,16,32\}       & 16   \\
-        Epochs                & \{2,3,4\}         & 3    \\
-        Max sequence length   & \{128,256,512\}   & 256  \\
-        Warmup steps          & 500               & 500  \\
-        Weight decay          & \{0.0,0.01\}      & 0.01 \\
-        \hline
-      \end{tabular}
-      \caption{Danh sách siêu tham số thực nghiệm}
-    \end{table}
-    
-    \item \textbf{Chi tiết môi trường thực nghiệm}  
-    \begin{itemize}
-      \item Python 3.8, PyTorch 1.13.1, Transformers 4.x  
-      \item GPU: NVIDIA T4 (Google Colab), RAM:12GB  
-      \item Thời gian trung bình: 30 phút/epoch (from-scratch), 10 phút/epoch (fine-tune)
-    \end{itemize}
-    
-    \item \textbf{Đồ thị và hình minh hoạ bổ sung}  
-    \begin{itemize}
-      \item Biểu đồ loss \& accuracy qua các epoch  
-      \item Ma trận nhầm lẫn full-size và t-SNE embedding  
-      \item Heatmap attention (nếu có) xuất từ thư viện \texttt{bertviz}
-    \end{itemize}
-    
-    \item \textbf{Phân tích lỗi chi tiết}  
-    Danh sách 5–10 câu mẫu dự đoán sai, kèm nhãn thật, nhãn dự đoán và nguyên nhân lỗi.
-    
-    \item \textbf{Link GitHub / Colab notebook}  
-    \begin{verbatim}
-    https://github.com/khoaoe/HCMUS-MathAI-Final-BERT
-    https://colab.research.google.com/drive/...
-    \end{verbatim}
+    \item Max features: 5,000
+    \item N-gram range: (1, 2)
+    \item Stop words: English stopwords
+    \item Solver: liblinear
+    \item Max iterations: 1,000
+    \item Random state: 42
 \end{itemize}
+
+% =======================================================================
+% A.2 MÔI TRƯỜNG HARDWARE/SOFTWARE
+% =======================================================================
+\subsection*{A.2 Môi trường}
+\label{subsec:environment}
+
+\subsubsection*{A.2.1 Cấu hình Hardware}
+\label{subsubsec:hardware_config}
+
+\begin{table}[H]
+\centering
+\caption{Chi tiết của môi trường thực nghiệm}
+\label{tab:hardware_specs}
+\begin{tabular}{ll}
+\toprule
+\textbf{Component} & \textbf{Specification} \\
+\midrule
+Operating System & Google Colab \\
+GPU & NVIDIA Tesla T4 (16GB VRAM) \\
+CUDA Version & 11.7 / 12.2 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsubsection*{A.2.2 Dependencies}
+\label{subsubsec:software_deps}
+
+Toàn bộ dependencies được quản lý thông qua file \texttt{requirements.txt}:
+\begin{minted}{bash}
+torch>=2.0.0
+transformers>=4.25.0
+matplotlib>=3.5.0
+seaborn>=0.11.0
+tqdm>=4.64.0
+numpy>=1.21.0
+scikit-learn>=1.2.0
+datasets>=2.8.0
+fsspec>=2023.1.0
+\end{minted}
+
+% =======================================================================
+% A.3 KẾT QUẢ THỰC NGHIỆM MỞ RỘNG
+% =======================================================================
+\subsection*{A.3 Kết quả Thực nghiệm Mở rộng}
+\label{subsec:extended_results}
+
+\subsubsection*{A.3.1 Metrics Chi tiết}
+\label{subsubsec:detailed_metrics}
+
+\begin{table}[H]
+\centering
+\caption{Kết quả chi tiết trên tập validation IMDb (1,000 samples)}
+\label{tab:detailed_results}
+\begin{tabular}{lccccc}
+\toprule
+\textbf{Model} & \textbf{Accuracy} & \textbf{Precision} & \textbf{Recall} & \textbf{F1-Score} & \textbf{Training Time} \\
+\midrule
+TF-IDF + LR & 0.855 & 0.86 & 0.86 & 0.85 & 2 minutes \\
+BERT Fine-tuned & \textbf{0.894} & \textbf{0.89} & \textbf{0.90} & \textbf{0.89} & 4.5 minutes \\
+\midrule
+\textbf{Improvement} & \textbf{+3.9\%} & \textbf{+3.0\%} & \textbf{+4.0\%} & \textbf{+4.0\%} & - \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\begin{table}[H]
+\centering
+\caption{Hiệu năng theo từng class (Positive/Negative)}
+\label{tab:per_class_results}
+\begin{tabular}{lcccccc}
+\toprule
+\textbf{Model} & \textbf{Class} & \textbf{Precision} & \textbf{Recall} & \textbf{F1-Score} & \textbf{Support} \\
+\midrule
+\multirow{2}{*}{TF-IDF + LR} & Negative & 0.87 & 0.84 & 0.85 & 506 \\
+& Positive & 0.84 & 0.87 & 0.86 & 494 \\
+\midrule
+\multirow{2}{*}{BERT Fine-tuned} & Negative & 0.90 & 0.89 & 0.89 & 506 \\
+& Positive & 0.89 & 0.90 & 0.89 & 494 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsubsection*{A.3.2 Confusion Matrices}
+\label{subsubsec:confusion_matrices}
+
+\begin{table}[H]
+\centering
+\caption{Confusion Matrix - BERT Fine-tuned Model}
+\label{tab:confusion_matrix_bert}
+\begin{tabular}{cc|cc}
+\toprule
+& & \multicolumn{2}{c}{\textbf{Predicted}} \\
+& & \textbf{Negative} & \textbf{Positive} \\
+\midrule
+\multirow{2}{*}{\rotatebox{90}{\textbf{Actual}}} & \textbf{Negative} & 447 & 53 \\
+& \textbf{Positive} & 53 & 447 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\begin{table}[H]
+\centering
+\caption{Confusion Matrix - TF-IDF + Logistic Regression Baseline}
+\label{tab:confusion_matrix_baseline}
+\begin{tabular}{cc|cc}
+\toprule
+& & \multicolumn{2}{c}{\textbf{Predicted}} \\
+& & \textbf{Negative} & \textbf{Positive} \\
+\midrule
+\multirow{2}{*}{\rotatebox{90}{\textbf{Actual}}} & \textbf{Negative} & 425 & 81 \\
+& \textbf{Positive} & 64 & 430 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsubsection*{A.3.3 Learning Curves}
+\label{subsubsec:learning_curves}
+
+\begin{table}[H]
+\centering
+\caption{Qúa trình train của BERT Fine-tuning}
+\label{tab:training_progression}
+\begin{tabular}{cccc}
+\toprule
+\textbf{Epoch} & \textbf{Training Loss} & \textbf{Validation Loss} & \textbf{Validation Accuracy} \\
+\midrule
+1 & 0.1204 & 0.5563 & 0.8770 \\
+2 & 0.0996 & 0.5123 & 0.8940 \\
+3 & 0.1045 & 0.6461 & 0.8930 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\begin{table}[H]
+\centering
+\caption{Qúa trình train BERT "from-scratch":}
+\label{tab:minibert_training}
+\begin{tabular}{cccc}
+\toprule
+\textbf{Epoch} & \textbf{Average Loss} \\
+\midrule
+1 & 11.0717 \\
+2 & 10.9688 \\
+5 & 10.8573 \\
+10 & 10.7116 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+% =======================================================================
+% A.4 CODE IMPLEMENTATION  
+% =======================================================================
+\subsection*{A.4 Code Implementation}
+\label{subsec:code_implementation}
+
+\subsubsection*{A.4.1 Các thành phần của BERT}
+\label{subsubsec:bert_architecture}
+
+\paragraph{Multi-Head Self-Attention:}
+\begin{minted}{python}
+class MultiHeadSelfAttention(nn.Module):
+    def __init__(self, config: BertConfig):
+        super().__init__()
+        # Kiểm tra hidden_size chia hết cho num_heads
+        self.num_attention_heads = config.num_attention_heads
+        self.attention_head_size = int(config.hidden_size / config.num_attention_heads)
+        self.all_head_size = self.num_attention_heads * self.attention_head_size
+
+        # Linear projections cho Q, K, V
+        # W^Q, W^K, W^V trong paper
+        self.query = nn.Linear(config.hidden_size, self.all_head_size)
+        self.key = nn.Linear(config.hidden_size, self.all_head_size)
+        self.value = nn.Linear(config.hidden_size, self.all_head_size)
+
+        # Dropout cho attention probabilities
+        self.dropout = nn.Dropout(config.attention_probs_dropout_prob)
+
+    def transpose_for_scores(self, x: torch.Tensor) -> torch.Tensor:
+        new_x_shape = x.size()[:-1] + (self.num_attention_heads, self.attention_head_size)
+        x = x.view(*new_x_shape)
+        return x.permute(0, 2, 1, 3)
+
+    def forward(self, hidden_states: torch.Tensor, 
+                attention_mask: Optional[torch.Tensor] = None) -> Tuple[torch.Tensor, torch.Tensor]:
+        # Tính Q, K, V projections
+        mixed_query_layer = self.query(hidden_states)
+        mixed_key_layer = self.key(hidden_states)
+        mixed_value_layer = self.value(hidden_states)
+
+        # Reshape cho multi-head: (batch, heads, seq_len, head_size)
+        query_layer = self.transpose_for_scores(mixed_query_layer)
+        key_layer = self.transpose_for_scores(mixed_key_layer)
+        value_layer = self.transpose_for_scores(mixed_value_layer)
+
+        # Tính attention scores: QK^T
+        # shape: (batch, heads, seq_len, seq_len)
+        attention_scores = torch.matmul(query_layer, key_layer.transpose(-1, -2))
+        
+        # Scale bởi √d_k để tránh softmax saturation khi d_k lớn
+        # Đây là "Scaled" trong "Scaled Dot-Product Attention"
+        attention_scores = attention_scores / math.sqrt(self.attention_head_size)
+
+        if attention_mask is not None:
+            # Áp dụng mask: -10000 cho positions cần mask
+            # Sau softmax sẽ thành ~0
+            attention_scores = attention_scores + attention_mask
+
+        # Normalize scores thành probabilities
+        attention_probs = nn.Softmax(dim=-1)(attention_scores)
+        
+        # Dropout cho regularization
+        attention_probs = self.dropout(attention_probs)
+
+        # Tính weighted sum: attention_probs @ V
+        context_layer = torch.matmul(attention_probs, value_layer)
+
+        # Reshape về (batch, seq_len, all_head_size)
+        context_layer = context_layer.permute(0, 2, 1, 3).contiguous()
+        new_context_layer_shape = context_layer.size()[:-2] + (self.all_head_size,)
+        context_layer = context_layer.view(*new_context_layer_shape)
+
+        return context_layer, attention_probs
+\end{minted}
+
+\paragraph{BERT Embeddings Layer:}
+\begin{minted}{python}
+class BertEmbeddings(nn.Module):
+    def __init__(self, config: BertConfig):
+        super().__init__()
+        # Token embeddings với padding_idx=0 ([PAD] token)
+        self.word_embeddings = nn.Embedding(
+            config.vocab_size, 
+            config.hidden_size, 
+            padding_idx=0
+        )
+        
+        # Position embeddings - BERT học position thay vì dùng sinusoidal
+        self.position_embeddings = nn.Embedding(
+            config.max_position_embeddings, 
+            config.hidden_size
+        )
+        
+        # Segment embeddings để phân biệt câu A/B, Cần thiết cho NSP task
+        self.token_type_embeddings = nn.Embedding(
+            config.type_vocab_size, 
+            config.hidden_size
+        )
+        
+        # LayerNorm với epsilon nhỏ tránh chia 0
+        self.LayerNorm = nn.LayerNorm(config.hidden_size, eps=1e-12)
+        
+        # Dropout để regularization
+        self.dropout = nn.Dropout(config.hidden_dropout_prob)
+
+    def forward(self, input_ids: torch.Tensor, 
+                token_type_ids: Optional[torch.Tensor] = None) -> torch.Tensor:
+        seq_length = input_ids.size(1)
+        
+        # Tạo position IDs từ 0 đến seq_length-1
+        position_ids = torch.arange(seq_length, dtype=torch.long, device=input_ids.device)
+        position_ids = position_ids.unsqueeze(0).expand_as(input_ids)
+
+        # Default segment 0 nếu không có token_type_ids
+        if token_type_ids is None:
+            token_type_ids = torch.zeros_like(input_ids)
+
+        # Lấy 3 loại embeddings
+        word_embeddings = self.word_embeddings(input_ids)
+        position_embeddings = self.position_embeddings(position_ids)
+        token_type_embeddings = self.token_type_embeddings(token_type_ids)
+
+        # Cộng tổng 3 embeddings (Figure 2 trong paper)
+        embeddings = word_embeddings + position_embeddings + token_type_embeddings
+
+        # LayerNorm và Dropout
+        embeddings = self.LayerNorm(embeddings)
+        embeddings = self.dropout(embeddings)
+        
+        return embeddings
+\end{minted}
+
+\subsubsection*{A.4.2 Training Pipeline}
+\label{subsubsec:training_pipeline}
+
+\paragraph{Dataset tự tạo:}
+\begin{minted}{python}
+small_corpus = [
+    ("The man went to the store.", "He bought a gallon of milk."),
+    ("She reads a book.", "The book is about dragons."),
+    ("BERT is a powerful model.", "It was developed by Google."),
+    ("An apple a day keeps the doctor away.", "The cat sat on the mat."),
+    ("The dog is cute.", "The sky is blue."),
+    ("A transformer is a type of model.", "This model uses an attention mechanism."),
+    ("This is a language model.", "The model can understand text."),
+    ("They built a new AI model.", "The model has many parameters."),
+    ("This system uses a predictive model.", "The model forecasts future sales."),
+    ("The new model is very efficient.", "It runs faster than the old one."),
+    ("GPT-3 is a large language model.", "The model was trained by OpenAI."),
+    ("This machine learning model is complex.", "The model requires a lot of data."),
+    # --- Dữ liệu bổ sung để dạy về câu liên quan (NSP) ---
+    ("I have a new car.", "The car is red."),
+    ("The student studied for the exam.", "He passed with a high score."),
+    ("We went to the restaurant last night.", "The food there was delicious."),
+    ("She wrote a long letter.", "The letter was for her best friend."),
+    ("The library is quiet.", "People are reading books."),
+    # --- Dữ liệu bổ sung để dạy về câu không liên quan (NSP) ---
+    ("The sun is shining today.", "My favorite color is green."),
+    ("He drinks coffee every morning.", "History is an interesting subject."),
+    ("The train arrived on time.", "Elephants are very large mammals."),
+    ("She likes to play the piano.", "The ocean is very deep."),
+    ("My computer is very fast.", "Birds can fly high in the sky.")
+]
+\end{minted}
+
+\paragraph{Chuẩn bị dataset pre-traing cho BERT "from-scratch":}
+\begin{minted}{python}
+class PretrainingDataset(Dataset):
+    def __init__(self, corpus, tokenizer, max_len=64):
+        self.corpus = corpus
+        self.tokenizer = tokenizer
+        self.max_len = max_len
+
+    def __len__(self):
+        return len(self.corpus)
+
+    def __getitem__(self, idx):
+        # === Chuẩn bị cho NSP ===
+        sent_a, sent_b = self.corpus[idx]
+        is_next = True
+        
+        # 50% xác suất chọn random sentence
+        if random.random() < 0.5:
+            rand_idx = random.randint(0, len(self.corpus) - 1)
+            sent_b = self.corpus[rand_idx][1]
+            is_next = False
+
+        # Tokenize với format [CLS] A [SEP] B [SEP]
+        tokenized = self.tokenizer(
+            sent_a, sent_b, 
+            truncation=True, 
+            max_length=self.max_len, 
+            padding="max_length"
+        )
+        
+        input_ids = torch.tensor(tokenized['input_ids'])
+        token_type_ids = torch.tensor(tokenized['token_type_ids'])
+        attention_mask = torch.tensor(tokenized['attention_mask'])
+
+        # === Chuẩn bị cho MLM ===
+        labels = input_ids.clone()
+        
+        # Tạo probability matrix 15% cho masking
+        probability_matrix = torch.full(labels.shape, 0.15)
+        
+        # Không mask special tokens ([CLS], [SEP], [PAD])
+        special_tokens_mask = torch.tensor(
+            self.tokenizer.get_special_tokens_mask(labels.tolist(), already_has_special_tokens=True), 
+            dtype=torch.bool
+        )
+        probability_matrix.masked_fill_(special_tokens_mask, value=0.0)
+        
+        # Chọn positions để mask dựa trên xác suất
+        masked_indices = torch.bernoulli(probability_matrix).bool()
+        
+        # Set label -100 cho non-masked positions (ignored trong loss)
+        labels[~masked_indices] = -100
+
+        # Áp dụng chiến lược 80-10-10
+        # 80% masked positions -> [MASK]
+        indices_replaced = torch.bernoulli(torch.full(labels.shape, 0.8)).bool() & masked_indices
+        input_ids[indices_replaced] = self.tokenizer.mask_token_id
+
+        # 10% masked positions -> random token  
+        indices_random = torch.bernoulli(torch.full(labels.shape, 0.5)).bool() & masked_indices & ~indices_replaced
+        random_words = torch.randint(len(self.tokenizer), labels.shape, dtype=torch.long)
+        input_ids[indices_random] = random_words[indices_random]
+        
+        # 10% còn lại giữ nguyên
+
+        return {
+            "input_ids": input_ids,
+            "token_type_ids": token_type_ids,
+            "attention_mask": attention_mask,
+            "masked_lm_labels": labels,
+            "next_sentence_label": torch.tensor(1 if is_next else 0, dtype=torch.long)
+        }
+\end{minted}
+
+
+\paragraph{Training BERT "from-scratch":}
+\begin{minted}{python}
+def train_loop(model, dataloader, optimizer, epochs, device):
+    model.train()
+    print("Bắt đầu quá trình huấn luyện BERT...")
+    
+    for epoch in range(epochs):
+        total_loss = 0
+        progress_bar = tqdm(dataloader, desc=f"Epoch {epoch + 1}/{epochs}")
+        
+        for batch in progress_bar:
+            optimizer.zero_grad()
+            
+            # Move batch lên device
+            inputs = {k: v.to(device) for k, v in batch.items()}
+            
+            # Forward pass
+            outputs = model(**inputs)
+            loss = outputs['loss']
+            
+            if loss is not None:
+                # Backward pass
+                loss.backward()
+                
+                # Gradient clipping (optional nhưng recommended)
+                torch.nn.utils.clip_grad_norm_(model.parameters(), 1.0)
+                
+                # Update weights
+                optimizer.step()
+                
+                total_loss += loss.item()
+                
+            # Update progress bar
+            progress_bar.set_postfix({'loss': loss.item() if loss else 'N/A'})
+
+        avg_loss = total_loss / len(dataloader)
+        print(f"Epoch {epoch + 1} hoàn tất. Loss trung bình: {avg_loss:.4f}")
+        
+    print("Huấn luyện hoàn tất!")
+\end{minted}
+
+% =======================================================================
+% A.5 PHÂN TÍCH TOÁN HỌC
+% =======================================================================
+\subsection*{A.5 Phân tích toán}
+\label{subsec:mathematical_analysis}
+
+\subsubsection*{A.5.1 Attention}
+\label{subsubsec:attention_math}
+
+\paragraph{Scaled Dot-Product Attention:}
+
+Công thức cơ bản của self-attention trong BERT:
+
+\begin{equation}
+\text{Self-Attention}(Q, K, V) = \text{softmax}\left(\frac{QK^T}{\sqrt{d_k}}\right)V
+\label{eq:scaled_attention}
+\end{equation}
+
+Trong đó:
+\begin{align}
+Q &= XW^Q \in \mathbb{R}^{n \times d_k} \quad \text{(Queries)} \\
+K &= XW^K \in \mathbb{R}^{n \times d_k} \quad \text{(Keys)} \\
+V &= XW^V \in \mathbb{R}^{n \times d_v} \quad \text{(Values)} \\
+X &\in \mathbb{R}^{n \times d_{model}} \quad \text{(Input representations)}
+\end{align}
+
+\paragraph{Multi-Head Attention:}
+\begin{equation}
+\text{MultiHead}(Q, K, V) = \text{Concat}(\text{head}_1, ..., \text{head}_h)W^O
+\label{eq:multihead_full}
+\end{equation}
+
+Với mỗi head $i$:
+\begin{equation}
+\text{head}_i = \text{Self-Attention}(QW_i^Q, KW_i^K, VW_i^V)
+\label{eq:head_i_full}
+\end{equation}
+
+Các ma trận chiếu tham số:
+\begin{align}
+W_i^Q &\in \mathbb{R}^{d_{model} \times d_k}, \quad d_k = d_{model}/h \\
+W_i^K &\in \mathbb{R}^{d_{model} \times d_k} \\
+W_i^V &\in \mathbb{R}^{d_{model} \times d_v}, \quad d_v = d_{model}/h \\
+W^O &\in \mathbb{R}^{hd_v \times d_{model}}
+\end{align}
+
+\paragraph{Độ phức tạp:}
+
+self-attention:
+\begin{align}
+\text{Time Complexity} &= O(n^2 \cdot d + n \cdot d^2) \\
+\text{Space Complexity} &= O(n^2 + n \cdot d)
+\end{align}
+
+
+\subsubsection*{A.5.2 Hàm Loss}
+\label{subsubsec:loss_functions}
+
+\paragraph{Masked Language Model Loss:}
+\begin{equation}
+\mathcal{L}_{\text{MLM}} = -\sum_{i \in \mathcal{M}} \log P(x_i | \mathbf{x}_{\backslash \mathcal{M}})
+\label{eq:mlm_loss}
+\end{equation}
+
+Trong đó $\mathcal{M}$ là tập các vị trí bị mask, và $\mathbf{x}_{\backslash \mathcal{M}}$ là sequence với các tokens bị mask.
+
+\paragraph{Next Sentence Prediction Loss:}
+\begin{equation}
+\mathcal{L}_{\text{NSP}} = -\sum_{i=1}^{N} y_i \log P(\text{IsNext} | C, A_i, B_i)
+\label{eq:nsp_loss}
+\end{equation}
+
+Với $y_i \in \{0, 1\}$ là label cho sentence pair $(A_i, B_i)$.
+
+\paragraph{Combined Pre-training Loss:}
+\begin{equation}
+\mathcal{L}_{\text{total}} = \mathcal{L}_{\text{MLM}} + \mathcal{L}_{\text{NSP}}
+\label{eq:combined_loss}
+\end{equation}
+
+\subsubsection*{A.5.3 Optimization}
+\label{subsubsec:optimization}
+
+\paragraph{AdamW Optimizer:}
+
+BERT sử dụng AdamW optimizer với decoupled weight decay:
+
+\begin{align}
+m_t &= \beta_1 m_{t-1} + (1 - \beta_1) g_t \\
+v_t &= \beta_2 v_{t-1} + (1 - \beta_2) g_t^2 \\
+\hat{m}_t &= \frac{m_t}{1 - \beta_1^t} \\
+\hat{v}_t &= \frac{v_t}{1 - \beta_2^t} \\
+\theta_t &= \theta_{t-1} - \alpha \left(\frac{\hat{m}_t}{\sqrt{\hat{v}_t} + \epsilon} + \lambda \theta_{t-1}\right)
+\end{align}
+
+Với: $\beta_1 = 0.9$, $\beta_2 = 0.999$, $\epsilon = 10^{-8}$, $\lambda = 0.01$.
+
+\paragraph{Cập nhật Learning Rate:}
+Linear warmup và decay:
+\begin{equation}
+lr(t) = \begin{cases}
+lr_{max} \cdot \frac{t}{t_{warmup}} & \text{if } t \leq t_{warmup} \\
+lr_{max} \cdot \frac{t_{total} - t}{t_{total} - t_{warmup}} & \text{if } t > t_{warmup}
+\end{cases}
+\label{eq:lr_schedule}
+\end{equation}
+
+% =======================================================================
+% A.6 DATASET VÀ PREPROCESSING
+% =======================================================================
+\subsection*{A.6 Dataset}
+\label{subsec:dataset_preprocessing}
+
+\subsubsection*{A.6.1 Tổng quan IMDb dataset}
+\label{subsubsec:imdb_statistics}
+
+\begin{table}[H]
+\centering
+\caption{Thống kê chi tiết bộ dữ liệu IMDb Movie Reviews}
+\label{tab:imdb_statistics}
+\begin{tabular}{lc}
+\toprule
+\textbf{Thống kê} & \textbf{Giá trị} \\
+\midrule
+Tổng số reviews & 50,000 \\
+Training set (official) & 25,000 \\
+Test set (official) & 25,000 \\
+\midrule
+\textbf{Subset được sử dụng:} & \\
+Training samples & 4,000 \\
+Validation samples & 1,000 \\
+\midrule
+Positive/Negative distribution & 50\%/50\% \\
+\midrule
+Vocabulary size & ~89,000 \\
+After WordPiece tokenization & ~120,000\\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsubsection*{A.6.2 Preprocessing}
+\label{subsubsec:preprocessing_steps}
+
+\paragraph{Tokenizer cho BERT fine-tune:}
+\begin{minted}{python}
+tokenizer = BertTokenizer.from_pretrained('bert-base-uncased')
+
+def preprocess_function(examples):
+    return tokenizer(
+        examples['text'],
+        truncation=True,
+        padding='max_length',
+        max_length=256,  # Optimized cho GPU memory
+        return_tensors='pt'
+    )
+\end{minted}
+
+% =======================================================================
+% A.7 PHÂN TÍCH LỖI
+% =======================================================================
+\subsection*{A.7 Phân tích Lỗi}
+\label{subsec:error_analysis}
+
+\begin{table}[H]
+\centering
+\caption{Ví dụ các trường hợp sarcasm/irony dự đoán sai}
+\label{tab:sarcasm_examples}
+\begin{tabular}{p{8cm}cc}
+\toprule
+\textbf{Review Text (excerpt)} & \textbf{True} & \textbf{Predicted} \\
+\midrule
+"This movie is just truly awful, the eye-candy that plays Ben just can make up for everything else that is wrong with this movie." & Negative & Positive \\
+\midrule
+"Thanks to this fungal film I do NOT want my Maypo, and that's saying something." & Negative & Positive \\
+\midrule
+"What a brilliant piece of film making. So original and thought-provoking. NOT!" & Negative & Positive \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\begin{table}[H]
+\centering
+\caption{Ví dụ complex negation patterns}
+\label{tab:negation_examples}
+\begin{tabular}{p{8cm}cc}
+\toprule
+\textbf{Text} & \textbf{True} & \textbf{Predicted} \\
+\midrule
+"I previously thought that this film was the lamest thing ever... I was never more wrong about anything in my life." & Positive & Negative \\
+\midrule
+"You can't not love this movie if you don't hate good cinematography." & Positive & Negative \\
+\midrule
+"It's not that I didn't enjoy it, but rather that it wasn't uninteresting." & Positive & Negative \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+% =======================================================================
+% A.8 TRỰC QUAN HÓA
+% =======================================================================
+\subsection*{A.8 Trực quan hóa}
+\label{subsec:visualization}
+
+\subsubsection*{A.8.1 t-SNE cho embeddings}
+\label{subsubsec:tsne_embeddings}
+
+\begin{table}[H]
+\centering
+\caption{Cấu hình t-SNE cho visualization}
+\label{tab:tsne_params}
+\begin{tabular}{ll}
+\toprule
+\textbf{Parameter} & \textbf{Value} \\
+\midrule
+n\_components & 2 \\
+perplexity & 30 \\
+learning\_rate & 200 \\
+n\_iter & 1000 \\
+random\_state & 42 \\
+metric & euclidean \\
+early\_exaggeration & 12.0 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\paragraph{Quy trình trích xuất BERT embedding và visualize:}
+\begin{minted}{python}
+# Tải mô hình tốt nhất đã được lưu
+best_model_path = trainer.state.best_model_checkpoint
+print(f"Đang tải mô hình tốt nhất từ: {best_model_path}")
+feature_extractor = BertModel.from_pretrained(best_model_path).to(device)
+feature_extractor.eval()
+
+# Lấy một tập con nhỏ hơn để trực quan hóa
+sample_dataset = tokenized_val_dataset.shuffle(seed=RANDOM_STATE).select(range(500))
+
+def get_embeddings(batch):
+    # Xóa các cột không phải là input của mô hình
+    batch = {k: v for k, v in batch.items() if k in tokenizer.model_input_names}
+    inputs = {k: torch.tensor(v).to(device) for k, v in batch.items()}
+    with torch.no_grad():
+        # Lấy hidden state của token [CLS]
+        last_hidden_state = feature_extractor(**inputs).last_hidden_state
+        cls_embedding = last_hidden_state[:, 0, :].cpu().numpy()
+    return {"embeddings": cls_embedding}
+
+embedded_dataset = sample_dataset.map(get_embeddings, batched=True, batch_size=16)
+
+bert_embeddings = np.array(embedded_dataset['embeddings'])
+labels = np.array(embedded_dataset['label'])
+
+# Áp dụng t-SNE
+from sklearn.manifold import TSNE
+
+# Giảm chiều bằng t-SNE
+tsne = TSNE(n_components=2, random_state=RANDOM_STATE, perplexity=30, n_iter_without_progress=1000)
+embeddings_2d = tsne.fit_transform(bert_embeddings)
+
+# Trực quan hóa
+plt.figure(figsize=(10, 8))
+palette = sns.color_palette("bright", 2)
+sns.scatterplot(x=embeddings_2d[:, 0], y=embeddings_2d[:, 1], hue=labels, legend='full', palette=palette)
+plt.title('t-SNE visualization of BERT Embeddings')
+plt.show()
+\end{minted}
+
+% =======================================================================
+% RESOURCE
+% =======================================================================
+\subsection*{A.9 Resource}
+\label{subsec:resources}
+
+\paragraph{Link video thuyết trình (Youtube):} https://youtu.be/sOHMstidMQg
+
+\paragraph{Link source code (GitHub):} https://github.com/khoaoe/HCMUS-MathAI-Final-BERT
+
+\paragraph{Sơ đồ của repo GitHub}
+\begin{minted}{console}
+HCMUS-MathAI-Final-BERT/
+    ├── code/
+    │   ├── bert.py                 # From-scratch BERT implementation
+    │   ├── bert_application.ipynb  # experiment notebook
+    │   └── requirements.txt        # Dependencies
+    ├── report/                    # LaTeX report files' components
+    │   ├── content.tex             # main content
+    │   ├── appendix.tex            
+    │   ├── cite.tex
+    │   └── ref.bib
+    ├── presentation/               # LaTeX file for slides
+    │   └── presentation.tex
+    └── README.md
+\end{minted}

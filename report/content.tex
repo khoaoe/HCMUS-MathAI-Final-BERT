@@ -33,7 +33,7 @@ OpenAI \hyperref[acro:gpt]{\texttt{GPT}} \cite{radford2018improving} đã tận 
 \subsection{Đột phá của \hyperref[acro:bert]{\textbf{BERT}} và đóng góp chính}
 \label{ssec:muc_tieu_dong_gop_bert}
 
-\textbf{\hyperref[acro:bert]{\textbf{BERT}} (Bidirectional Encoder Representations from Transformers)} \cite{devlin2018bert}, được \texttt{Google AI} giới thiệu vào năm 2018, đã giải quyết triệt để vấn đề học chỉ một chiều từ trái sang phải của các mô hình trước đó. 
+\textbf{\hyperref[acro:bert]{\textbf{BERT}} (Pre-training of Deep Bidirectional Transformers for Language Understanding)} \cite{devlin2018bert}, được \texttt{Google AI} giới thiệu vào năm 2018, đã giải quyết triệt để vấn đề học chỉ một chiều từ trái sang phải của các mô hình trước đó. 
 
 \subsubsection{Đổi mới then chốt: \texttt{deeply bidirectional learning}}
 \hyperref[acro:bert]{\textbf{BERT}} sử dụng một chiến lược mới: mask ngẫu nhiên một số từ trong câu (\texttt{masked language modeling}) và yêu cầu mô hình dự đoán chúng dựa trên ngữ cảnh hai chiều. Điều này cho phép \hyperref[acro:bert]{\textbf{BERT}} học được biểu diễn \textbf{deeply bidirectional} nghĩa là mỗi từ được hiểu dựa trên toàn bộ ngữ cảnh xung quanh, không chỉ một phía từ trái sang phải như các mô hình trước.
@@ -192,7 +192,7 @@ Trong đó:
 \subsection{Residual Connections và Layer Normalization}
 \label{ssec:residual_layer_norm}
 
-Mỗi sublayer (\texttt{attention} hoặc \hyperref[acro:ffn]{\texttt{FFN}}) sẽ đưa vào hàm:
+Sau mỗi sublayer (\texttt{attention} hoặc \hyperref[acro:ffn]{\texttt{FFN}}) sẽ đưa vào hàm:
 
 \begin{equation}
 \text{LayerNorm}(x + \text{Sublayer}(x))
@@ -523,17 +523,19 @@ Lưu ý: Datasets nhỏ nhạy cảm hơn với sự thay đổi hyperparameters
 Chương này trình bày chuỗi thực nghiệm toàn diện nhằm khảo sát và đánh giá mô hình \hyperref[acro:bert]{\textbf{BERT}} từ nhiều góc độ khác nhau. Thiết kế thực nghiệm được xây dựng dựa trên nguyên tắc \textit{từ lý thuyết đến thực tiễn}, bao gồm hai phương pháp tiếp cận bổ sung lẫn nhau:
 
 \begin{enumerate}
-    \item \textbf{Triển khai từ nền tảng (From-scratch Implementation):} 
+    \item \textbf{Triển khai từ nền tảng:} 
     \begin{itemize}
         \item Xây dựng các thành phần cốt lõi của \hyperref[acro:bert]{\textbf{BERT}} để hiểu sâu về kiến trúc và cơ chế hoạt động nội tại. 
         \item Việc triển khai được thực hiện trong module \texttt{bert.py}, bao gồm các khối xây dựng cơ bản như \texttt{Multi-Head Self-Attention}, \texttt{Transformer} Encoder, và các tác vụ tiền huấn luyện.
+        \item File thực hiện: \texttt{bert.py}
     \end{itemize}
     
-    \item \textbf{Ứng dụng thực tế (Practical Application):} 
+    \item \textbf{Ứng dụng thực tế:} 
     \begin{itemize}
-        \item Thử huấn luyện và sử dụng mô hình "From-scratch" cho 2 tác vụ \hyperref[acro:mlm]{\texttt{MLM}} và \hyperref[acro:nsp]{\texttt{NSP}}
+        \item Thử huấn luyện và sử dụng mô hình "from-scratch" cho 2 tác vụ \hyperref[acro:mlm]{\texttt{MLM}} và \hyperref[acro:nsp]{\texttt{NSP}}
         \item Tận dụng mô hình \hyperref[acro:bert]{\textbf{BERT}} đã được tiền huấn luyện từ thư viện Hugging Face \cite{wolf2019huggingface} để giải quyết bài toán phân loại cảm xúc trên bộ dữ liệu IMDb Movie Reviews \cite{maas2011learning}. Phương pháp này cho phép đánh giá hiệu năng thực tế và khả năng transfer learning của \hyperref[acro:bert]{\textbf{BERT}}.
         \item Pipeline trên được triển khai và trình bày trong file Jupyter Notebook \texttt{bert\_application.ipynb}
+        \item File thực hiện: \texttt{bert\_application.ipynb}
     \end{itemize}
 \end{enumerate}
 
@@ -548,17 +550,18 @@ Chương này trình bày chuỗi thực nghiệm toàn diện nhằm khảo sá
     % Nodes
     \node[block] (theory) {Lý thuyết\\BERT};
     \node[block, right of=theory] (scratch) {Triển khai\\"From-scratch"};
-    \node[block, right of=scratch] (pretrained) {Pre-trained\\Model};
+    \node[block, right of=scratch] (pretrained) {Test\\MLM \& NSP};
     \node[block, below of=pretrained] (finetune) {Fine-tuning\\IMDb};
     \node[block, left of=finetune] (evaluate) {Đánh giá\\So sánh};
     \node[block, below of=theory] (analysis) {Phân tích};
     
     % Arrows
-    \draw[arrow] (theory) -- node[above] {\footnotesize Hiểu bản chất} (scratch);
+    \draw[arrow] (theory) -- node[above] {\footnotesize Hiểu lý thuyết} (scratch);
     \draw[arrow] (scratch) -- node[below] {\footnotesize Ứng dụng} (pretrained);
     \draw[arrow] (scratch) -- node[above] {\footnotesize Xác minh} (pretrained);
-    \draw[arrow] (pretrained) -- (finetune);
-    \draw[arrow] (finetune) -- (evaluate);
+    \draw[arrow] (theory) -- node[left] {\footnotesize Sử dụng} (finetune);
+    \draw[arrow] (theory) -- node[right] {\footnotesize pre-trained model} (finetune);
+    \draw[arrow] (finetune) -- node[above] {\footnotesize Kết quả} (evaluate);
     \draw[arrow] (evaluate) -- (analysis);
     \draw[dashedarrow] (analysis) -- node[left] {\footnotesize Insights} (theory);
 \end{tikzpicture}
@@ -569,62 +572,49 @@ Chương này trình bày chuỗi thực nghiệm toàn diện nhằm khảo sá
 \subsection{Môi trường Thực nghiệm}
 \label{ssec:moi_truong_thuc_nghiem}
 
+File notebook được chạy trên \texttt{Google Colab}
+
 Tất cả thực nghiệm được thực hiện trong môi trường thống nhất để đảm bảo tính tái lập:
 
 \begin{table}[H]
 \centering
 \caption{Cấu hình môi trường thực nghiệm}
 \label{tab:experiment_environment}
-% \begin{tabular}{ll}
-% \toprule
-% \textbf{Thành phần} & \textbf{Thông số kỹ thuật} \\
-% \midrule
-% Hệ điều hành & Ubuntu 20.04 LTS \\
-% Python & 3.8.10 \\
-% PyTorch & 1.13.0+cu117 \\
-% Transformers & 4.25.1 \\
-% GPU & NVIDIA Tesla T4 (16GB VRAM) \\
-% CUDA & 11.7 \\
-% Random Seed & 42 (đảm bảo tính tái lập) \\
-% \bottomrule
-% \end{tabular}
+\begin{tabular}{ll}
+\toprule
+\textbf{Thành phần} & \textbf{Thông số kỹ thuật} \\
+\midrule
+Python & 3.8.10 \\
+PyTorch & 2.6.0+cu124 \\
+Transformers & 4.25.1 \\
+GPU & NVIDIA Tesla T4 (16GB VRAM) \\
+CUDA & Có sử dụng \\
+Random Seed & 42 \\
+\bottomrule
+\end{tabular}
 \end{table}
 
-\subsection{Phần 1: Kiểm thử Triển khai "from-scratch"}
+\subsection{Phần 1: Kiểm thử triển khai "from-scratch"}
 \label{ssec:kiem_thu_from_scratch}
 
-\subsubsection{Mục tiêu và Phương pháp}
+\subsubsection{Mục tiêu}
 
 Việc triển khai lại \hyperref[acro:bert]{\textbf{BERT}} từ đầu phục vụ hai mục đích chính:
 \begin{itemize}
-    \item \textbf{Mục đích giáo dục:} Hiểu sâu về từng thành phần trong kiến trúc thông qua việc tự tay xây dựng lại mô hình
+    \item \textbf{Mục đích hiểu lý thuyết:} Hiểu sâu về từng thành phần trong kiến trúc thông qua việc tự tay xây dựng lại mô hình
     \item \textbf{Mục đích xác minh:} Kiểm tra tính đúng đắn của việc triển khai thông qua các test case cụ thể
 \end{itemize}
 
-Do hạn chế về tài nguyên tính toán,  sử dụng một cấu hình \hyperref[acro:bert]{\textbf{BERT}} thu nhỏ với các tham số sau:
-
-\begin{minted}{python}
-config = {
-    'vocab_size': 30522,
-    'hidden_size': 128,      # Giảm từ 768
-    'num_hidden_layers': 2,  # Giảm từ 12
-    'num_attention_heads': 2,# Giảm từ 12
-    'intermediate_size': 512,# Giảm từ 3072
-    'max_position_embeddings': 512,
-    'dropout_prob': 0.1
-}
-\end{minted}
-
 \subsubsection{Kiểm thử Masked Language Model (MLM)}
 
-Tác vụ \hyperref[acro:mlm]{\texttt{MLM}} là trái tim của \hyperref[acro:bert]{\textbf{BERT}}, cho phép mô hình học biểu diễn hai chiều. Kiểm thử bằng cách huấn luyện trên một corpus nhỏ và đánh giá khả năng dự đoán từ bị che.
+Tác vụ \hyperref[acro:mlm]{\texttt{MLM}} là trái tim của \hyperref[acro:bert]{\textbf{BERT}}, cho phép mô hình học biểu diễn hai chiều. Kiểm thử bằng cách huấn luyện trên một corpus nhỏ và đánh giá khả năng dự đoán từ bị mask.
 
 \begin{figure}[H]
 \centering
 \fbox{
 \begin{minipage}{0.9\textwidth}
 \textbf{Input:} \texttt{"BERT is a [MASK]."}\\[0.5em]
-\textbf{Kết quả dự đoán:}
+\textbf{Top 5 dự đoán:}
 \begin{center}
 \begin{tabular}{lcc}
 \toprule
@@ -670,7 +660,7 @@ The dog is cute. & The sky is blue. & NotNext & 52.74\% \\
 \subsection{Phần 2: Fine-tuning cho Phân loại Cảm xúc}
 \label{ssec:fine_tuning_sentiment}
 
-\subsubsection{Thiết lập Bài toán}
+\subsubsection{Thiết lập bài toán}
 
 Để đánh giá khả năng \texttt{transfer learning} của \hyperref[acro:bert]{\textbf{BERT}}, chọn bài toán phân loại cảm xúc trên bộ dữ liệu \texttt{IMDb Movie Reviews} \cite{maas2011learning}. Đây là bài toán binary classification trong \hyperref[acro:nlp]{\texttt{NLP}}, phù hợp để so sánh với các phương pháp baseline truyền thống.
 
@@ -683,7 +673,7 @@ The dog is cute. & The sky is blue. & NotNext & 52.74\% \\
     \item \textbf{Độ dài tối đa:} 256 tokens (phù hợp với giới hạn bộ nhớ GPU)
 \end{itemize}
 
-\subsubsection{Mô tả Bộ dữ liệu IMDb} \label{5.4.2}
+\subsubsection{Mô tả bộ dữ liệu IMDb} \label{5.4.2}
 
 Bộ dữ liệu \texttt{IMDb Movie Reviews} \cite{maas2011learning} được thiết kế đặc biệt cho phân loại cảm xúc nhị phân với các đặc điểm:
 
@@ -777,13 +767,13 @@ Confusion matrix cung cấp cái nhìn về các lỗi của mô hình:
 \end{figure}
 Mô hình đạt được sự cân bằng tốt giữa \texttt{precision} và \texttt{recall} cho cả hai lớp, với 447 true negatives, 447 true positives, 53 false positives và 53 false negatives.
 
-\subsubsection{Phân tích Lỗi Định tính}
+\subsubsection{Phân tích lỗi định tính}
 
-Để hiểu rõ hơn về điểm mạnh và hạn chế của mô hình, phân tích các trường hợp dự đoán sai:
+Để hiểu rõ hơn về điểm mạnh và hạn chế của mô hình, xem và phân tích các trường hợp dự đoán sai
 
 \begin{table}[H]
 \centering
-\caption{Ví dụ các trường hợp dự đoán sai và phân tích nguyên nhân}
+\caption{Ví dụ vài trường hợp dự đoán sai}
 \label{tab:error_analysis}
 \begin{tabular}{p{7cm}cc}
 \toprule
@@ -795,7 +785,7 @@ Mô hình đạt được sự cân bằng tốt giữa \texttt{precision} và \
 \end{tabular}
 \end{table}
 
-Phân tích cho thấy mô hình gặp khó khăn với:
+Qua các dự đoán lỗi, có thể thấy mô hình gặp khó khăn với:
 \begin{itemize}
     \item \textbf{Sarcasm và irony:} Câu có cấu trúc phức tạp với ý nghĩa mỉa mai
     \item \textbf{Phủ định phức tạp:} Cấu trúc phủ định kép hoặc ngữ cảnh đảo ngược
