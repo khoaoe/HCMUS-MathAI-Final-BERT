@@ -11,7 +11,6 @@ File này implement đầy đủ kiến trúc BERT bao gồm:
 """
 # ========================= Phần Import Thư viện =========================
 
-# --- PyTorch Core ---
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
@@ -21,19 +20,16 @@ from torch.optim import AdamW
 # F: Functional API cho các phép toán không có trạng thái
 # AdamW: Optimizer với weight decay tách biệt
 
-# --- Thư viện Toán học và Tiện ích Python ---
 import math  # Dùng cho sqrt trong scaled attention 
 import random  # Tạo ngẫu nhiên cho MLM và NSP
 from typing import Dict, List, Tuple, Optional, Union  # Type hints
 import time  
 from dataclasses import dataclass  # Decorator cho config class
 
-# --- Thư viện Hugging Face ---
 from transformers import BertTokenizer
 # BertTokenizer: Implement WordPiece tokenization
 # Vocab size ~30K tokens, xử lý OOV bằng subword units
 
-# --- PyTorch Data Utils ---
 from torch.utils.data import Dataset, DataLoader
 # Dataset: Abstract class cho custom datasets
 # DataLoader: Batching, shuffling, multiprocessing
@@ -94,20 +90,18 @@ class BertEmbeddings(nn.Module):
         )
         
         # Position embeddings - BERT học position thay vì dùng sinusoidal
-        # Khác với Transformer gốc (Vaswani et al., 2017)
         self.position_embeddings = nn.Embedding(
             config.max_position_embeddings, 
             config.hidden_size
         )
         
-        # Segment embeddings để phân biệt câu A/B
-        # Cần thiết cho NSP task
+        # Segment embeddings để phân biệt câu A/B, Cần thiết cho NSP task
         self.token_type_embeddings = nn.Embedding(
             config.type_vocab_size, 
             config.hidden_size
         )
         
-        # LayerNorm (Ba et al., 2016) với epsilon nhỏ tránh chia 0
+        # LayerNorm với epsilon nhỏ tránh chia 0
         self.LayerNorm = nn.LayerNorm(config.hidden_size, eps=1e-12)
         
         # Dropout để regularization
