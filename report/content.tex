@@ -887,17 +887,29 @@ Mixed precision (FP16) & Enabled (with cuda)\\
 \toprule
 \textbf{Mô hình} & \textbf{Accuracy} & \textbf{Precision} & \textbf{Recall} & \textbf{F1-Score} \\
 \midrule
-\hyperref[acro:bert]{\textbf{BERT}} (fine-tuned) & \textbf{0.895} & \textbf{0.895} & \textbf{0.895} & \textbf{0.895} \\
-\hyperref[acro:tfidf]{\texttt{TF-IDF}} + \hyperref[acro:lr]{\texttt{LR}} & 0.855 & 0.855 & 0.855 & 0.855 \\
+\hyperref[acro:bert]{\textbf{BERT}} (fine-tuned) & \textbf{0.895} & \textbf{0.90} & \textbf{0.895} & \textbf{0.895} \\
+\hyperref[acro:tfidf]{\texttt{TF-IDF}} + \hyperref[acro:lr]{\texttt{LR}} & 0.854 & 0.855 & 0.855 & 0.855 \\
 \midrule
-\textbf{Cải thiện} & +4.0\% & +4.0\% & +4.0\% & +4.0\% \\
+\textbf{Cải thiện} & +4.1\% & +4.5\% & +4.0\% & +4.0\% \\
 \bottomrule
 \end{tabular}
 \end{table}
 
+\subsubsection{Phân tích Confusion Matrix}
+
+Confusion matrix cung cấp cái nhìn về các lỗi của mô hình:
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.65\textwidth]{img/bert_confusion_matrix.png}
+    \caption{Confusion matrix của BERT fine-tuned}
+    \label{fig:confusion_matrix_detailed}
+\end{figure}
+Mô hình đạt được sự cân bằng ổn giữa \texttt{precision} và \texttt{recall} cho cả hai lớp, với 442 true negatives, 453 true positives, 64 false positives và 41 false negatives.
+
 \subsubsection{Phân tích chi tiết hiệu năng}
 
-Kết quả thực nghiệm cho thấy \hyperref[acro:bert]{\textbf{BERT}} đạt accuracy 89.4\% trên tập validation 1,000 mẫu, với phân bố lỗi như sau:
+Kết quả thực nghiệm cho thấy \hyperref[acro:bert]{\textbf{BERT}} đạt accuracy 89.4\% trên tập validation 1,000 mẫu, với phân bố lỗi cân bằng như sau:
 
 \begin{table}[H]
 \centering
@@ -916,6 +928,23 @@ False Negatives & 41 & 4.1\% \\
 \end{tabular}
 \end{table}
 
+\begin{table}[H]
+\centering
+\caption{Hiệu năng chi tiết theo từng class của BERT}
+\label{tab:bert_per_class_performance}
+\begin{tabular}{lcccc}
+\toprule
+\textbf{Class} & \textbf{Precision} & \textbf{Recall} & \textbf{F1-Score} & \textbf{Support} \\
+\midrule
+Negative & 0.92 & 0.87 & 0.89 & 500 \\
+Positive & 0.88 & 0.92 & 0.90 & 500 \\
+\midrule
+\textbf{Macro avg} & 0.90 & 0.90 & 0.90 & 1000 \\
+\textbf{Weighted avg} & 0.90 & 0.89 & 0.89 & 1000 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
 Tỷ lệ False Positive cao hơn False Negative (64 vs 41) cho thấy mô hình có xu hướng dự đoán tích cực hơn thực tế, điều này có thể do:
 \begin{itemize}
     \item Fine-tuning trên dữ liệu có sự cân bằng tương đối giữa positive/negative
@@ -923,44 +952,8 @@ Tỷ lệ False Positive cao hơn False Negative (64 vs 41) cho thấy mô hình
     \item Ảnh hưởng của pre-training trên corpus tổng quát có xu hướng tích cực
 \end{itemize}
 
-\subsubsection{Phân tích chi tiết qua Confusion Matrix}
 
-Confusion matrix cung cấp cái nhìn về các lỗi của mô hình:
-
-\begin{figure}[H]
-    \centering
-    \includegraphics[width=0.65\textwidth]{img/bert_confusion_matrix.png}
-    \caption{Confusion matrix của BERT fine-tuned}
-    \label{fig:confusion_matrix_detailed}
-\end{figure}
-Mô hình đạt được sự cân bằng tốt giữa \texttt{precision} và \texttt{recall} cho cả hai lớp, với 447 true negatives, 447 true positives, 53 false positives và 53 false negatives.
-
-\subsubsection{Phân tích dự đoán sai}
-
-Để hiểu rõ hơn về điểm mạnh và hạn chế của mô hình, xem và phân tích các trường hợp dự đoán sai
-
-\begin{table}[H]
-\centering
-\caption{Ví dụ vài trường hợp dự đoán sai}
-\label{tab:error_analysis}
-\begin{tabular}{p{7cm}cc}
-\toprule
-\textbf{Review excerpt} & \textbf{True} & \textbf{Predicted} \\
-\midrule
-\textit{"This movie is just truly awful, the eye-candy that..."} & Negative & Positive \\
-\textit{"I previously thought that this film was the lamest..."} & Positive & Negative \\
-\toprule
-\end{tabular}
-\end{table}
-
-Qua các dự đoán lỗi, có thể thấy mô hình gặp khó khăn với:
-\begin{itemize}
-    \item \textbf{Sarcasm và irony:} Câu có cấu trúc phức tạp với ý nghĩa mỉa mai
-    \item \textbf{Phủ định phức tạp:} Cấu trúc phủ định kép hoặc ngữ cảnh đảo ngược
-    \item \textbf{Domain-specific:} Thuật ngữ chuyên ngành điện ảnh
-\end{itemize}
-
-\subsubsection{Trực quan hóa không gian biểu diễn}
+\subsection{Trực quan hóa không gian biểu diễn}
 
 Để hiểu cách \hyperref[acro:bert]{\textbf{BERT}} tổ chức không gian ngữ nghĩa, sử dụng t-SNE \cite{vandermaaten2008visualizing} để giảm chiều các embedding:
 
@@ -1042,11 +1035,11 @@ Phân tích 12 attention heads cho thấy sự chuyên môn hóa rõ rệt:
 
 \subsubsection{So sánh attention patterns giữa 2 label}
 
-So sánh attention patterns giữa positive và negative texts:
+So sánh attention patterns giữa văn bản positive và negative:
 
 \begin{table}[H]
 \centering
-\caption{Attention entropy comparison giữa positive vs negative texts}
+\caption{Attention entropy comparison giữa positive vs negative}
 \label{tab:sentiment_attention_comparison}
 \begin{tabular}{lccc}
 \toprule
@@ -1060,7 +1053,7 @@ Layer 10, Head 9 & 1.430 & 1.727 & Negative more distributed \\
 \end{tabular}
 \end{table}
 
-Nhìn chung, negative texts có xu hướng attention distributed hơn (entropy cao hơn), trong khi positive texts focus rõ ràng hơn vào specific tokens. Điều này cho thấy:
+Nhìn chung, negative có xu hướng được phân phối attention hơn (entropy cao hơn), trong khi positive rõ ràng hơn vào vài token cụ thể. Điều này cho thấy:
 \begin{itemize}
     \item Positive thường có markers rõ ràng ("fantastic!", "amazing")
     \item Negative phức tạp hơn, cần xem xét nhiều yếu tố

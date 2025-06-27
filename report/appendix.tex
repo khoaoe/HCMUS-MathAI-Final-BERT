@@ -1,13 +1,13 @@
-\section*{Phụ lục}
+\section{Phụ lục}
 \label{sec:appendix}
 
 % =======================================================================
 % A.1 CẤU HÌNH THỰC NGHIỆM CHI TIẾT
 % =======================================================================
-\subsection*{A.1 Cấu hình Thực nghiệm Chi tiết}
+\subsection{Cấu hình Thực nghiệm Chi tiết}
 \label{subsec:experiment_config}
 
-\subsubsection*{A.1.1 Thông số Kiến trúc Mô hình}
+\subsubsection{Thông số Kiến trúc Mô hình}
 \label{subsubsec:model_architecture}
 
 Bảng \ref{tab:model_configs} tổng hợp các thông số kiến trúc cho cả hai mô hình được sử dụng trong thực nghiệm:
@@ -32,7 +32,7 @@ Dropout rate & 0.1 & 0.1 \\
 \end{tabular}
 \end{table}
 
-\subsubsection*{A.1.2 Hyperparameters}
+\subsubsection{Hyperparameters}
 \label{subsubsec:training_hyperparams}
 
 \paragraph{BERT configuration (bảng trên)}
@@ -75,10 +75,10 @@ Mô hình baseline (TF-IDF + Logistic Regression) sử dụng các tham số:
 % =======================================================================
 % A.2 MÔI TRƯỜNG HARDWARE/SOFTWARE
 % =======================================================================
-\subsection*{A.2 Môi trường}
+\subsection{Môi trường}
 \label{subsec:environment}
 
-\subsubsection*{A.2.1 Cấu hình Hardware}
+\subsubsection{Cấu hình Hardware}
 \label{subsubsec:hardware_config}
 
 \begin{table}[H]
@@ -96,7 +96,7 @@ CUDA Version & 11.7 / 12.2 \\
 \end{tabular}
 \end{table}
 
-\subsubsection*{A.2.2 Dependencies}
+\subsubsection{Dependencies}
 \label{subsubsec:software_deps}
 
 Toàn bộ dependencies được quản lý thông qua file \texttt{requirements.txt}:
@@ -115,10 +115,10 @@ fsspec>=2023.1.0
 % =======================================================================
 % A.3 KẾT QUẢ THỰC NGHIỆM MỞ RỘNG
 % =======================================================================
-\subsection*{A.3 Kết quả Thực nghiệm Mở rộng}
+\subsection{Kết quả Thực nghiệm Mở rộng}
 \label{subsec:extended_results}
 
-\subsubsection*{A.3.1 Metrics Chi tiết}
+\subsubsection{Metrics Chi tiết}
 \label{subsubsec:detailed_metrics}
 
 \begin{table}[H]
@@ -129,10 +129,10 @@ fsspec>=2023.1.0
 \toprule
 \textbf{Model} & \textbf{Accuracy} & \textbf{Precision} & \textbf{Recall} & \textbf{F1-Score} & \textbf{Training Time} \\
 \midrule
-TF-IDF + LR & 0.855 & 0.86 & 0.86 & 0.85 & 2 minutes \\
-BERT Fine-tuned & \textbf{0.894} & \textbf{0.89} & \textbf{0.90} & \textbf{0.89} & 4.5 minutes \\
+TF-IDF + LR & 0.854 & 0.855 & 0.855 & 0.855 & 2 minutes \\
+BERT Fine-tuned & \textbf{0.895} & \textbf{0.90} & \textbf{0.895} & \textbf{0.895} & 4.5 minutes \\
 \midrule
-\textbf{Improvement} & \textbf{+3.9\%} & \textbf{+3.0\%} & \textbf{+4.0\%} & \textbf{+4.0\%} & - \\
+\textbf{Improvement} & \textbf{+4.1\%} & \textbf{+4.5\%} & \textbf{+4.0\%} & \textbf{+4.0\%} & - \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -145,16 +145,16 @@ BERT Fine-tuned & \textbf{0.894} & \textbf{0.89} & \textbf{0.90} & \textbf{0.89}
 \toprule
 \textbf{Model} & \textbf{Class} & \textbf{Precision} & \textbf{Recall} & \textbf{F1-Score} & \textbf{Support} \\
 \midrule
-\multirow{2}{*}{TF-IDF + LR} & Negative & 0.87 & 0.84 & 0.85 & 506 \\
-& Positive & 0.84 & 0.87 & 0.86 & 494 \\
+\multirow{2}{*}{TF-IDF + LR} & Negative & 0.87 & 0.84 & 0.85 & 500 \\
+& Positive & 0.84 & 0.87 & 0.86 & 500 \\
 \midrule
-\multirow{2}{*}{BERT Fine-tuned} & Negative & 0.90 & 0.89 & 0.89 & 506 \\
-& Positive & 0.89 & 0.90 & 0.89 & 494 \\
+\multirow{2}{*}{BERT Fine-tuned} & Negative & 0.92 & 0.87 & 0.89 & 500 \\
+& Positive & 0.88 & 0.92 & 0.90 & 500 \\
 \bottomrule
 \end{tabular}
 \end{table}
 
-\subsubsection*{A.3.2 Confusion Matrices}
+\subsubsection{Confusion Matrices}
 \label{subsubsec:confusion_matrices}
 
 \begin{table}[H]
@@ -166,8 +166,8 @@ BERT Fine-tuned & \textbf{0.894} & \textbf{0.89} & \textbf{0.90} & \textbf{0.89}
 & & \multicolumn{2}{c}{\textbf{Predicted}} \\
 & & \textbf{Negative} & \textbf{Positive} \\
 \midrule
-\multirow{2}{*}{\rotatebox{90}{\textbf{Actual}}} & \textbf{Negative} & 447 & 53 \\
-& \textbf{Positive} & 53 & 447 \\
+\multirow{2}{*}{\rotatebox{90}{\textbf{Actual}}} & \textbf{Negative} & 442 & 64 \\
+& \textbf{Positive} & 41 & 453 \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -181,13 +181,13 @@ BERT Fine-tuned & \textbf{0.894} & \textbf{0.89} & \textbf{0.90} & \textbf{0.89}
 & & \multicolumn{2}{c}{\textbf{Predicted}} \\
 & & \textbf{Negative} & \textbf{Positive} \\
 \midrule
-\multirow{2}{*}{\rotatebox{90}{\textbf{Actual}}} & \textbf{Negative} & 425 & 81 \\
-& \textbf{Positive} & 64 & 430 \\
+\multirow{2}{*}{\rotatebox{90}{\textbf{Actual}}} & \textbf{Negative} & 420 & 86 \\
+& \textbf{Positive} & 60 & 434 \\
 \bottomrule
 \end{tabular}
 \end{table}
 
-\subsubsection*{A.3.3 Learning Curves}
+\subsubsection{Learning Curves}
 \label{subsubsec:learning_curves}
 
 \begin{table}[H]
@@ -224,10 +224,10 @@ BERT Fine-tuned & \textbf{0.894} & \textbf{0.89} & \textbf{0.90} & \textbf{0.89}
 % =======================================================================
 % A.4 CODE IMPLEMENTATION  
 % =======================================================================
-\subsection*{A.4 Code Implementation}
+\subsection{Code Implementation}
 \label{subsec:code_implementation}
 
-\subsubsection*{A.4.1 Các thành phần của BERT}
+\subsubsection{Các thành phần của BERT}
 \label{subsubsec:bert_architecture}
 
 \paragraph{Multi-Head Self-Attention:}
@@ -353,7 +353,7 @@ class BertEmbeddings(nn.Module):
         return embeddings
 \end{minted}
 
-\subsubsection*{A.4.2 Training Pipeline}
+\subsubsection{Training Pipeline}
 \label{subsubsec:training_pipeline}
 
 \paragraph{Dataset tự tạo:}
@@ -505,10 +505,10 @@ def train_loop(model, dataloader, optimizer, epochs, device):
 % =======================================================================
 % A.5 PHÂN TÍCH TOÁN HỌC
 % =======================================================================
-\subsection*{A.5 Phân tích toán}
+\subsection{Phân tích toán}
 \label{subsec:mathematical_analysis}
 
-\subsubsection*{A.5.1 Attention}
+\subsubsection{Attention}
 \label{subsubsec:attention_math}
 
 \paragraph{Scaled Dot-Product Attention:}
@@ -557,7 +557,7 @@ self-attention:
 \end{align}
 
 
-\subsubsection*{A.5.2 Hàm Loss}
+\subsubsection{Hàm Loss}
 \label{subsubsec:loss_functions}
 
 \paragraph{Masked Language Model Loss:}
@@ -582,7 +582,7 @@ Với $y_i \in \{0, 1\}$ là label cho sentence pair $(A_i, B_i)$.
 \label{eq:combined_loss}
 \end{equation}
 
-\subsubsection*{A.5.3 Optimization}
+\subsubsection{Optimization}
 \label{subsubsec:optimization}
 
 \paragraph{AdamW Optimizer:}
@@ -612,10 +612,10 @@ lr_{max} \cdot \frac{t_{total} - t}{t_{total} - t_{warmup}} & \text{if } t > t_{
 % =======================================================================
 % A.6 DATASET VÀ PREPROCESSING
 % =======================================================================
-\subsection*{A.6 Dataset}
+\subsection{Dataset}
 \label{subsec:dataset_preprocessing}
 
-\subsubsection*{A.6.1 Tổng quan IMDb dataset}
+\subsubsection{Tổng quan IMDb dataset}
 \label{subsubsec:imdb_statistics}
 
 \begin{table}[H]
@@ -642,7 +642,7 @@ After WordPiece tokenization & ~120,000\\
 \end{tabular}
 \end{table}
 
-\subsubsection*{A.6.2 Preprocessing}
+\subsubsection{Preprocessing}
 \label{subsubsec:preprocessing_steps}
 
 \paragraph{Tokenizer cho BERT fine-tune:}
@@ -662,50 +662,13 @@ def preprocess_function(examples):
 % =======================================================================
 % A.7 PHÂN TÍCH LỖI
 % =======================================================================
-\subsection*{A.7 Phân tích Lỗi}
-\label{subsec:error_analysis}
-
-\begin{table}[H]
-\centering
-\caption{Ví dụ các trường hợp sarcasm/irony dự đoán sai}
-\label{tab:sarcasm_examples}
-\begin{tabular}{p{8cm}cc}
-\toprule
-\textbf{Review Text (excerpt)} & \textbf{True} & \textbf{Predicted} \\
-\midrule
-"This movie is just truly awful, the eye-candy that plays Ben just can make up for everything else that is wrong with this movie." & Negative & Positive \\
-\midrule
-"Thanks to this fungal film I do NOT want my Maypo, and that's saying something." & Negative & Positive \\
-\midrule
-"What a brilliant piece of film making. So original and thought-provoking. NOT!" & Negative & Positive \\
-\bottomrule
-\end{tabular}
-\end{table}
-
-\begin{table}[H]
-\centering
-\caption{Ví dụ complex negation patterns}
-\label{tab:negation_examples}
-\begin{tabular}{p{8cm}cc}
-\toprule
-\textbf{Text} & \textbf{True} & \textbf{Predicted} \\
-\midrule
-"I previously thought that this film was the lamest thing ever... I was never more wrong about anything in my life." & Positive & Negative \\
-\midrule
-"You can't not love this movie if you don't hate good cinematography." & Positive & Negative \\
-\midrule
-"It's not that I didn't enjoy it, but rather that it wasn't uninteresting." & Positive & Negative \\
-\bottomrule
-\end{tabular}
-\end{table}
-
-% =======================================================================
+=======================================================================
 % A.8 TRỰC QUAN HÓA
 % =======================================================================
-\subsection*{A.8 Trực quan hóa}
+\subsection{Trực quan hóa}
 \label{subsec:visualization}
 
-\subsubsection*{A.8.1 t-SNE cho embeddings}
+\subsubsection{t-SNE cho embeddings}
 \label{subsubsec:tsne_embeddings}
 
 \begin{table}[H]
@@ -771,12 +734,14 @@ plt.show()
 % =======================================================================
 % RESOURCE
 % =======================================================================
-\subsection*{A.9 Resource}
+\subsection{Resource}
 \label{subsec:resources}
 
-\paragraph{Link video thuyết trình (Youtube):} https://youtu.be/sOHMstidMQg
+\paragraph{Link video thuyết trình (Youtube):} \href{https://youtu.be/sOHMstidMQg}{youtu.be/sOHMstidMQg}
 
-\paragraph{Link source code (GitHub):} https://github.com/khoaoe/HCMUS-MathAI-Final-BERT
+\paragraph{Link Google Colab của thực nghiệm:} \href{https://colab.research.google.com/drive/1LeZfdr22j_FC_qEG92QfVIE6dz_ppF6g?usp=sharing}{colab.research.google.com}
+
+\paragraph{Link source code (GitHub):} \href{https://github.com/khoaoe/HCMUS-MathAI-Final-BERT}{github.com/khoaoe/HCMUS-MathAI-Final-BERT}
 
 \paragraph{Sơ đồ của repo GitHub}
 \begin{minted}{console}
@@ -784,11 +749,12 @@ HCMUS-MathAI-Final-BERT/
     ├── code/
     │   ├── bert.py                 # From-scratch BERT implementation
     │   ├── bert_application.ipynb  # experiment notebook
-    │   └── requirements.txt        # Dependencies
+    │   └── requirements.txt        # dependencies
     ├── report/                    # LaTeX report files' components
     │   ├── content.tex             # main content
     │   ├── appendix.tex            
     │   ├── cite.tex
+       ├── abbre.tex
     │   └── ref.bib
     ├── presentation/               # LaTeX file for slides
     │   └── presentation.tex
