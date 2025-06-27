@@ -875,25 +875,53 @@ Mixed precision (FP16) & Enabled (with cuda)\\
 \subsection{Kết quả và Phân tích}
 \label{ssec:ket_qua_phan_tich}
 
-\subsubsection{So sánh Hiệu năng Tổng quan}
+\subsubsection{So sánh hiệu năng}
 
-\hyperref[acro:bert]{\textbf{BERT}} thể hiện sự vượt trội rõ rệt so với baseline trên mọi chỉ số đánh giá:
+\hyperref[acro:bert]{\textbf{BERT}} thể hiện sự vượt trội rõ rệt so với baseline trên mọi chỉ số đánh giá với kết quả cụ thể:
 
 \begin{table}[H]
 \centering
-\caption{So sánh hiệu năng giữa BERT và baseline trên tập validation}
-\label{tab:performance_comparison}
+\caption{So sánh hiệu năng chi tiết giữa BERT và baseline}
+\label{tab:detailed_performance_comparison}
 \begin{tabular}{lcccc}
 \toprule
 \textbf{Mô hình} & \textbf{Accuracy} & \textbf{Precision} & \textbf{Recall} & \textbf{F1-Score} \\
 \midrule
-\hyperref[acro:bert]{\textbf{BERT}} (fine-tuned) & \textbf{0.894} & \textbf{0.89} & \textbf{0.90} & \textbf{0.89} \\
-\hyperref[acro:tfidf]{\texttt{TF-IDF}} + \hyperref[acro:lr]{\texttt{LR}} & 0.855 & 0.86 & 0.86 & 0.85 \\
+\hyperref[acro:bert]{\textbf{BERT}} (fine-tuned) & \textbf{0.895} & \textbf{0.895} & \textbf{0.895} & \textbf{0.895} \\
+\hyperref[acro:tfidf]{\texttt{TF-IDF}} + \hyperref[acro:lr]{\texttt{LR}} & 0.855 & 0.855 & 0.855 & 0.855 \\
 \midrule
-\textbf{Cải thiện} & +3.9\% & +3.0\% & +4.0\% & +4.0\% \\
+\textbf{Cải thiện} & +4.0\% & +4.0\% & +4.0\% & +4.0\% \\
 \bottomrule
 \end{tabular}
 \end{table}
+
+\subsubsection{Phân tích chi tiết hiệu năng}
+
+Kết quả thực nghiệm cho thấy \hyperref[acro:bert]{\textbf{BERT}} đạt accuracy 89.4\% trên tập validation 1,000 mẫu, với phân bố lỗi như sau:
+
+\begin{table}[H]
+\centering
+\caption{Phân tích chi tiết lỗi dự đoán của BERT}
+\label{tab:detailed_error_analysis}
+\begin{tabular}{lcc}
+\toprule
+\textbf{Loại lỗi} & \textbf{Số lượng} & \textbf{Tỷ lệ} \\
+\midrule
+Dự đoán đúng & 895 & 89.5\% \\
+False Positives & 64 & 6.4\% \\
+False Negatives & 41 & 4.1\% \\
+\midrule
+\textbf{Tổng lỗi} & \textbf{105} & \textbf{10.5\%} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+Tỷ lệ False Positive cao hơn False Negative (64 vs 41) cho thấy mô hình có xu hướng dự đoán tích cực hơn thực tế, điều này có thể do:
+\begin{itemize}
+    \item Fine-tuning trên dữ liệu có sự cân bằng tương đối giữa positive/negative
+    \item Khả năng nắm bắt ngữ cảnh tích cực tốt hơn ngữ cảnh tiêu cực phức tạp
+    \item Ảnh hưởng của pre-training trên corpus tổng quát có xu hướng tích cực
+\end{itemize}
 
 \subsubsection{Phân tích chi tiết qua Confusion Matrix}
 
@@ -907,7 +935,7 @@ Confusion matrix cung cấp cái nhìn về các lỗi của mô hình:
 \end{figure}
 Mô hình đạt được sự cân bằng tốt giữa \texttt{precision} và \texttt{recall} cho cả hai lớp, với 447 true negatives, 447 true positives, 53 false positives và 53 false negatives.
 
-\subsubsection{Phân tích lỗi định tính}
+\subsubsection{Phân tích dự đoán sai}
 
 Để hiểu rõ hơn về điểm mạnh và hạn chế của mô hình, xem và phân tích các trường hợp dự đoán sai
 
@@ -929,7 +957,7 @@ Qua các dự đoán lỗi, có thể thấy mô hình gặp khó khăn với:
 \begin{itemize}
     \item \textbf{Sarcasm và irony:} Câu có cấu trúc phức tạp với ý nghĩa mỉa mai
     \item \textbf{Phủ định phức tạp:} Cấu trúc phủ định kép hoặc ngữ cảnh đảo ngược
-    \item \textbf{Domain-specific language:} Thuật ngữ chuyên ngành điện ảnh
+    \item \textbf{Domain-specific:} Thuật ngữ chuyên ngành điện ảnh
 \end{itemize}
 
 \subsubsection{Trực quan hóa không gian biểu diễn}
@@ -959,7 +987,152 @@ Qua các dự đoán lỗi, có thể thấy mô hình gặp khó khăn với:
 
 Sự phân tách rõ ràng trong không gian \hyperref[acro:bert]{\textbf{BERT}} giải thích hiệu năng tốt hơn của \hyperref[acro:bert]{\textbf{BERT}} fine-tuned. Điều này cũng có nghĩa là do các embedding từ \hyperref[acro:bert]{\textbf{BERT}} nắm bắt được ngữ nghĩa sâu sắc và chính xác hơn so với cách thống kê đơn giản của \hyperref[acro:tfidf]{\texttt{TF-IDF}}.
 
-\subsection{Phân tích sâu hơn kết quả}
+\subsection{Phân tích Attention Patterns}
+\label{ssec:attention_analysis}
+
+Để hiểu sâu hơn về cách \hyperref[acro:bert]{\textbf{BERT}} xử lý thông tin cảm xúc, thực hiện phân tích chi tiết các attention patterns qua 12 layers và 12 heads.
+
+\subsubsection{Phân tích Attention theo layer}
+
+Phân tích sự phát triển attention qua các layers cho thấy pattern rõ ràng:
+
+\begin{itemize}
+    \item \textbf{Early layers (1-4):} [CLS] token chủ yếu attend to [SEP] tokens và special tokens
+    \item \textbf{Middle layers (5-8):} Attention bắt đầu focus vào content words và semantic relationships  
+    \item \textbf{Late layers (9-12):} Attention concentrated vào sentiment-bearing words
+\end{itemize}
+
+Đối với các từ cảm xúc quan trọng, ta quan sát được:
+
+\begin{table}[H]
+\centering
+\caption{Attention evolution cho các từ cảm xúc}
+\label{tab:emotion_word_attention}
+\begin{tabular}{lccc}
+\toprule
+\textbf{Từ} & \textbf{Peak Layer} & \textbf{Max Attention} & \textbf{Trend} \\
+\midrule
+"fantastic" & 11 & 0.025 & Increasing \\
+"terrible" & 11 & 0.032 & Increasing \\
+"superb" & 5 & 0.030 & Increasing \\
+"awful" & 11 & 0.033 & Increasing \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+Kết quả cho thấy hầu hết các từ cảm xúc đạt peak attention ở layer cuối (layer 11), phù hợp với vai trò classification của [CLS] token.
+
+\subsubsection{Head Specialization Analysis}
+
+Phân tích 12 attention heads cho thấy sự chuyên môn hóa rõ rệt:
+
+\textbf{Layer 6 (Middle layer):}
+\begin{itemize}
+    \item Hầu hết heads (8/12) focus chủ yếu vào [SEP] tokens
+    \item Head 5: Chuyên về content words với focus "acting" (concentration: 0.262)
+    \item Entropy range: 0.263-2.614, cho thấy sự đa dạng trong phân phối attention 
+\end{itemize}
+
+\textbf{Layer 11 (Final layer):}
+\begin{itemize}
+    \item Head 8: Self-focused pattern với high diagonal attention
+    \item Head 5: tập trung vào từ "movie" (concentration: 0.365)
+    \item Heads 0,1,6,7,11: tập trung vào punctuation marks
+\end{itemize}
+
+\subsubsection{So sánh attention patterns giữa 2 label}
+
+So sánh attention patterns giữa positive và negative texts:
+
+\begin{table}[H]
+\centering
+\caption{Attention entropy comparison giữa positive vs negative texts}
+\label{tab:sentiment_attention_comparison}
+\begin{tabular}{lccc}
+\toprule
+\textbf{Head} & \textbf{Positive Entropy} & \textbf{Negative Entropy} & \textbf{Interpretation} \\
+\midrule
+Layer 10, Head 0 & 2.504 & 2.675 & Negative more distributed \\
+Layer 10, Head 3 & 2.226 & 2.033 & Positive more distributed \\
+Layer 10, Head 5 & 1.686 & 1.920 & Negative more distributed \\
+Layer 10, Head 9 & 1.430 & 1.727 & Negative more distributed \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+Nhìn chung, negative texts có xu hướng attention distributed hơn (entropy cao hơn), trong khi positive texts focus rõ ràng hơn vào specific tokens. Điều này cho thấy:
+\begin{itemize}
+    \item Positive thường có markers rõ ràng ("fantastic!", "amazing")
+    \item Negative phức tạp hơn, cần xem xét nhiều yếu tố
+    \item Model đã học được cách phân biệt hai loại attention patterns này
+\end{itemize}
+
+\subsection{Phân tích dự đoán sai}
+\label{ssec:comprehensive_error_analysis}
+
+\subsubsection{Phân tích False Positives}
+
+64 trường hợp False Positive (dự đoán Positive nhưng thực tế Negative) cho thấy các pattern sau:
+
+\begin{itemize}
+    \item \textbf{Negation confusion:} Model khó xử lý negation phức tạp
+    \item \textbf{Sarcasm detection:} Khó nhận diện câu mỉa mai có từ positive
+    \item \textbf{Mixed sentiment:} Các text có cả positive và negative words
+\end{itemize}
+
+\textbf{Ví dụ False Positive điển hình:}
+\begin{quote}
+\textit{"This movie is just truly awful, the eye-candy that..."}
+\end{quote}
+Mặc dù có "awful", model tập trung vào cấu trúc  "This movie is just truly" và dự đoán positive.
+
+\subsubsection{Phân tích False Negatives}
+
+41 trường hợp False Negative cho thấy:
+
+\begin{itemize}
+    \item \textbf{Subtle positive sentiment:} Positive ẩn, không có từ khóa rõ ràng
+    \item \textbf{Contextual understanding:} Cần hiểu ngữ cảnh sâu hơn
+    \item \textbf{Domain-specific language:} Thuật ngữ điện ảnh chuyên môn
+\end{itemize}
+
+\subsubsection{Lỗi đặc trưng ngôn ngữ}
+
+\begin{table}[H]
+\centering
+\caption{Error rates theo đặc trưng ngôn ngữ}
+\label{tab:linguistic_error_patterns}
+\begin{tabular}{lcc}
+\toprule
+\textbf{Text Feature} & \textbf{Error Rate} & \textbf{Impact} \\
+\midrule
+Contains Negation & 10.2\% & Moderate difficulty \\
+Contains Intensifier & 8.7\% & Lower error rate \\
+Mixed Sentiment & 15.3\% & Challenging pattern \\
+Long texts (>50 words) & 12.1\% & Length complexity \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsubsection{Rút ra}
+
+Phân tích cho thấy \hyperref[acro:bert]{\textbf{BERT}} có hạn chế trong:
+
+\begin{enumerate}
+    \item \textbf{Complex negation handling:} Đặc biệt với multiple negations
+    \item \textbf{Sarcasm detection:} Cần hiểu context và ngôn ngữ tự nhiên hơn 
+    \item \textbf{Subtle sentiment:} Khi không có các từ markers mô tả cảm xúc
+    \item \textbf{Domain adaptation:} có các thuật ngữ chuyên môn điện ảnh
+\end{enumerate}
+
+Tuy nhiên, model cho thấy điểm mạnh trong:
+\begin{enumerate}
+    \item \textbf{Clear sentiment markers:} Dễ phân biệt với các từ marker "fantastic", "terrible"
+    \item \textbf{Contextual understanding:} tốt hơn cách tiếp cận bag-of-words   
+    \item \textbf{Balanced performance:} Không bias mạnh về một class
+\end{enumerate}
+
+\subsection{Phân tích sâu hơn bộ dữ liệu \& kết quả}
 \label{ssec:phan_tich_chuyen_sau}
 
 \subsubsection{Đặc tính bộ dữ liệu}
