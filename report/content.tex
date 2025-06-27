@@ -731,7 +731,7 @@ Tất cả thực nghiệm được thực hiện trong môi trường thống n
 Python & 3.8.10 \\
 PyTorch & 2.6.0+cu124 \\
 Transformers & 4.25.1 \\
-GPU & NVIDIA Tesla T4 (16GB VRAM) \\
+\hyperref[acro:gpu]{\texttt{GPU}} & NVIDIA Tesla T4 (16GB VRAM) \\
 CUDA & Có sử dụng \\
 Random Seed & 42 \\
 \bottomrule
@@ -814,7 +814,7 @@ The dog is cute. & The sky is blue. & NotNext & 52.74\% \\
 \begin{itemize}
     \item \textbf{Tập train:} 4,000 reviews (2,000 positive, 2,000 negative)
     \item \textbf{Tập validation:} 1,000 reviews (500 positive, 500 negative)
-    \item \textbf{Độ dài tối đa:} 256 tokens (phù hợp với giới hạn bộ nhớ GPU)
+    \item \textbf{Độ dài tối đa:} 256 tokens (phù hợp với giới hạn bộ nhớ \hyperref[acro:gpu]{\texttt{GPU}})
 \end{itemize}
 
 \subsubsection{Mô tả bộ dữ liệu IMDb} \label{5.4.2}
@@ -853,7 +853,7 @@ classifier = LogisticRegression(
 
 \subsubsection{Fine-tuning BERT}
 
-Quá trình fine-tuning \hyperref[acro:bert]{\textbf{BERT}} được thực hiện với các hyperparameter được tối ưu cẩn thận:
+Quá trình fine-tuning \hyperref[acro:bert]{\textbf{BERT}} được thực hiện với các hyperparameter như sau:
 
 \begin{table}[H]
 \centering
@@ -870,7 +870,7 @@ Gradient accumulation steps & 2 \\
 Number of epochs & 3 \\
 Warmup steps & 500 \\
 Weight decay & 0.01 \\
-Optimizer & AdamW \cite{loshchilov2017decoupled} \\
+Optimizer & \hyperref[acro:adamw]{\texttt{AdamW}} \cite{loshchilov2017decoupled} \\
 Mixed precision (FP16) & Enabled (with cuda)\\
 \bottomrule
 \end{tabular}
@@ -1191,7 +1191,7 @@ Mặc dù đạt kết quả khá tốt, thực nghiệm vẫn có một số h�
 Kết quả thực nghiệm cho thấy \hyperref[acro:bert]{\textbf{BERT}} là lựa chọn tốt cho các ứng dụng \hyperref[acro:nlp]{\texttt{NLP}} thực tế, đặc biệt khi:
 \begin{itemize}
     \item Độ chính xác là yếu tố quan trọng nhất
-    \item Có sẵn tài nguyên GPU cho inference
+    \item Có sẵn tài nguyên \hyperref[acro:gpu]{\texttt{GPU}} cho inference
     \item Dữ liệu huấn luyện giới hạn (do \texttt{transfer learning} hiệu quả)
 \end{itemize}
 
@@ -1230,7 +1230,7 @@ Phần này trình bày kết quả của \hyperref[acro:bert]{\textbf{BERT}} tr
         \textbf{Model} & \textbf{\hyperref[acro:mnli]{\texttt{MNLI}}-m/mm} & \textbf{\hyperref[acro:qqp]{\texttt{QQP}}} & \textbf{\hyperref[acro:qnli]{\texttt{QNLI}}} & \textbf{\hyperref[acro:sst2]{\texttt{SST-2}}} & \textbf{\hyperref[acro:cola]{\texttt{CoLA}}} & \textbf{\hyperref[acro:stsb]{\texttt{STS-B}}} & \textbf{\hyperref[acro:mrpc]{\texttt{MRPC}}} & \textbf{\hyperref[acro:rte]{\texttt{RTE}}} & \textbf{\hyperref[acro:wnli]{\texttt{WNLI}}} & \textbf{Avg} \\
         & (Acc) & (\hyperref[acro:f1]{\texttt{F1}}/Acc) & (Acc) & (Acc) & (Mcc) & (Corr) & (\hyperref[acro:f1]{\texttt{F1}}/Acc) & (Acc) & (Acc) & \\
         \midrule
-        Previous SOTA & 80.6/80.1 & 66.1/- & 82.3 & 93.2 & 35.0 & 81.0 & 86.0/- & 61.7 & 65.1 & 74.0 \\
+        Previous \hyperref[acro:sota]{\texttt{SOTA}} & 80.6/80.1 & 66.1/- & 82.3 & 93.2 & 35.0 & 81.0 & 86.0/- & 61.7 & 65.1 & 74.0 \\
         OpenAI \hyperref[acro:gpt]{\texttt{GPT}} \cite{radford2018improving} & 82.1/81.4 & 70.3/88.5 & 87.4 & 91.3 & 45.4 & 80.0 & 82.3/75.7 & 56.0 & 65.1 & 72.8 \\
         \midrule
         BERT\textsubscript{BASE} & 84.6/83.4 & 71.2/89.2 & 90.5 & 93.5 & 52.1 & 85.8 & 88.9/84.8 & 66.4 & 65.1 & 78.3 \\
@@ -1457,7 +1457,7 @@ Mặc dù \hyperref[acro:bert]{\textbf{BERT}} đã tạo ra bước đột phá,
 \begin{itemize}
     \item \textbf{\hyperref[acro:t5]{\texttt{T5}} \cite{raffel2020exploring}:} "text-to-text" framework, mọi task đều là seq2seq
     \item \textbf{\hyperref[acro:bart]{\texttt{BART}} \cite{lewis2019bart}:} Denoising autoencoder cho generation
-    \item \textbf{\hyperref[acro:unilm]{\texttt{UniLM}}:} Thống nhất pre-training cho cả understanding và generation
+    \item \textbf{\hyperref[acro:unilm]{\texttt{UniLM}}:} Thống nhất pre-training cho cả contextual understanding và generation
 \end{itemize}
 
 \subsubsection{Đa ngôn ngữ (multilingual) và kết hợp nhiều ngôn ngữ (cross-lingual)}
@@ -1513,7 +1513,7 @@ BERT đã khẳng định hiệu quả của phương pháp \texttt{pre-training
     
     \item \textbf{2 tác vụ pre-training sáng tạo:} \hyperref[acro:mlm]{\texttt{MLM}} và \hyperref[acro:nsp]{\texttt{NSP}} tuy đơn giản nhưng hiệu quả, cho phép học từ dữ liệu không label vốn là nguồn tài nguyên dồi dào và dễ thu thập. Chiến lược \texttt{masking 80-10-10} được thiết kế tốt để giảm thiểu domain shift giữa pre-training và fine-tuning.
     
-    \item \textbf{Transfer learning:} Thiết lập mô hình "pre-train once, fine-tune for everything" đã trở thành chuẩn mực cho ngành. Với chi phí fine-tuning thấp (vài giờ trên GPU), \hyperref[acro:bert]{\textbf{BERT}} "bình dân hóa" (democratize) việc sử dụng các mô hình ngôn ngữ lớn.
+    \item \textbf{Transfer learning:} Thiết lập mô hình "pre-train once, fine-tune for everything" đã trở thành chuẩn mực cho ngành. Với chi phí fine-tuning thấp (vài giờ trên \hyperref[acro:gpu]{\texttt{GPU}}), \hyperref[acro:bert]{\textbf{BERT}} "bình dân hóa" (democratize) việc sử dụng các mô hình ngôn ngữ lớn.
     
     \item \textbf{Đột phá trong hiệu năng:} Không chỉ cải thiện mà tạo ra những bước nhảy lớn trên nhiều benchmarks. Trên \hyperref[acro:glue]{\texttt{GLUE}}, \hyperref[acro:bert]{\textbf{BERT}} tăng 7.7 điểm. Trên \hyperref[acro:squad]{\texttt{SQuAD}} v1.1, thậm chí vượt qua human performance.
 \end{itemize}
