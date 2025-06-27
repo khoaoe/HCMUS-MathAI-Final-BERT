@@ -286,7 +286,7 @@ Các heads có \texttt{specialization score} cao (> 0.8) thường tập trung v
 Sau khi tổng hợp thông tin qua \texttt{self-attention}, mỗi vị trí được xử lý qua một mạng \hyperref[acro:ffn]{\texttt{FFN}} giống nhau:
 
 \begin{equation}
-\text{FFN}(x) = \max(0, x*W_1 + b_1)W_2 + b_2
+\text{FFN}(x) = \text{GELU}(x*W_1 + b_1)W_2 + b_2
 \label{eq:ffn}
 \end{equation}
 
@@ -296,6 +296,10 @@ Trong đó:
     \item $W_2 \in \mathbb{R}^{d_{ff} \times d_{model}}$, $b_2 \in \mathbb{R}^{d_{model}}$
     \item $d_{ff}$ thường > $d_{model}$ (trong BERT-base: $d_{ff}=3072$, $d_{model}=768$)
 \end{itemize}
+Trong đó \texttt{GELU} (Gaussian Error Linear Unit) được sử dụng thay vì \hyperref[acro:relu]{\texttt{ReLU}}:
+\begin{equation}
+\text{GELU}(x) = x \cdot \Phi(x) = x \cdot \frac{1}{2}[1 + \text{erf}(x/\sqrt{2})]
+\end{equation}
 
 \hyperref[acro:ffn]{\texttt{FFN}} có vai trò xử lý đặc trưng cục bộ sau khi đã có ngữ cảnh toàn cục từ \texttt{self-attention}. Việc mở rộng sang không gian $d_{ff}$ (thường là) lớn hơn cho phép mô hình học các biến đổi phi tuyến phức tạp hơn.
 
@@ -909,7 +913,7 @@ Mô hình đạt được sự cân bằng ổn giữa \texttt{precision} và \t
 
 \subsubsection{Phân tích chi tiết hiệu năng}
 
-Kết quả thực nghiệm cho thấy \hyperref[acro:bert]{\textbf{BERT}} đạt accuracy 89.4\% trên tập validation 1,000 mẫu, với phân bố lỗi cân bằng như sau:
+Kết quả thực nghiệm cho thấy \hyperref[acro:bert]{\textbf{BERT}} đạt accuracy 89.5\% trên tập validation 1,000 mẫu, với phân bố lỗi cân bằng như sau:
 
 \begin{table}[H]
 \centering
@@ -1149,7 +1153,7 @@ Giả lập 4,000 mẫu huấn luyện đã tạo ra sự bất đối xứng c�
     \item \textbf{\hyperref[acro:bert]{\textbf{BERT}}:} có kiến thức từ 3.3 tỷ từ pre-training, rồi fine-tuning trên 4,000 mẫu
 \end{itemize}
 
-Cải thiện 3.9\% so với \texttt{TFIDF + Logistic Regression} cũng phần nào minh chứng cho hiệu quả khi sử dụng trên bộ dữ liệu nhỏ của \texttt{transfer learning} của \hyperref[acro:bert]{\textbf{BERT}}.
+Cải thiện 4.1\% so với \texttt{TFIDF + Logistic Regression} cũng phần nào minh chứng cho hiệu quả khi sử dụng trên bộ dữ liệu nhỏ của \texttt{transfer learning} của \hyperref[acro:bert]{\textbf{BERT}}.
 
 \subsubsection{Phân tích không gian biểu diễn}
 
@@ -1170,7 +1174,7 @@ Thông qua pipeline thực nghiệm, rút ra các kết luận sau:
 \begin{enumerate}
     \item \textbf{Hiệu quả của học hai chiều:} Pre-traing áp dụng \texttt{deep bidirectional} bằng \hyperref[acro:mlm]{\texttt{MLM}} là cách \hyperref[acro:bert]{\textbf{BERT}} vượt qua hạn chế của các mô hình \texttt{unidirectional} (một chiều) truyền thống. Khả năng xem xét ngữ cảnh từ cả hai phía tạo ra biểu diễn chính xác hơn.
     
-    \item \textbf{Sức mạnh của Transfer Learning:} Với chỉ 3 epochs fine-tuning trên 4,000 mẫu, \hyperref[acro:bert]{\textbf{BERT}} cũng đã đạt accuracy tốt là 89.4\%, hơn baseline \texttt{TFIDF + Logistic Regression} 3.9\%. Điều này chứng minh giá trị của pre-training trên corpus khổng lồ.
+    \item \textbf{Sức mạnh của Transfer Learning:} Với chỉ 3 epochs fine-tuning trên 4,000 mẫu, \hyperref[acro:bert]{\textbf{BERT}} cũng đã đạt accuracy tốt là 89.5\%, hơn baseline \texttt{TFIDF + Logistic Regression} 4.1\%. Điều này chứng minh giá trị của pre-training trên corpus khổng lồ.
     
     \item \textbf{Hiểu được ngữ nghĩa phức tạp:} qua phân tích t-SNE, \hyperref[acro:bert]{\textbf{BERT}} đã học được không gian biểu diễn có cấu trúc rõ ràng, tách biệt tốt giữa 2 label; dù cho dữ liệu có chứa những độ khó về ngữ nghĩa (sacarsm, irony, ...) cho thấy \hyperref[acro:bert]{\textbf{BERT}} đã nắm bắt được mối quan hệ phức tạp này nhờ hiểu ngữ cảnh sâu sắc hơn.
 \end{enumerate}
