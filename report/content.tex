@@ -92,6 +92,66 @@ Mỗi lớp con đều có kết nối dư (\texttt{residual connection}) và ch
 \end{figure}
 \hyperref[acro:bert]{\textbf{BERT}} chỉ sử dụng phần \texttt{Encoder} (bên trái). Mỗi khối encoder chứa lớp \texttt{Multi-Head Self-Attention} và \texttt{Feed-Forward}, được kết nối bằng \texttt{residual connections} và \texttt{layer normalization}.
 
+\subsection{Phân biệt Encoder-Only (\hyperref[acro:bert]{\textbf{BERT}}) và Decoder-Only}
+\label{ssec:encoder_vs_decoder}
+
+\textbf{Sự khác biệt kiến trúc cơ bản:}
+
+\begin{table}[H]
+\centering
+\caption{So sánh BERT (Encoder-Only) vs GPT (Decoder-Only)}
+\begin{tabular}{lcc}
+\toprule
+\textbf{Đặc điểm} & \textbf{BERT (Encoder-Only)} & \textbf{GPT (Decoder-Only)} \\
+\midrule
+Attention Pattern & Bidirectional (full attention) & Causal (masked attention) \\
+Training Task  & MLM + NSP & Next Token Prediction \\
+Input Processing & Parallel & Sequential \\
+Use case chính & Understanding tasks & Generation tasks \\
+Attention Mask & None (full visibility) & Lower triangular matrix \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\textbf{Trực quan hóa Attention Mask:}
+\begin{figure}[H]
+    \centering
+    \begin{subfigure}[b]{0.45\textwidth}
+        \centering
+        \begin{tikzpicture}[scale=0.6]
+            \foreach \i in {1,2,3,4} {
+                \foreach \j in {1,2,3,4} {
+                    \fill[blue!30] (\i-0.5,5.5-\j) rectangle (\i+0.5,4.5-\j);
+                    \node at (\i,5-\j) {1};
+                }
+            }
+            \node[below] at (2.5,0.5) {BERT: Full Attention};
+        \end{tikzpicture}
+        \caption{Bidirectional Attention}
+    \end{subfigure}
+    \hfill
+    \begin{subfigure}[b]{0.45\textwidth}
+        \centering
+        \begin{tikzpicture}[scale=0.6]
+            \foreach \i in {1,2,3,4} {
+                \foreach \j in {1,2,3,4} {
+                    \ifnum\i<\j
+                        \fill[red!30] (\i-0.5,5.5-\j) rectangle (\i+0.5,4.5-\j);
+                        \node at (\i,5-\j) {0};
+                    \else
+                        \fill[blue!30] (\i-0.5,5.5-\j) rectangle (\i+0.5,4.5-\j);
+                        \node at (\i,5-\j) {1};
+                    \fi
+                }
+            }
+            \node[below] at (2.5,0.5) {GPT: Causal Attention};
+        \end{tikzpicture}
+        \caption{Unidirectional Attention}
+    \end{subfigure}
+    \caption{Attention patterns BERT vs GPT}
+\end{figure}
+\hyperref[acro:bert]{\textbf{BERT}} cho phép mỗi token nhìn tất cả tokens khác, trong khi GPT chỉ cho phép nhìn các tokens trước đó.
+
 \subsection{Cơ chế \texttt{Self-Attention}}
 \label{ssec:self_attention}
 
@@ -119,6 +179,20 @@ Trong đó:
     \item $\sqrt{d_k}$: Hệ số chuẩn hóa để tránh \texttt{gradient vanishing} khi $d_k$ lớn (khi $d_k$ lớn, phép nhân $QK^T$ có thể cho giá trị rất lớn, gây ra \texttt{softmax saturation})
     \item $\text{softmax}$: chuyển score thành xác suất (tổng theo chiều keys = 1)
 \end{itemize}
+
+\subsubsection{Phân tích về hệ số chuẩn hóa $\frac{1}{\sqrt{d_k}}$}
+
+Việc chia cho $\sqrt{d_k}$ trong công thức attention không phải là tùy ý mà có cơ sở toán học vững chắc. Giả sử các thành phần của $Q$ và $K$ là các biến ngẫu nhiên độc lập với mean = 0 và variance = 1. Khi đó, tích vô hướng $QK^T$ có variance = $d_k$.
+
+\textbf{Phân tích variance:}
+\begin{align}
+\text{Var}(q \cdot k) &= \text{Var}\left(\sum_{i=1}^{d_k} q_i k_i\right) \\
+&= \sum_{i=1}^{d_k} \text{Var}(q_i k_i) \quad \text{(do độc lập)} \\
+&= \sum_{i=1}^{d_k} \text{Var}(q_i)\text{Var}(k_i) \quad \text{(do mean = 0)} \\
+&= d_k \cdot 1 \cdot 1 = d_k
+\end{align}
+
+Khi $d_k$ lớn, attention scores có thể có giá trị rất lớn, đẩy softmax vào gradient vanishing. Chia cho $\sqrt{d_k}$ đảm bảo variance của attention scores ổn định ở mức 1, duy trì gradient flow hiệu quả.
 
 \subsubsection{Ý nghĩa và lợi ích}
 Cơ chế \texttt{self-attention} có độ phức tạp $O(n^2 \cdot d)$ so với \hyperref[acro:rnn]{\texttt{RNN}} có độ phức tạp $O(n \cdot d^2)$. Khi $d > n$ (thường xảy ra trong \hyperref[acro:nlp]{\texttt{NLP}}) thì \texttt{self-attention} sẽ hiệu quả hơn về mặt tính toán. Đáng chú ý, \texttt{self-attention} cho phép mô hình hóa quan hệ giữa mọi cặp token mà không phụ thuộc vào khoảng cách của chúng trong chuỗi.
@@ -169,6 +243,42 @@ Mỗi head có thể học một "góc nhìn" khác nhau về dữ liệu, ví d
     \label{fig:multi_head_attention}
 \end{figure}
 Đầu vào được chiếu thành $h$ bộ Q, K, V độc lập. Mỗi head thực hiện attention riêng, sau đó các kết quả được concat và chiếu qua $W^O$ để tạo đầu ra cuối cùng.
+
+\subsubsection{Chuyên môn hóa của các Attention Heads qua các layers}
+
+Nghiên cứu về attention head specialization \cite{clark2019does} cho thấy các heads học những pattern khác nhau:
+
+\textbf{Layer thấp (1-4):} 
+\begin{itemize}
+    \item \textbf{Syntactic:} Tập trung vào quan hệ cú pháp (subject-verb, determiner-noun)
+    \item \textbf{Positional:} Attention chủ yếu ở các vị trí gần nhau
+\end{itemize}
+
+\textbf{Layer giữa (5-8):}
+\begin{itemize}
+    \item \textbf{Coreference:} Liên kết các mention của cùng entity
+    \item \textbf{Semantic:} Kết nối từ có quan hệ ngữ nghĩa
+\end{itemize}
+
+\textbf{Layer cao (9-12):}
+\begin{itemize}
+    \item \textbf{Task-specific:} Chuyên môn hóa cho downstream tasks
+    \item \textbf{Broad context:} Tổng hợp thông tin từ toàn bộ sequence
+\end{itemize}
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=1\textwidth]{img/attention_specialization.png}
+    \caption{Ví dụ attention patterns của các heads khác nhau}
+    \label{fig:attention_specialization}
+\end{figure}
+
+\textbf{Giá trị của mỗi head:} 
+\begin{equation}
+\text{Head Specialization Score} = \frac{\text{Attention to relevant positions}}{\text{Total attention mass}}
+\end{equation}
+
+Các heads có \texttt{specialization score} cao (> 0.8) thường tập trung vào một loại \texttt{linguistic phenomenon} cụ thể.
 
 \subsection{Position-wise Feed-Forward Networks}
 \label{ssec:feed_forward_networks}
@@ -267,6 +377,36 @@ Lợi ích:
     \label{fig:bert_input_representation}
 \end{figure}
 Ba loại embeddings được cộng theo từng vị trí để tạo input embedding cuối cùng. Token \text{[CLS]} ở đầu sẽ được dùng cho các tác vụ phân loại.
+
+\subsubsection{So sánh Position Embeddings giữa BERT vs Transformer gốc}
+
+\texttt{Transformer\cite{vaswani2017attention}} sử dụng sinusoidal positional encoding cố định:
+\begin{align}
+PE_{(pos,2i)} &= \sin\left(\frac{pos}{10000^{2i/d_{model}}}\right) \\
+PE_{(pos,2i+1)} &= \cos\left(\frac{pos}{10000^{2i/d_{model}}}\right)
+\end{align}
+
+\textbf{\hyperref[acro:bert]{\textbf{BERT}} \cite{devlin2018bert}} sử dụng learned position embeddings:
+\begin{equation}
+\text{PositionEmb} \in \mathbb{R}^{512 \times d_{model}}
+\end{equation}
+
+\begin{table}[H]
+\centering
+\caption{So sánh Position Encoding strategies}
+\begin{tabular}{lcc}
+\toprule
+\textbf{Tiêu chí} & \textbf{Sinusoidal (Transformer)} & \textbf{Learned (BERT)} \\
+\midrule
+Tính chất & Deterministic & Learnable parameters \\
+Extrapolation & Tốt cho sequence dài hơn & Giới hạn 512 tokens \\
+Memory & Không cần lưu trữ & Cần $512 \times d_{model}$ params \\
+Flexibility & Cố định & Adapt với dữ liệu \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+Lý do BERT chọn learned embeddings vì các tác vụ downstream (GLUE, SQuAD) hiếm khi có sequence > 512 tokens, do đó flexibility của learned embeddings quan trọng hơn khả năng extrapolation.
 
 \subsection{Các phiên bản \hyperref[acro:bert]{\textbf{BERT}}}
 \label{ssec:bert_versions}
