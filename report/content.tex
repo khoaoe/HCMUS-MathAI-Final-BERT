@@ -876,10 +876,10 @@ Mixed precision (FP16) & Enabled (with cuda)\\
 \end{tabular}
 \end{table}
 
-\subsection{Kết quả và Phân tích}
+\subsubsection{Kết quả và Phân tích}
 \label{ssec:ket_qua_phan_tich}
 
-\subsubsection{So sánh hiệu năng}
+\paragraph{So sánh hiệu năng:}
 
 \hyperref[acro:bert]{\textbf{BERT}} thể hiện sự vượt trội rõ rệt so với baseline trên mọi chỉ số đánh giá với kết quả cụ thể:
 
@@ -899,7 +899,7 @@ Mixed precision (FP16) & Enabled (with cuda)\\
 \end{tabular}
 \end{table}
 
-\subsubsection{Phân tích Confusion matrix}
+\paragraph{Phân tích Confusion matrix:}
 
 Confusion matrix cung cấp cái nhìn về các lỗi của mô hình:
 
@@ -915,7 +915,7 @@ Mô hình đạt được sự cân bằng ổn giữa \texttt{precision} và \t
     \item 64 false positives vs 41 false negatives
 \end{itemize}
 
-\subsubsection{Phân tích chi tiết hiệu năng}
+\paragraph{Phân tích chi tiết hiệu năng:}
 
 Kết quả thực nghiệm cho thấy \hyperref[acro:bert]{\textbf{BERT}} đạt accuracy \textbf{89.5\%} trên tập validation 1,000 mẫu, với phân bố lỗi cân bằng như sau:
 
@@ -961,7 +961,7 @@ Tỷ lệ False Positive cao hơn False Negative (64 vs 41) cho thấy mô hình
 \end{itemize}
 
 
-\subsection{Trực quan hóa không gian biểu diễn}
+\subsection{Phần 3: Trực quan hóa không gian biểu diễn}
 
 Để hiểu cách \hyperref[acro:bert]{\textbf{BERT}} tổ chức không gian ngữ nghĩa, sử dụng t-SNE \cite{vandermaaten2008visualizing} để giảm chiều các embedding:
 
@@ -988,7 +988,7 @@ Tỷ lệ False Positive cao hơn False Negative (64 vs 41) cho thấy mô hình
 
 Sự phân tách rõ ràng trong không gian \hyperref[acro:bert]{\textbf{BERT}} giải thích hiệu năng tốt hơn của \hyperref[acro:bert]{\textbf{BERT}} fine-tuned. Điều này cũng có nghĩa là do các embedding từ \hyperref[acro:bert]{\textbf{BERT}} nắm bắt được ngữ nghĩa sâu sắc và chính xác hơn so với cách thống kê đơn giản của \hyperref[acro:tfidf]{\texttt{TF-IDF}}.
 
-\subsection{Phân tích Attention Patterns}
+\subsection{Phần 4: Phân tích Attention Patterns}
 \label{ssec:attention_analysis}
 
 Để hiểu sâu hơn về cách \hyperref[acro:bert]{\textbf{BERT}} xử lý thông tin cảm xúc, thực hiện phân tích chi tiết các attention patterns qua 12 layers và 12 heads.
@@ -1068,7 +1068,7 @@ Nhìn chung, negative có xu hướng được phân phối attention hơn (entr
     \item Model đã học được cách phân biệt hai loại attention patterns này
 \end{itemize}
 
-\subsection{Phân tích dự đoán sai}
+\subsection{Phần 5: Phân tích dự đoán sai}
 \label{ssec:comprehensive_error_analysis}
 
 \subsubsection{Phân tích False Positives}
