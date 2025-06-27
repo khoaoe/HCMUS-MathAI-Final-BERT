@@ -1019,7 +1019,7 @@ Phân tích sự phát triển attention qua các layers cho thấy pattern rõ 
 
 Kết quả cho thấy hầu hết các từ cảm xúc đạt peak attention ở layer cuối (layer 11), phù hợp với vai trò classification của [CLS] token.
 
-\subsubsection{Head Specialization Analysis}
+\subsubsection{Head Specialization:}
 
 Phân tích 12 attention heads cho thấy sự chuyên môn hóa rõ rệt:
 
@@ -1116,17 +1116,17 @@ Long texts (>50 words) & 12.1\% & Length complexity \\
 Phân tích cho thấy \hyperref[acro:bert]{\textbf{BERT}} có hạn chế trong:
 
 \begin{enumerate}
-    \item \textbf{Complex negation handling:} Đặc biệt với multiple negations
-    \item \textbf{Sarcasm detection:} Cần hiểu context và ngôn ngữ tự nhiên hơn 
+    \item \textbf{Complex negation handling:} các câu có cấu trúc phủ định phức tạp
+    \item \textbf{Sarcasm detection:} cần hiểu sâu hơn ngữ cảnh và ngôn ngữ tự nhiên hơn để nhận ra các ý phức tạp của ngôn ngữ như mỉa mai, sarcasm, ...
     \item \textbf{Subtle sentiment:} Khi không có các từ markers mô tả cảm xúc
     \item \textbf{Domain adaptation:} có các thuật ngữ chuyên môn điện ảnh
 \end{enumerate}
 
-Tuy nhiên, model cho thấy điểm mạnh trong:
+Tuy vậy, model cho thấy điểm mạnh trong:
 \begin{enumerate}
-    \item \textbf{Clear sentiment markers:} Dễ phân biệt với các từ marker "fantastic", "terrible"
-    \item \textbf{Contextual understanding:} tốt hơn cách tiếp cận bag-of-words   
-    \item \textbf{Balanced performance:} Không bias mạnh về một class
+    \item \textbf{Clear sentiment markers:} Dễ phân biệt với các từ marker "fantastic", "terrible", ...
+    \item \textbf{Contextual understanding:} tốt hơn cách tiếp cận bag-of-words nhờ hiểu ngữ cảnh   
+    \item \textbf{Balanced performance:} Không bias mạnh về một class nào
 \end{enumerate}
 
 \subsection{Phân tích sâu hơn bộ dữ liệu \& kết quả}
