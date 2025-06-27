@@ -899,7 +899,7 @@ Mixed precision (FP16) & Enabled (with cuda)\\
 \end{tabular}
 \end{table}
 
-\subsubsection{Phân tích Confusion Matrix}
+\subsubsection{Phân tích Confusion matrix}
 
 Confusion matrix cung cấp cái nhìn về các lỗi của mô hình:
 
@@ -909,11 +909,15 @@ Confusion matrix cung cấp cái nhìn về các lỗi của mô hình:
     \caption{Confusion matrix của BERT fine-tuned}
     \label{fig:confusion_matrix_detailed}
 \end{figure}
-Mô hình đạt được sự cân bằng ổn giữa \texttt{precision} và \texttt{recall} cho cả hai lớp, với 442 true negatives, 453 true positives, 64 false positives và 41 false negatives.
+Mô hình đạt được sự cân bằng ổn giữa \texttt{precision} và \texttt{recall} cho cả hai lớp, với: 
+\begin{itemize}
+    \item 442 true negatives vs 453 true positives
+    \item 64 false positives vs 41 false negatives
+\end{itemize}
 
 \subsubsection{Phân tích chi tiết hiệu năng}
 
-Kết quả thực nghiệm cho thấy \hyperref[acro:bert]{\textbf{BERT}} đạt accuracy 89.5\% trên tập validation 1,000 mẫu, với phân bố lỗi cân bằng như sau:
+Kết quả thực nghiệm cho thấy \hyperref[acro:bert]{\textbf{BERT}} đạt accuracy \textbf{89.5\%} trên tập validation 1,000 mẫu, với phân bố lỗi cân bằng như sau:
 
 \begin{table}[H]
 \centering
